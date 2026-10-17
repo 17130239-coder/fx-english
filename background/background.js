@@ -10,7 +10,8 @@ importScripts(
   '../lib/compromise.js',
   '../lib/subtitleParser.js',
   '../lib/cefrDict.js',
-  '../lib/vocabAnalyzer.js'
+  '../lib/vocabAnalyzer.js',
+  '../lib/neonClient.js'
 );
 
 const MessageDispatcher = {
@@ -181,6 +182,54 @@ const MessageDispatcher = {
       } catch (e) {}
 
       return { isMedia: false };
+    },
+
+    // Neon Database: Save scanned movie & vocabulary
+    ['neon_save_movie']: async (message) => {
+      const client = (typeof APP_NEON_CLIENT !== 'undefined') ? APP_NEON_CLIENT : null;
+      if (!client) throw new Error('Neon client is not initialized in background worker');
+      const movie = await client.saveMovie(message.item);
+      return { success: true, movie };
+    },
+
+    // Neon Database: Retrieve scanned movies
+    ['neon_get_movies']: async (message) => {
+      const client = (typeof APP_NEON_CLIENT !== 'undefined') ? APP_NEON_CLIENT : null;
+      if (!client) throw new Error('Neon client is not initialized in background worker');
+      const movies = await client.getMovies(message.limit || 100);
+      return { success: true, movies };
+    },
+
+    // Neon Database: Delete scanned movie
+    ['neon_delete_movie']: async (message) => {
+      const client = (typeof APP_NEON_CLIENT !== 'undefined') ? APP_NEON_CLIENT : null;
+      if (!client) throw new Error('Neon client is not initialized in background worker');
+      const deleted = await client.deleteMovie(message.id);
+      return { success: true, deleted };
+    },
+
+    // Neon Database: Clear all scanned movies
+    ['neon_clear_all_movies']: async () => {
+      const client = (typeof APP_NEON_CLIENT !== 'undefined') ? APP_NEON_CLIENT : null;
+      if (!client) throw new Error('Neon client is not initialized in background worker');
+      await client.clearAllMovies();
+      return { success: true };
+    },
+
+    // Neon Database: Health check
+    ['neon_check_health']: async () => {
+      const client = (typeof APP_NEON_CLIENT !== 'undefined') ? APP_NEON_CLIENT : null;
+      if (!client) throw new Error('Neon client is not initialized in background worker');
+      const health = await client.checkHealth();
+      return { success: true, health };
+    },
+
+    // Neon Database: Raw SQL Query
+    ['neon_query']: async (message) => {
+      const client = (typeof APP_NEON_CLIENT !== 'undefined') ? APP_NEON_CLIENT : null;
+      if (!client) throw new Error('Neon client is not initialized in background worker');
+      const rows = await client.queryDirect(message.sql, message.params || []);
+      return { success: true, rows };
     }
   },
 

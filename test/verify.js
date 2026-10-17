@@ -261,7 +261,60 @@ assert.ok(testMultiPassAnalysis.categories.verb.count > 0, 'Extracted verbs with
 assert.ok(testMultiPassAnalysis.categories.adverb.count > 0, 'Extracted adverbs without scope errors');
 console.log('   ✓ Multi-pass repeated lexeme analysis passed without ReferenceErrors.\n');
 
-console.log('====================================================');
-console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
-console.log('====================================================');
+// 9. Testing Neon Serverless Database Client
+console.log('☁️ 9. Testing Neon Serverless Database Client...');
+const neonClient = require('../lib/neonClient.js');
+assert.ok(neonClient, 'neonClient loaded successfully');
+assert.strictEqual(typeof neonClient.queryDirect, 'function', 'queryDirect method exists');
+assert.strictEqual(typeof neonClient.saveMovie, 'function', 'saveMovie method exists');
+assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method exists');
+
+(async () => {
+  try {
+    const health = await neonClient.checkHealth();
+    assert.ok(health.ok, 'Neon database connection is healthy');
+    console.log('   ✓ Neon health check passed (Connected to host: ' + health.host + ')');
+
+    const testId = 'verify_test_' + Date.now();
+    const testMovie = {
+      id: testId,
+      title: 'Neon Integration Test Video',
+      platform: 'youtube',
+      url: 'https://www.youtube.com/watch?v=neon_test_verify',
+      timestamp: Date.now(),
+      dateFormatted: '17/10/2026, 23:40',
+      wordCount: 12,
+      nounCount: 4,
+      verbCount: 3,
+      adjCount: 3,
+      advCount: 2,
+      cues: [{ startSec: 0, endSec: 3, text: 'Hello Neon PostgreSQL world' }],
+      analysis: testMultiPassAnalysis
+    };
+
+    const saved = await neonClient.saveMovie(testMovie);
+    assert.ok(saved, 'Movie saved to Neon');
+    assert.strictEqual(saved.id, testId, 'Saved movie has matching ID');
+    assert.strictEqual(saved.title, testMovie.title, 'Saved movie has matching title');
+    assert.strictEqual(saved.nounCount, 4, 'Saved movie has matching noun count');
+    assert.ok(saved.analysis, 'Saved movie includes full analysis JSONB');
+
+    const movies = await neonClient.getMovies(10);
+    assert.ok(Array.isArray(movies), 'getMovies returns an array');
+    const retrieved = movies.find(m => m.id === testId);
+    assert.ok(retrieved, 'Retrieved saved movie from Neon');
+
+    const deleted = await neonClient.deleteMovie(testId);
+    assert.ok(deleted, 'Cleaned up test movie from Neon');
+    console.log('   ✓ Full Neon CRUD cycle verified (saveMovie, getMovies, deleteMovie).\n');
+
+    console.log('====================================================');
+    console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
+    console.log('====================================================');
+  } catch (err) {
+    console.error('❌ Neon Integration Test Error:', err);
+    process.exit(1);
+  }
+})();
+
 

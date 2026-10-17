@@ -37,6 +37,8 @@
       this.historyEmptyEl = document.getElementById('fx-history-empty');
       this.historyGridEl = document.getElementById('fx-history-grid');
       this.btnClearHistory = document.getElementById('fx-btn-clear-history');
+      this.neonSyncPill = document.getElementById('fx-neon-sync-pill');
+      this.neonSyncText = document.getElementById('fx-neon-sync-text');
 
       // Banners & Inputs
       this.bannerEl = document.getElementById('fx-detected-banner');
@@ -672,12 +674,30 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     },
 
     // ==========================================
-    // Scanned Movies & Videos History Feature
+    // Scanned Movies & Videos History Feature (Neon Cloud Sync)
     // ==========================================
 
-    saveCurrentToHistory() {
+    setNeonSyncStatus(status, text) {
+      if (!this.neonSyncPill) return;
+      this.neonSyncPill.classList.remove('syncing', 'offline');
+      if (status === 'syncing') {
+        this.neonSyncPill.classList.add('syncing');
+      } else if (status === 'offline') {
+        this.neonSyncPill.classList.add('offline');
+      }
+      if (this.neonSyncText && text) {
+        this.neonSyncText.textContent = text;
+      }
+    },
+
+    getNeonClient() {
+      if (typeof APP_NEON_CLIENT !== 'undefined') return APP_NEON_CLIENT;
+      if (typeof window !== 'undefined' && window.neonClient) return window.neonClient;
+      return null;
+    },
+
+    async saveCurrentToHistory() {
       if (!this.analysis) return;
-      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
 
       const title = this.movieTitle || 'Không tên';
       let platform = 'file';
@@ -687,53 +707,129 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         platform = 'netflix';
       }
 
-      chrome.storage.local.get(['fxScanHistory'], (res) => {
-        let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+      const newItem = {
+        id: 'scan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        title: title,
+        platform: platform,
+        url: this.movieUrl || '',
+        timestamp: Date.now(),
+        dateFormatted: new Date().toLocaleDateString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }),
+        wordCount: this.analysis.totals.uniqueWords,
+        nounCount: this.analysis.categories.noun.count,
+        verbCount: this.analysis.categories.verb.count,
+        adjCount: this.analysis.categories.adjective.count,
+        advCount: this.analysis.categories.adverb.count,
+        cues: this.cues || [],
+        analysis: this.analysis
+      };
 
-        // Deduplicate: remove existing entry with same title or url
-        history = history.filter((item) => {
-          if (this.movieUrl && item.url && item.url === this.movieUrl) return false;
-          if (item.title && item.title === title) return false;
-          return true;
+      // 1. Instant local persistence (offline-first)
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['fxScanHistory'], (res) => {
+          let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+          history = history.filter((item) => {
+            if (this.movieUrl && item.url && item.url === this.movieUrl) return false;
+            if (item.title && item.title === title) return false;
+            return true;
+          });
+          history.unshift(newItem);
+          if (history.length > 50) history = history.slice(0, 50);
+
+          chrome.storage.local.set({ fxScanHistory: history }, () => {
+            this.renderHistoryList(history);
+          });
         });
+      }
 
-        const newItem = {
-          id: 'scan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-          title: title,
-          platform: platform,
-          url: this.movieUrl || '',
-          timestamp: Date.now(),
-          dateFormatted: new Date().toLocaleDateString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          }),
-          wordCount: this.analysis.totals.uniqueWords,
-          nounCount: this.analysis.categories.noun.count,
-          verbCount: this.analysis.categories.verb.count,
-          adjCount: this.analysis.categories.adjective.count,
-          advCount: this.analysis.categories.adverb.count,
-          cues: this.cues || [],
-          analysis: this.analysis
-        };
-
-        history.unshift(newItem);
-        if (history.length > 50) history = history.slice(0, 50);
-
-        chrome.storage.local.set({ fxScanHistory: history }, () => {
-          this.loadHistory();
-        });
-      });
+      // 2. Cloud persistence to Neon PostgreSQL
+      const neon = this.getNeonClient();
+      if (neon) {
+        this.setNeonSyncStatus('syncing', 'Đang lưu Neon...');
+        try {
+          await neon.saveMovie(newItem);
+          this.setNeonSyncStatus('synced', 'Neon DB (Đã lưu)');
+        } catch (err) {
+          console.warn('[FX Neon] Cloud save warning:', err);
+          this.setNeonSyncStatus('offline', 'Neon DB (Lưu cục bộ)');
+        }
+      }
     },
 
-    loadHistory() {
-      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
-      chrome.storage.local.get(['fxScanHistory'], (res) => {
-        const history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
-        this.renderHistoryList(history);
-      });
+    async loadHistory() {
+      let localHistory = [];
+
+      // 1. Render immediately from local storage cache
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        localHistory = await new Promise((resolve) => {
+          chrome.storage.local.get(['fxScanHistory'], (res) => {
+            resolve((res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : []);
+          });
+        });
+        if (localHistory.length > 0) {
+          this.renderHistoryList(localHistory);
+        }
+      }
+
+      // 2. Neon Cloud Sync
+      const neon = this.getNeonClient();
+      if (!neon) {
+        this.setNeonSyncStatus('offline', 'Neon DB');
+        return;
+      }
+
+      this.setNeonSyncStatus('syncing', 'Đang kết nối Neon...');
+      try {
+        const cloudMovies = await neon.getMovies(100);
+
+        // Merge cloud movies and local movies, avoiding duplicates
+        const map = new Map();
+
+        // Add cloud movies first
+        cloudMovies.forEach((m) => {
+          const key = m.id || m.title;
+          map.set(key, m);
+        });
+
+        // Merge local movies
+        localHistory.forEach((loc) => {
+          const key = loc.id || loc.title;
+          const existing = map.get(key);
+          if (!existing || (loc.timestamp && loc.timestamp > (existing.timestamp || 0))) {
+            map.set(key, loc);
+          }
+        });
+
+        let merged = Array.from(map.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        if (merged.length > 50) merged = merged.slice(0, 50);
+
+        // Update local cache
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ fxScanHistory: merged });
+        }
+
+        this.renderHistoryList(merged);
+        this.setNeonSyncStatus('synced', 'Neon DB (Đã đồng bộ)');
+
+        // Background sync: push any local-only movie up to Neon
+        localHistory.forEach((loc) => {
+          const existsInCloud = cloudMovies.some((c) => c.id === loc.id || c.title === loc.title);
+          if (!existsInCloud) {
+            neon.saveMovie(loc).catch(() => {});
+          }
+        });
+      } catch (err) {
+        console.warn('[FX Neon] Load sync notice:', err);
+        this.setNeonSyncStatus('offline', 'Neon DB (Offline)');
+        if (localHistory.length > 0) {
+          this.renderHistoryList(localHistory);
+        }
+      }
     },
 
     renderHistoryList(history) {
@@ -776,7 +872,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             <div class="fx-history-card-header">
               <span class="fx-history-badge ${badgeClass}">${badgeText}</span>
               <span class="fx-history-date">${item.dateFormatted || ''}</span>
-              <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này">×</button>
+              <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này khỏi máy & Neon">×</button>
             </div>
             <h4 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h4>
             <div class="fx-history-stats">
@@ -847,23 +943,40 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.vocabSection.scrollIntoView({ behavior: 'smooth' });
     },
 
-    deleteHistoryItem(id) {
-      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
-      chrome.storage.local.get(['fxScanHistory'], (res) => {
-        let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
-        history = history.filter((item) => item.id !== id);
-        chrome.storage.local.set({ fxScanHistory: history }, () => {
-          this.renderHistoryList(history);
+    async deleteHistoryItem(id) {
+      // 1. Delete from local storage
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['fxScanHistory'], (res) => {
+          let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+          history = history.filter((item) => item.id !== id);
+          chrome.storage.local.set({ fxScanHistory: history }, () => {
+            this.renderHistoryList(history);
+          });
         });
-      });
+      }
+
+      // 2. Delete from Neon PostgreSQL
+      const neon = this.getNeonClient();
+      if (neon) {
+        neon.deleteMovie(id).catch((err) => console.warn('[FX Neon] Cloud delete warning:', err));
+      }
     },
 
-    clearAllHistory() {
-      if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử các phim đã quét?')) return;
-      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
-      chrome.storage.local.remove(['fxScanHistory'], () => {
-        this.renderHistoryList([]);
-      });
+    async clearAllHistory() {
+      if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử các phim đã quét (cả trên trình duyệt và Neon DB)?')) return;
+
+      // 1. Clear local
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.remove(['fxScanHistory'], () => {
+          this.renderHistoryList([]);
+        });
+      }
+
+      // 2. Clear Neon
+      const neon = this.getNeonClient();
+      if (neon) {
+        neon.clearAllMovies().catch((err) => console.warn('[FX Neon] Cloud clear warning:', err));
+      }
     }
   };
 

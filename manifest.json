@@ -31,7 +31,8 @@
     "*://*.nflxvideo.net/*",
     "*://*.nflxext.com/*",
     "*://*.youtube.com/*",
-    "*://*.googlevideo.com/*"
+    "*://*.googlevideo.com/*",
+    "https://*.neon.tech/*"
   ],
   "background": {
     "service_worker": "background/background.js"

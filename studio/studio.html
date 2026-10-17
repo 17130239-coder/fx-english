@@ -55,8 +55,14 @@
       <section id="fx-history-section" class="fx-history-section">
         <div class="fx-section-header">
           <div class="fx-history-title-group">
-            <h2>📂 Phim & Video Đã Quét (<span id="fx-history-count">0</span>)</h2>
-            <span class="fx-section-hint">Nhấp vào một bộ phim để mở lại danh sách 4 loại từ tương ứng</span>
+            <div class="fx-history-title-row">
+              <h2>📂 Phim & Video Đã Quét (<span id="fx-history-count">0</span>)</h2>
+              <span id="fx-neon-sync-pill" class="fx-neon-pill" title="Đồng bộ cơ sở dữ liệu đám mây Neon PostgreSQL">
+                <span class="fx-neon-dot"></span>
+                <span id="fx-neon-sync-text">Neon DB</span>
+              </span>
+            </div>
+            <span class="fx-section-hint">Nhấp vào một bộ phim để mở lại danh sách 4 loại từ tương ứng (Đã lưu & đồng bộ Neon)</span>
           </div>
           <button type="button" id="fx-btn-clear-history" class="fx-btn fx-btn-ghost-sm" style="display:none;">🗑️ Xóa lịch sử</button>
         </div>
@@ -228,6 +234,7 @@ Learning English through movies is fascinating and effective."></textarea>
   <script src="../lib/subtitleParser.js"></script>
   <script src="../lib/cefrDict.js"></script>
   <script src="../lib/vocabAnalyzer.js"></script>
+  <script src="../lib/neonClient.js"></script>
   <script src="studio.js"></script>
 </body>
 </html>
