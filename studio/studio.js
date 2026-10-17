@@ -566,11 +566,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     async openSettingsModal(notice = '') {
       if (!this.settingsModal) return;
       const ai = this.getAiClient();
-      const conf = ai ? await ai.getConfig() : { baseUrl: 'https://api.9router.com/v1', apiKey: '', model: 'gemini-3.8-flash' };
+      const conf = ai ? await ai.getConfig() : {
+        baseUrl: 'http://localhost:20128/v1',
+        apiKey: 'sk-98667fb36de52067-1qd56t-2af84524',
+        model: 'ag/gemini-3.8-flash-low'
+      };
 
-      if (this.inputAiBaseUrl) this.inputAiBaseUrl.value = conf.baseUrl || 'https://api.9router.com/v1';
-      if (this.inputAiApiKey) this.inputAiApiKey.value = conf.apiKey || '';
-      if (this.inputAiModel) this.inputAiModel.value = conf.model || 'gemini-3.8-flash';
+      if (this.inputAiBaseUrl) this.inputAiBaseUrl.value = conf.baseUrl || 'http://localhost:20128/v1';
+      if (this.inputAiApiKey) this.inputAiApiKey.value = conf.apiKey || 'sk-98667fb36de52067-1qd56t-2af84524';
+      if (this.inputAiModel) this.inputAiModel.value = conf.model || 'ag/gemini-3.8-flash-low';
 
       if (this.settingsStatus) {
         if (notice) {
@@ -595,10 +599,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const ai = this.getAiClient();
       if (!ai) return;
 
-      const rawBase = (this.inputAiBaseUrl?.value || '').trim() || 'https://api.9router.com/v1';
+      const rawBase = (this.inputAiBaseUrl?.value || '').trim() || 'http://localhost:20128/v1';
       const baseUrl = ai.normalizeBaseUrl ? ai.normalizeBaseUrl(rawBase) : rawBase;
-      const apiKey = (this.inputAiApiKey?.value || '').trim();
-      const model = (this.inputAiModel?.value || '').trim() || 'gemini-3.8-flash';
+      const apiKey = (this.inputAiApiKey?.value || '').trim() || 'sk-98667fb36de52067-1qd56t-2af84524';
+      const model = (this.inputAiModel?.value || '').trim() || 'ag/gemini-3.8-flash-low';
 
       if (!apiKey) {
         this.showSettingsStatus('error', 'Vui lòng nhập 9Router API Key.');

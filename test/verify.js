@@ -549,8 +549,10 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
     // 15.1 Verify default configuration
     const initialConfig = await aiClientModule.getConfig();
-    assert.strictEqual(initialConfig.baseUrl, 'https://api.9router.com/v1', 'Default baseUrl is https://api.9router.com/v1');
-    assert.strictEqual(initialConfig.model, 'gemini-3.8-flash', 'Default model is gemini-3.8-flash');
+    assert.strictEqual(initialConfig.baseUrl, 'http://localhost:20128/v1', 'Default baseUrl is http://localhost:20128/v1');
+    assert.strictEqual(initialConfig.apiKey, 'sk-98667fb36de52067-1qd56t-2af84524', 'Default apiKey is set');
+    assert.strictEqual(initialConfig.model, 'ag/gemini-3.8-flash-low', 'Default model is ag/gemini-3.8-flash-low');
+    assert.strictEqual(aiClientModule.isConfigured(), true, 'isConfigured() returns true out of the box with defaults');
 
     // 15.2 Verify normalizeBaseUrl
     assert.strictEqual(aiClientModule.normalizeBaseUrl('http://localhost:20128'), 'http://localhost:20128/v1', 'Appends /v1 if missing');
