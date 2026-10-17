@@ -310,8 +310,36 @@ assert.ok(testMultiPassAnalysis.categories.verb.count > 0, 'Extracted verbs with
 assert.ok(testMultiPassAnalysis.categories.adverb.count > 0, 'Extracted adverbs without scope errors');
 console.log('   ✓ Multi-pass repeated lexeme analysis passed without ReferenceErrors.\n');
 
-// 9. Testing Neon Serverless Database Client
-console.log('☁️ 9. Testing Neon Serverless Database Client...');
+// 9. Testing Curated Practical Communicative Sentences Extraction
+console.log('💬 9. Testing Curated Practical Communicative Sentences Extraction...');
+const sampleConversationalCues = [
+  { startSec: 1, endSec: 3.5, start: '00:00:01', end: '00:00:03', text: 'Hey, take it easy! We have plenty of time.' },
+  { startSec: 4, endSec: 6.8, start: '00:00:04', end: '00:00:06', text: "Why don't we call it a day and grab some food?" },
+  { startSec: 7, endSec: 9.2, start: '00:00:07', end: '00:00:09', text: 'Sounds like a plan to me, let me know when you are ready.' },
+  { startSec: 10, endSec: 12.5, start: '00:00:10', end: '00:00:12', text: 'I had no idea you could play the piano so well!' }
+];
+
+const convoAnalysis = analyzer.analyzeSubtitles(sampleConversationalCues);
+assert.ok(convoAnalysis.communicativeSentences, 'communicativeSentences array generated');
+assert.strictEqual(convoAnalysis.communicativeSentences.length, 4, 'Extracted exactly 4 communicative sentences');
+assert.strictEqual(convoAnalysis.categories.sentences.count, 4, 'categories.sentences count matches');
+
+const sent1 = convoAnalysis.communicativeSentences[0];
+assert.strictEqual(sent1.highlightPhrase, 'take it easy', 'Identified "take it easy" core phrase');
+assert.ok(sent1.vietnamese.includes('Bình tĩnh'), 'Matched Vietnamese meaning for "take it easy"');
+assert.ok(sent1.tag.includes('Đời sống') || sent1.tag.includes('Cụm từ'), 'Tagged category');
+
+const ankiSentDeck = analyzer.exportToAnkiFormat(convoAnalysis.communicativeSentences);
+assert.ok(ankiSentDeck.includes('take it easy'), 'Anki contains sentence');
+assert.ok(ankiSentDeck.includes('call it a day'), 'Anki contains call it a day');
+
+const csvSentExport = analyzer.exportToCsvFormat(convoAnalysis.communicativeSentences);
+assert.ok(csvSentExport.includes('"Câu tiếng Anh"'), 'CSV header formatted for sentences');
+assert.ok(csvSentExport.includes('Sounds like a plan'), 'CSV contains sentence text');
+console.log('   ✓ Practical communicative sentence extraction, tags, Anki & CSV export verified.\n');
+
+// 10. Testing Neon Serverless Database Client
+console.log('☁️ 10. Testing Neon Serverless Database Client...');
 const neonClient = require('../lib/neonClient.js');
 assert.ok(neonClient, 'neonClient loaded successfully');
 assert.strictEqual(typeof neonClient.queryDirect, 'function', 'queryDirect method exists');

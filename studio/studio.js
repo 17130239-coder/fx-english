@@ -64,6 +64,7 @@
       this.statVerb = document.getElementById('fx-stat-verb');
       this.statAdj = document.getElementById('fx-stat-adj');
       this.statAdv = document.getElementById('fx-stat-adv');
+      this.statSentences = document.getElementById('fx-stat-sentences');
 
       // Tab Counters
       this.tabCountAll = document.getElementById('fx-tab-count-all');
@@ -71,6 +72,7 @@
       this.tabCountVerb = document.getElementById('fx-tab-count-verb');
       this.tabCountAdj = document.getElementById('fx-tab-count-adj');
       this.tabCountAdv = document.getElementById('fx-tab-count-adv');
+      this.tabCountSentences = document.getElementById('fx-tab-count-sentences');
 
       // Filters
       this.searchInput = document.getElementById('fx-filter-search');
@@ -409,35 +411,48 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.statVerb.textContent = categories.verb.count.toLocaleString();
       this.statAdj.textContent = categories.adjective.count.toLocaleString();
       this.statAdv.textContent = categories.adverb.count.toLocaleString();
+      if (this.statSentences) {
+        const sentCount = categories.sentences?.count || totals.communicativeCount || 0;
+        this.statSentences.textContent = sentCount.toLocaleString();
+      }
 
       this.tabCountAll.textContent = totals.uniqueWords.toLocaleString();
       this.tabCountNoun.textContent = categories.noun.count.toLocaleString();
       this.tabCountVerb.textContent = categories.verb.count.toLocaleString();
       this.tabCountAdj.textContent = categories.adjective.count.toLocaleString();
       this.tabCountAdv.textContent = categories.adverb.count.toLocaleString();
+      if (this.tabCountSentences) {
+        const sentCount = categories.sentences?.count || totals.communicativeCount || 0;
+        this.tabCountSentences.textContent = sentCount.toLocaleString();
+      }
     },
 
     getFilteredWords() {
       if (!this.analysis) return [];
       let list = [];
 
-      if (this.activePosFilter === 'all') {
+      if (this.activePosFilter === 'sentences') {
+        const sentCat = this.analysis.categories?.sentences || { words: this.analysis.communicativeSentences || [] };
+        list = [...(sentCat.words || [])];
+      } else if (this.activePosFilter === 'all') {
         const seen = new Set();
         ['noun', 'verb', 'adjective', 'adverb'].forEach((catKey) => {
-          this.analysis.categories[catKey].words.forEach((w) => {
-            if (!seen.has(w.word)) {
-              seen.add(w.word);
-              list.push(w);
-            }
-          });
+          if (this.analysis.categories[catKey]) {
+            this.analysis.categories[catKey].words.forEach((w) => {
+              if (!seen.has(w.word)) {
+                seen.add(w.word);
+                list.push(w);
+              }
+            });
+          }
         });
       } else {
         const cat = this.analysis.categories[this.activePosFilter];
         list = cat ? [...cat.words] : [];
       }
 
-      // Filter by CEFR
-      if (this.cefrFilter !== 'all') {
+      // Filter by CEFR (applies to vocabulary words; sentences pass through unless specific)
+      if (this.cefrFilter !== 'all' && this.activePosFilter !== 'sentences') {
         list = list.filter((w) => (w.cefr || '').toUpperCase() === this.cefrFilter.toUpperCase());
       }
 
@@ -470,11 +485,69 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.cardsGrid.innerHTML = '';
 
       if (words.length === 0) {
+        const emptyMsg = this.activePosFilter === 'sentences'
+          ? 'Không tìm thấy câu giao tiếp nào khớp với bộ lọc.'
+          : 'Không tìm thấy từ vựng nào khớp với bộ lọc.';
         this.cardsGrid.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: #71717a;">
-            Không tìm thấy từ vựng nào khớp với bộ lọc.
+            ${emptyMsg}
           </div>
         `;
+        return;
+      }
+
+      // Render dedicated communicative sentence cards
+      if (this.activePosFilter === 'sentences') {
+        words.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'fx-sentence-card';
+
+          let phraseHtml = this.escape(item.sentence);
+          if (item.highlightPhrase) {
+            const escapedHl = this.escapeRegExp(item.highlightPhrase);
+            phraseHtml = phraseHtml.replace(new RegExp(`(${escapedHl})`, 'gi'), '<mark class="fx-sent-highlight">$1</mark>');
+          }
+
+          card.innerHTML = `
+            <div class="fx-sent-top">
+              <div class="fx-sent-tags-wrap">
+                <span class="fx-sent-tag">${this.escape(item.tag || '💡 Giao tiếp')}</span>
+                ${item.startTime ? `<span class="fx-sent-time">⏱ ${this.escape(item.startTime)}</span>` : ''}
+              </div>
+              <div class="fx-sent-actions">
+                <button class="fx-btn-icon-sm fx-btn-speak" title="Nghe phát âm toàn câu">🔊</button>
+                <button class="fx-btn-icon-sm fx-btn-copy" title="Sao chép câu">📋</button>
+              </div>
+            </div>
+
+            <div class="fx-sent-body">
+              "${phraseHtml}"
+            </div>
+
+            <p class="fx-sent-trans">${this.escape(item.vietnamese || '')}</p>
+
+            <div class="fx-sent-footer">
+              ${item.highlightPhrase ? `<span class="fx-sent-core-phrase">✨ Cụm từ cốt lõi: <b>${this.escape(item.highlightPhrase)}</b></span>` : ''}
+              ${item.usageNote ? `<span class="fx-sent-note">💡 ${this.escape(item.usageNote)}</span>` : ''}
+            </div>
+          `;
+
+          card.querySelector('.fx-btn-speak').onclick = (e) => {
+            e.stopPropagation();
+            this.speakWord(item.sentence);
+          };
+
+          const copyBtn = card.querySelector('.fx-btn-copy');
+          copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(item.sentence).then(() => {
+              copyBtn.textContent = '✓';
+              setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
+            }).catch(() => {});
+          };
+
+          this.cardsGrid.appendChild(card);
+        });
         return;
       }
 
@@ -542,6 +615,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         case 'verb': return 'Động từ';
         case 'adjective': return 'Tính từ';
         case 'adverb': return 'Trạng từ';
+        case 'sentences': return 'Câu giao tiếp';
         default: return pos || 'Từ vựng';
       }
     },
@@ -559,7 +633,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     openFlashcards() {
       const words = this.getFilteredWords();
       if (words.length === 0) {
-        alert('Không có từ vựng nào để tạo thẻ ghi nhớ.');
+        alert('Không có từ vựng hoặc câu giao tiếp nào để tạo thẻ ghi nhớ.');
         return;
       }
 
@@ -606,6 +680,31 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (!item) return;
 
       this.fcCounter.textContent = `${this.currentCardIdx + 1} / ${this.flashcardList.length}`;
+
+      // Sentence Flashcard
+      if (item.isCommunicative || item.sentence) {
+        this.fcPos.textContent = (item.tag || 'CÂU GIAO TIẾP').toUpperCase();
+        this.fcPos.className = 'fx-pos-badge sentences';
+        this.fcCefr.textContent = 'GIAO TIẾP';
+        this.fcFreq.textContent = `${item.frequency || 1}x xuất hiện`;
+        this.fcWord.textContent = item.sentence;
+        this.fcIpa.textContent = item.startTime ? `⏱ ${item.startTime}` : '';
+
+        this.fcContext.innerHTML = item.highlightPhrase
+          ? `Cụm từ cốt lõi: <b style="color:#fbbf24;">${this.escape(item.highlightPhrase)}</b>`
+          : '';
+
+        this.fcTrans.textContent = item.vietnamese || 'Đang cập nhật nghĩa';
+        this.fcLemma.innerHTML = item.usageNote
+          ? `💡 Ứng dụng: <b>${this.escape(item.usageNote)}</b>`
+          : '';
+        this.fcBackSentence.innerHTML = `"${this.escape(item.sentence)}"`;
+
+        this.fcPrev.disabled = (this.currentCardIdx === 0);
+        this.fcNext.disabled = (this.currentCardIdx === this.flashcardList.length - 1);
+        return;
+      }
+
       this.fcPos.textContent = this.getPosLabel(item.pos).toUpperCase();
       this.fcPos.className = `fx-pos-badge ${item.pos}`;
 
@@ -758,6 +857,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         verbCount: this.analysis.categories.verb.count,
         adjCount: this.analysis.categories.adjective.count,
         advCount: this.analysis.categories.adverb.count,
+        sentencesCount: this.analysis.categories?.sentences?.count || this.analysis.totals.communicativeCount || 0,
         cues: this.cues || [],
         analysis: this.analysis
       };
@@ -923,8 +1023,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
               <span class="fx-hist-pill hist-verb">V: ${item.verbCount}</span>
               <span class="fx-hist-pill hist-adj">Adj: ${item.adjCount}</span>
               <span class="fx-hist-pill hist-adv">Adv: ${item.advCount}</span>
+              ${(item.sentencesCount || item.analysis?.categories?.sentences?.count) ? `<span class="fx-hist-pill" style="color:#fbbf24;background:rgba(245,158,11,0.15);">💬 ${item.sentencesCount || item.analysis?.categories?.sentences?.count} câu</span>` : ''}
             </div>
-            <button type="button" class="fx-btn-open-hist" data-id="${item.id}">Xem danh sách từ loại 👉</button>
+            <button type="button" class="fx-btn-open-hist" data-id="${item.id}">Xem từ loại & câu hay 👉</button>
           </div>
         `;
       }).join('');
