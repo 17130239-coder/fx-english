@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnOpenStudio = document.getElementById('fx-btn-open-studio');
 
   let activeTabId = null;
+  let activeTabUrl = '';
 
   // Open Studio
   btnOpenStudio.addEventListener('click', () => {
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.id) {
       activeTabId = tab.id;
+      activeTabUrl = tab.url || '';
       chrome.tabs.sendMessage(tab.id, { action: 'get_media_info' }, async (resp) => {
         if (!chrome.runtime.lastError && resp && resp.success) {
           showMedia(resp);
@@ -129,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           chrome.storage.local.set({
             fxPendingStudio: {
               title: res.title || info.title || 'Movie / Video',
+              url: res.url || activeTabUrl || '',
               cues: res.cues
             }
           }, () => {

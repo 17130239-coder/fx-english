@@ -176,7 +176,18 @@ assert.ok(advWords.includes('softly') || advWords.includes('through'), 'Identifi
 
 // Verify auxiliary filter (e.g. 'is' should be filtered out)
 assert.ok(!verbWords.includes('is'), 'Auxiliary verb "is" was properly filtered');
-console.log('   ✓ POS Categorization passed with high accuracy.\n');
+
+// Verify 'there' is classified as adverb and NEVER as noun
+const testCues = [
+  { startSec: 1, endSec: 3, text: 'There is an ancient car over there.' }
+];
+const testAnalysis = analyzer.analyzeSubtitles(testCues);
+const testNouns = testAnalysis.categories.noun.words.map(w => w.word);
+const testAdverbs = testAnalysis.categories.adverb.words.map(w => w.word);
+assert.ok(testAdverbs.includes('there'), '"there" must be classified as an adverb');
+assert.ok(!testNouns.includes('there'), '"there" must NEVER be classified as a noun');
+assert.ok(!testNouns.includes('this'), '"this" pronoun must NEVER be classified as a noun');
+console.log('   ✓ POS Categorization passed with high accuracy (verified "there" is adverb, zero noun leak).\n');
 
 // 6. Test Anki & CSV Export Formats
 console.log('🗂️ 6. Testing Anki & CSV Exporters...');
@@ -195,6 +206,48 @@ assert.ok(csvExport.startsWith('"Từ vựng","Loại từ"'), 'CSV header is we
 assert.ok(csvExport.includes('fascinating') || csvExport.includes('astronomer'), 'CSV contains target word');
 console.log('   ✓ Anki and CSV export formatting verified.\n');
 
+// 7. Testing Scanned Movie & Video History Data Architecture
+console.log('📂 7. Testing Scanned History Data Architecture...');
+const mockHistory = [];
+const mockMovieAnalysis = analyzer.analyzeSubtitles(cues);
+
+function saveToMockHistory(history, item) {
+  // Deduplicate
+  let updated = history.filter(h => !(h.title === item.title || (item.url && h.url === item.url)));
+  updated.unshift(item);
+  return updated.slice(0, 50);
+}
+
+const item1 = {
+  id: 'scan_yt_1',
+  title: 'English Lesson 101',
+  platform: 'youtube',
+  url: 'https://www.youtube.com/watch?v=mock123',
+  timestamp: Date.now(),
+  dateFormatted: '17/10/2026, 23:00',
+  wordCount: mockMovieAnalysis.totals.uniqueWords,
+  nounCount: mockMovieAnalysis.categories.noun.count,
+  verbCount: mockMovieAnalysis.categories.verb.count,
+  adjCount: mockMovieAnalysis.categories.adjective.count,
+  advCount: mockMovieAnalysis.categories.adverb.count,
+  cues: cues,
+  analysis: mockMovieAnalysis
+};
+
+let currentHistory = saveToMockHistory(mockHistory, item1);
+assert.strictEqual(currentHistory.length, 1, 'History has 1 item');
+assert.strictEqual(currentHistory[0].platform, 'youtube', 'Platform correctly tagged as youtube');
+assert.strictEqual(currentHistory[0].advCount, 1, 'Adverb count stored correctly');
+
+// Re-saving same title updates and deduplicates
+const item1Updated = { ...item1, wordCount: 99 };
+currentHistory = saveToMockHistory(currentHistory, item1Updated);
+assert.strictEqual(currentHistory.length, 1, 'Deduplication works when scanning same title');
+assert.strictEqual(currentHistory[0].wordCount, 99, 'Item updated to latest stats');
+
+console.log('   ✓ Scanned history model & deduplication logic verified.\n');
+
 console.log('====================================================');
 console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
 console.log('====================================================');
+

@@ -25,11 +25,19 @@
     init() {
       this.bindElements();
       this.bindEvents();
+      this.loadHistory();
       this.checkPendingStorage();
       this.detectActiveMedia();
     },
 
     bindElements() {
+      // History elements
+      this.historySection = document.getElementById('fx-history-section');
+      this.historyCountEl = document.getElementById('fx-history-count');
+      this.historyEmptyEl = document.getElementById('fx-history-empty');
+      this.historyGridEl = document.getElementById('fx-history-grid');
+      this.btnClearHistory = document.getElementById('fx-btn-clear-history');
+
       // Banners & Inputs
       this.bannerEl = document.getElementById('fx-detected-banner');
       this.bannerTitleEl = document.getElementById('fx-banner-title');
@@ -164,6 +172,11 @@
         this.speakWord(this.fcWord.textContent);
       });
 
+      // Clear History Button
+      if (this.btnClearHistory) {
+        this.btnClearHistory.addEventListener('click', () => this.clearAllHistory());
+      }
+
       // Keyboard navigation for Flashcards
       window.addEventListener('keydown', (e) => {
         if (this.fcModal.style.display !== 'flex') return;
@@ -188,6 +201,7 @@
           const item = res.fxPendingStudio;
           chrome.storage.local.remove(['fxPendingStudio']);
           if (item.title) this.movieTitle = item.title;
+          if (item.url) this.movieUrl = item.url;
           if (item.rawText) {
             this.rawTextarea.value = item.rawText;
             this.analyzeFromTextarea();
@@ -228,6 +242,7 @@
 
         if (Array.isArray(res.cues) && res.cues.length > 0) {
           this.movieTitle = res.title || 'Movie';
+          this.movieUrl = res.url || (this.detectedMediaTab ? this.detectedMediaTab.url : '');
           this.cues = res.cues;
           this.runAnalysis();
         } else {
@@ -244,6 +259,7 @@
 
     loadFile(file) {
       this.movieTitle = file.name.replace(/\.[^/.]+$/, '');
+      this.movieUrl = '';
       const reader = new FileReader();
       reader.onload = (e) => {
         this.rawTextarea.value = e.target.result;
@@ -254,6 +270,7 @@
 
     pasteSampleSubtitles() {
       this.movieTitle = 'Movie_Sample';
+      this.movieUrl = '';
       this.rawTextarea.value = `1
 00:00:01,000 --> 00:00:04,200
 In a quiet ancient library, the young scholar discovered a mysterious map.
@@ -288,7 +305,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.runAnalysis();
     },
 
-    runAnalysis() {
+    runAnalysis(skipSaveHistory = false) {
       if (!ANALYZER) {
         alert('Không tìm thấy VocabAnalyzer.');
         return;
@@ -297,6 +314,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.analysis = ANALYZER.analyzeSubtitles(this.cues);
       this.updateStats();
       this.renderVocabularyGrid();
+      if (!skipSaveHistory) {
+        this.saveCurrentToHistory();
+      }
 
       // Show sections & nav buttons
       this.statsSection.style.display = 'grid';
@@ -585,6 +605,201 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
     escapeRegExp(str) {
       return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    },
+
+    // ==========================================
+    // Scanned Movies & Videos History Feature
+    // ==========================================
+
+    saveCurrentToHistory() {
+      if (!this.analysis) return;
+      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
+
+      const title = this.movieTitle || 'Không tên';
+      let platform = 'file';
+      if ((this.movieUrl && this.movieUrl.includes('youtube.com')) || (this.detectedMediaTab && this.detectedMediaTab.platform === 'youtube')) {
+        platform = 'youtube';
+      } else if ((this.movieUrl && this.movieUrl.includes('netflix.com')) || (this.detectedMediaTab && this.detectedMediaTab.platform === 'netflix')) {
+        platform = 'netflix';
+      }
+
+      chrome.storage.local.get(['fxScanHistory'], (res) => {
+        let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+
+        // Deduplicate: remove existing entry with same title or url
+        history = history.filter((item) => {
+          if (this.movieUrl && item.url && item.url === this.movieUrl) return false;
+          if (item.title && item.title === title) return false;
+          return true;
+        });
+
+        const newItem = {
+          id: 'scan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          title: title,
+          platform: platform,
+          url: this.movieUrl || '',
+          timestamp: Date.now(),
+          dateFormatted: new Date().toLocaleDateString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }),
+          wordCount: this.analysis.totals.uniqueWords,
+          nounCount: this.analysis.categories.noun.count,
+          verbCount: this.analysis.categories.verb.count,
+          adjCount: this.analysis.categories.adjective.count,
+          advCount: this.analysis.categories.adverb.count,
+          cues: this.cues || [],
+          analysis: this.analysis
+        };
+
+        history.unshift(newItem);
+        if (history.length > 50) history = history.slice(0, 50);
+
+        chrome.storage.local.set({ fxScanHistory: history }, () => {
+          this.loadHistory();
+        });
+      });
+    },
+
+    loadHistory() {
+      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
+      chrome.storage.local.get(['fxScanHistory'], (res) => {
+        const history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+        this.renderHistoryList(history);
+      });
+    },
+
+    renderHistoryList(history) {
+      if (!this.historyGridEl) return;
+
+      const count = history.length;
+      if (this.historyCountEl) {
+        this.historyCountEl.textContent = count;
+      }
+
+      if (count === 0) {
+        if (this.historyEmptyEl) this.historyEmptyEl.style.display = 'block';
+        if (this.historyGridEl) {
+          this.historyGridEl.style.display = 'none';
+          this.historyGridEl.innerHTML = '';
+        }
+        if (this.btnClearHistory) this.btnClearHistory.style.display = 'none';
+        return;
+      }
+
+      if (this.historyEmptyEl) this.historyEmptyEl.style.display = 'none';
+      if (this.historyGridEl) this.historyGridEl.style.display = 'grid';
+      if (this.btnClearHistory) this.btnClearHistory.style.display = 'inline-flex';
+
+      this.historyGridEl.innerHTML = history.map((item) => {
+        let badgeClass = 'badge-file';
+        let badgeText = '📁 File / Mẫu';
+        if (item.platform === 'youtube') {
+          badgeClass = 'badge-yt';
+          badgeText = '▶ YouTube';
+        } else if (item.platform === 'netflix') {
+          badgeClass = 'badge-nf';
+          badgeText = '🍿 Netflix';
+        }
+
+        const isCurrentActive = this.movieTitle === item.title;
+
+        return `
+          <div class="fx-history-card ${isCurrentActive ? 'active' : ''}" data-id="${item.id}">
+            <div class="fx-history-card-header">
+              <span class="fx-history-badge ${badgeClass}">${badgeText}</span>
+              <span class="fx-history-date">${item.dateFormatted || ''}</span>
+              <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này">×</button>
+            </div>
+            <h4 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h4>
+            <div class="fx-history-stats">
+              <span class="fx-hist-pill hist-total">${item.wordCount} từ</span>
+              <span class="fx-hist-pill hist-noun">N: ${item.nounCount}</span>
+              <span class="fx-hist-pill hist-verb">V: ${item.verbCount}</span>
+              <span class="fx-hist-pill hist-adj">Adj: ${item.adjCount}</span>
+              <span class="fx-hist-pill hist-adv">Adv: ${item.advCount}</span>
+            </div>
+            <button type="button" class="fx-btn-open-hist" data-id="${item.id}">Xem danh sách từ loại 👉</button>
+          </div>
+        `;
+      }).join('');
+
+      // Bind Card & Button Clicks
+      this.historyGridEl.querySelectorAll('.fx-history-card').forEach((card) => {
+        const id = card.dataset.id;
+        const item = history.find((h) => h.id === id);
+        if (!item) return;
+
+        // Card click -> open item
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.fx-btn-del-hist')) return;
+          this.openHistoryItem(item);
+        });
+
+        // Delete button click
+        const delBtn = card.querySelector('.fx-btn-del-hist');
+        if (delBtn) {
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.deleteHistoryItem(id);
+          });
+        }
+      });
+    },
+
+    openHistoryItem(item) {
+      if (!item) return;
+
+      this.movieTitle = item.title || 'fx_vocab';
+      this.movieUrl = item.url || '';
+      this.cues = item.cues || [];
+
+      if (item.analysis && item.analysis.totals && item.analysis.categories) {
+        this.analysis = item.analysis;
+        this.updateStats();
+        this.renderVocabularyGrid();
+      } else if (this.cues.length > 0 && ANALYZER) {
+        this.runAnalysis(true);
+      }
+
+      // Highlight active card
+      if (this.historyGridEl) {
+        this.historyGridEl.querySelectorAll('.fx-history-card').forEach((c) => {
+          c.classList.toggle('active', c.dataset.id === item.id);
+        });
+      }
+
+      // Show sections & nav buttons
+      this.statsSection.style.display = 'grid';
+      this.vocabSection.style.display = 'flex';
+      this.btnToggleFlashcards.style.display = 'inline-flex';
+      this.btnExportAnkiTop.style.display = 'inline-flex';
+      this.btnExportCsvTop.style.display = 'inline-flex';
+
+      // Scroll to vocab section smoothly
+      this.vocabSection.scrollIntoView({ behavior: 'smooth' });
+    },
+
+    deleteHistoryItem(id) {
+      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
+      chrome.storage.local.get(['fxScanHistory'], (res) => {
+        let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+        history = history.filter((item) => item.id !== id);
+        chrome.storage.local.set({ fxScanHistory: history }, () => {
+          this.renderHistoryList(history);
+        });
+      });
+    },
+
+    clearAllHistory() {
+      if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử các phim đã quét?')) return;
+      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) return;
+      chrome.storage.local.remove(['fxScanHistory'], () => {
+        this.renderHistoryList([]);
+      });
     }
   };
 

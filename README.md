@@ -9,7 +9,8 @@
 | Tính năng | Chi tiết |
 | :--- | :--- |
 | ⬇ **Tải phụ đề đa định dạng** | Tải toàn bộ phụ đề tiếng Anh của tập phim/video dưới dạng `.SRT` (chuẩn xem offline), `.VTT` (chuẩn web), và `.TXT` (transcript dạng đoạn văn sạch, dễ đọc). |
-| ⚡ **Phân tách 4 loại từ (POS)** | Phân loại từ vựng thành 4 nhóm ngữ pháp: <br>• 📘 **Danh từ (Nouns)** <br>• 📙 **Động từ (Verbs)** (tự động loại bỏ trợ động từ `is`, `was`, `are`, `have`, `do`...) <br>• 📗 **Tính từ (Adjectives)** <br>• 📕 **Trạng từ (Adverbs)** |
+| ⚡ **Phân tách 4 loại từ (POS)** | Phân loại từ vựng thành 4 nhóm ngữ pháp chính xác: <br>• 📘 **Danh từ (Nouns)** (loại trừ đại từ `this`, `that`, `it`...) <br>• 📙 **Động từ (Verbs)** (lọc trợ động từ `is`, `was`, `have`...) <br>• 📗 **Tính từ (Adjectives)** <br>• 📕 **Trạng từ (Adverbs)** (nhận diện chuẩn `there`, `here`, `suddenly`, `warmly`...) |
+| 📂 **Lịch sử phim & video đã quét** | Tự động lưu trữ danh sách các phim Netflix, YouTube và file phụ đề đã phân tích. **Nhấp vào bất kỳ phim nào để tải lại tức thì toàn bộ 4 loại từ** và thẻ Flashcard mà không cần quét lại từ đầu! |
 | 📖 **Từ điển Offline CEFR & Nghĩa Việt** | Tích hợp sẵn 2,500+ từ vựng thông dụng kèm cấp độ CEFR (A1–C2), phiên âm quốc tế IPA và nghĩa tiếng Việt. Hoạt động **100% offline**, không cần API key. |
 | 🎬 **Ngữ cảnh phim & Tua đến thời điểm** | Mỗi từ vựng đi kèm câu thoại thực tế trong phim cùng nút **▶ Tua đến thời điểm** (`01:23`) và nút **🔊 Phát âm chuẩn**. |
 | 🎴 **3D Flashcards Studio** | Chế độ lật thẻ ghi nhớ 3D trực quan, hỗ trợ phím tắt bàn phím (`Space` để lật thẻ, `←` / `→` để chuyển từ). |
