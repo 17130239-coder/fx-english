@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FX English - Vocabulary Studio & 3D Flashcards</title>
+  <link rel="stylesheet" href="studio.css">
+  <link rel="icon" type="image/png" href="../icons/icon32.png">
+</head>
+<body>
+  <div class="fx-studio-layout">
+    <!-- Navigation / Header -->
+    <header class="fx-navbar">
+      <div class="fx-nav-brand">
+        <span class="fx-nav-logo">⚡</span>
+        <div>
+          <h1 class="fx-nav-title">FX English Studio</h1>
+          <p class="fx-nav-sub">Phân tích từ vựng phụ đề phim • 4 Loại từ: Danh, Động, Tính, Trạng</p>
+        </div>
+      </div>
+
+      <div class="fx-nav-actions">
+        <button id="fx-btn-toggle-flashcards" class="fx-nav-btn fx-nav-btn-highlight" style="display:none;">
+          <span>🎴 Chế độ 3D Flashcards</span>
+        </button>
+        <button id="fx-btn-export-anki-top" class="fx-nav-btn" style="display:none;">
+          <span>🗂️ Xuất Anki</span>
+        </button>
+        <button id="fx-btn-export-csv-top" class="fx-nav-btn" style="display:none;">
+          <span>📊 Xuất CSV</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="fx-container">
+      <!-- Media Detection Banner -->
+      <section id="fx-detected-banner" class="fx-banner" style="display:none;">
+        <div class="fx-banner-content">
+          <span class="fx-banner-icon">🎬</span>
+          <div class="fx-banner-text">
+            <span class="fx-banner-label">Phát hiện phụ đề từ tab đang mở:</span>
+            <strong id="fx-banner-title" class="fx-banner-title">Movie Title</strong>
+          </div>
+        </div>
+        <button id="fx-btn-load-detected" class="fx-btn fx-btn-primary">
+          <span>⚡ Phân tích ngay</span>
+        </button>
+      </section>
+
+      <!-- Input / Subtitle Source Section -->
+      <section class="fx-input-section" id="fx-input-section">
+        <div class="fx-section-header">
+          <h2>📥 Nguồn Phụ Đề</h2>
+          <span class="fx-section-hint">Hỗ trợ định dạng SRT, WebVTT, hoặc dán nội dung phụ đề</span>
+        </div>
+
+        <div class="fx-input-grid">
+          <!-- Dropzone -->
+          <div class="fx-dropzone" id="fx-dropzone">
+            <input type="file" id="fx-file-input" accept=".srt,.vtt,.txt,.xml" style="display:none;">
+            <div class="fx-dropzone-content">
+              <span class="fx-drop-icon">📁</span>
+              <p class="fx-drop-main">Kéo thả file phụ đề vào đây</p>
+              <p class="fx-drop-sub">hoặc <button type="button" id="fx-btn-browse" class="fx-link-btn">chọn file từ máy</button> (.srt, .vtt, .txt)</p>
+            </div>
+          </div>
+
+          <!-- Textarea -->
+          <div class="fx-textarea-box">
+            <textarea id="fx-raw-subtitles" placeholder="Hoặc dán trực tiếp nội dung phụ đề tiếng Anh vào đây...
+Ví dụ:
+1
+00:00:01,200 --> 00:00:04,500
+Learning English through movies is fascinating and effective."></textarea>
+            <div class="fx-textarea-actions">
+              <button id="fx-btn-paste-sample" class="fx-btn fx-btn-ghost">Dán mẫu thử</button>
+              <button id="fx-btn-clear" class="fx-btn fx-btn-ghost">Xóa trắng</button>
+              <button id="fx-btn-analyze" class="fx-btn fx-btn-accent">⚡ Bắt đầu phân tích</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stats Summary Strip -->
+      <section id="fx-stats-section" class="fx-stats-strip" style="display:none;">
+        <div class="fx-stat-card">
+          <span class="fx-stat-num" id="fx-stat-total">0</span>
+          <span class="fx-stat-name">Tổng từ</span>
+        </div>
+        <div class="fx-stat-card stat-noun">
+          <span class="fx-stat-num" id="fx-stat-noun">0</span>
+          <span class="fx-stat-name">📘 Danh từ (Nouns)</span>
+        </div>
+        <div class="fx-stat-card stat-verb">
+          <span class="fx-stat-num" id="fx-stat-verb">0</span>
+          <span class="fx-stat-name">📙 Động từ (Verbs)</span>
+        </div>
+        <div class="fx-stat-card stat-adj">
+          <span class="fx-stat-num" id="fx-stat-adj">0</span>
+          <span class="fx-stat-name">📗 Tính từ (Adjectives)</span>
+        </div>
+        <div class="fx-stat-card stat-adv">
+          <span class="fx-stat-num" id="fx-stat-adv">0</span>
+          <span class="fx-stat-name">📕 Trạng từ (Adverbs)</span>
+        </div>
+      </section>
+
+      <!-- Vocabulary Explorer Section -->
+      <section id="fx-vocab-section" class="fx-vocab-section" style="display:none;">
+        <!-- Filters Bar -->
+        <div class="fx-filters-bar">
+          <div class="fx-tabs-group">
+            <button class="fx-tab-btn active" data-pos="all">Tất cả (<span id="fx-tab-count-all">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="noun">📘 Danh từ (<span id="fx-tab-count-noun">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="verb">📙 Động từ (<span id="fx-tab-count-verb">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="adjective">📗 Tính từ (<span id="fx-tab-count-adj">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="adverb">📕 Trạng từ (<span id="fx-tab-count-adv">0</span>)</button>
+          </div>
+
+          <div class="fx-filter-controls">
+            <div class="fx-search-wrap">
+              <span class="fx-search-icon">🔍</span>
+              <input type="text" id="fx-filter-search" placeholder="Tìm kiếm từ hoặc nghĩa tiếng Việt...">
+            </div>
+
+            <select id="fx-filter-cefr" class="fx-select-sm">
+              <option value="all">Mọi trình độ CEFR</option>
+              <option value="A1">A1 - Cơ bản</option>
+              <option value="A2">A2 - Sơ cấp</option>
+              <option value="B1">B1 - Trung cấp</option>
+              <option value="B2">B2 - Trung cao</option>
+              <option value="C1">C1 - Cao cấp</option>
+              <option value="C2">C2 - Thành thạo</option>
+            </select>
+
+            <select id="fx-filter-sort" class="fx-select-sm">
+              <option value="freq-desc">Tần suất giảm dần</option>
+              <option value="freq-asc">Tần suất tăng dần</option>
+              <option value="alpha-asc">Từ A đến Z</option>
+              <option value="alpha-desc">Từ Z đến A</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Word Cards Grid -->
+        <div id="fx-cards-grid" class="fx-cards-grid"></div>
+      </section>
+    </div>
+
+    <!-- 3D Flashcards Modal -->
+    <div id="fx-flashcard-modal" class="fx-flashcard-modal" style="display:none;">
+      <div class="fx-fc-backdrop" id="fx-fc-backdrop"></div>
+      <div class="fx-fc-container">
+        <div class="fx-fc-topbar">
+          <span class="fx-fc-counter" id="fx-fc-counter">1 / 100</span>
+          <span class="fx-fc-tip">Nhấn <b>Space</b> để lật thẻ • <b>← / →</b> để chuyển thẻ</span>
+          <button class="fx-fc-close" id="fx-fc-close">&times;</button>
+        </div>
+
+        <!-- 3D Card Scene -->
+        <div class="fx-fc-scene">
+          <div class="fx-fc-card" id="fx-fc-card">
+            <!-- Card Front -->
+            <div class="fx-fc-face fx-fc-front">
+              <div class="fx-fc-badges">
+                <span id="fx-fc-pos" class="fx-pos-badge noun">NOUN</span>
+                <span id="fx-fc-cefr" class="fx-cefr-badge">B2</span>
+                <span id="fx-fc-freq" class="fx-freq-badge">3x</span>
+              </div>
+              <h2 id="fx-fc-word" class="fx-fc-word">fascinating</h2>
+              <div class="fx-fc-phonetic-row">
+                <span id="fx-fc-ipa" class="fx-fc-ipa">/ˈfæsɪneɪtɪŋ/</span>
+                <button id="fx-fc-speak" class="fx-fc-audio-btn" title="Phát âm">🔊</button>
+              </div>
+              <div class="fx-fc-context-box">
+                <p id="fx-fc-context" class="fx-fc-context">
+                  Learning English through movies is <b>fascinating</b> and effective.
+                </p>
+              </div>
+              <span class="fx-fc-flip-hint">Nhấp chuột hoặc phím Space để xem nghĩa ↻</span>
+            </div>
+
+            <!-- Card Back -->
+            <div class="fx-fc-face fx-fc-back">
+              <span class="fx-fc-back-label">Nghĩa tiếng Việt</span>
+              <h3 id="fx-fc-trans" class="fx-fc-trans">hấp dẫn, lôi cuốn</h3>
+              <p id="fx-fc-lemma" class="fx-fc-lemma">Từ gốc: <b>fascinate</b> (động từ)</p>
+              <div class="fx-fc-back-context">
+                <span class="fx-fc-back-sub">Ngữ cảnh gốc:</span>
+                <p id="fx-fc-back-sentence" class="fx-fc-context"></p>
+              </div>
+              <span class="fx-fc-flip-hint">Nhấp chuột hoặc phím Space để quay lại ↺</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Controls -->
+        <div class="fx-fc-controls">
+          <button id="fx-fc-prev" class="fx-fc-btn">← Trước</button>
+          <button id="fx-fc-flip" class="fx-fc-btn fx-fc-btn-flip">↻ Lật thẻ (Space)</button>
+          <button id="fx-fc-next" class="fx-fc-btn">Sau →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../lib/compromise.js"></script>
+  <script src="../lib/subtitleParser.js"></script>
+  <script src="../lib/cefrDict.js"></script>
+  <script src="../lib/vocabAnalyzer.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+{
+  "manifest_version": 3,
+  "name": "FX English - Subtitle Downloader & Vocab POS Studio",
+  "version": "1.0.0",
+  "description": "Tải trọn bộ phụ đề tiếng Anh (.SRT, .VTT, .TXT) và tách từ vựng theo 4 loại từ (Danh từ, Động từ, Tính từ, Trạng từ) trên Netflix và YouTube.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "FX English"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://*.netflix.com/*",
+    "*://*.nflxvideo.net/*",
+    "*://*.nflxext.com/*",
+    "*://*.youtube.com/*",
+    "*://*.googlevideo.com/*"
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "lib/subtitleParser.js",
+        "content/youtubeContent.js"
+      ],
+      "css": [
+        "content/youtubeContent.css"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.netflix.com/*"
+      ],
+      "js": [
+        "lib/subtitleParser.js",
+        "content/netflixContent.js"
+      ],
+      "css": [
+        "content/netflixContent.css"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/netflixInjected.js",
+        "content/youtubeInjected.js",
+        "lib/compromise.js",
+        "icons/*"
+      ],
+      "matches": [
+        "*://*.netflix.com/*",
+        "*://*.youtube.com/*"
+      ]
+    }
+  ]
+}

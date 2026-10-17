@@ -1,0 +1,455 @@
+/* FX English - Netflix Player Styles */
+
+#fx-netflix-widget {
+  position: fixed;
+  top: 76px;
+  right: 28px;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  user-select: none;
+}
+
+.fx-widget-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 12, 41, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 9999px;
+  padding: 6px 14px;
+  color: #f4f4f5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  transition: all 0.18s ease;
+}
+
+.fx-widget-pill:hover {
+  background: rgba(48, 43, 99, 0.95);
+  border-color: #6366f1;
+  transform: translateY(-1px);
+}
+
+.fx-widget-icon {
+  color: #06b6d4;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fx-widget-title {
+  color: #f4f4f5;
+}
+
+.fx-widget-badge {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #a1a1aa;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  transition: all 0.18s ease;
+}
+
+.fx-widget-badge.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+/* Modal Backdrop */
+.fx-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.fx-modal-card {
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  background: #121217;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #f4f4f5;
+}
+
+.fx-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fx-modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fx-modal-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #06b6d4;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fx-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f4f4f5;
+}
+
+.fx-modal-close {
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.fx-modal-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.fx-modal-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fx-track-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.fx-field-label {
+  color: #a1a1aa;
+  font-weight: 500;
+}
+
+.fx-select {
+  flex: 1;
+  height: 34px;
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f4f4f5;
+  padding: 0 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.fx-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fx-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  outline: none;
+  border: none;
+}
+
+.fx-btn-primary {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.fx-btn-primary:hover {
+  background: #4f46e5;
+}
+
+.fx-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fx-btn-outline {
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e4e4e7;
+}
+
+.fx-btn-outline:hover {
+  background: #272732;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.fx-btn-secondary {
+  background: rgba(6, 182, 212, 0.16);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: #22d3ee;
+}
+
+.fx-btn-secondary:hover {
+  background: rgba(6, 182, 212, 0.28);
+}
+
+.fx-dl-group {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.fx-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 30px;
+  color: #a1a1aa;
+  font-size: 13px;
+}
+
+.fx-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: fxSpin 0.7s linear infinite;
+}
+
+@keyframes fxSpin {
+  to { transform: rotate(360deg); }
+}
+
+.fx-pos-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+
+.fx-pos-tab {
+  background: #1c1c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #a1a1aa;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fx-pos-tab:hover {
+  background: #272732;
+  color: #ffffff;
+}
+
+.fx-pos-tab.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #ffffff;
+}
+
+.fx-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fx-search-bar input {
+  flex: 1;
+  height: 34px;
+  background: #18181f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 0 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.fx-btn-sm {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.fx-btn-anki {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.fx-btn-csv {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.fx-words-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.fx-word-card {
+  background: #181820;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.fx-word-card:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+.fx-word-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fx-word-text {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.fx-pos-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.fx-pos-badge.noun { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+.fx-pos-badge.verb { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
+.fx-pos-badge.adjective { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+.fx-pos-badge.adverb { background: rgba(168, 85, 247, 0.18); color: #c084fc; }
+
+.fx-freq-pill {
+  font-size: 9.5px;
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 5px;
+  border-radius: 9999px;
+  margin-left: auto;
+}
+
+.fx-btn-speak {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.fx-btn-speak:hover {
+  opacity: 1;
+}
+
+.fx-word-ipa {
+  font-size: 10.5px;
+  color: #a1a1aa;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.fx-cefr-tag {
+  color: #06b6d4;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.fx-word-trans {
+  font-size: 12px;
+  color: #e4e4e7;
+  font-weight: 500;
+}
+
+.fx-word-context {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fx-context-text {
+  font-size: 10.5px;
+  color: #a1a1aa;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.fx-context-text b {
+  color: #22d3ee;
+}
+
+.fx-btn-seek {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: #6366f1;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.fx-btn-seek:hover {
+  color: #818cf8;
+  text-decoration: underline;
+}
+
+.fx-empty-msg {
+  grid-column: 1 / -1;
+  padding: 40px;
+  text-align: center;
+  color: #71717a;
+  font-size: 13px;
+}
