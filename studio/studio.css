@@ -746,10 +746,14 @@ body {
   transform: translateY(-50%);
   color: var(--fx-text-secondary);
   pointer-events: none;
+  z-index: 2;
 }
 
-#fx-filter-search {
+.fx-search-wrap input,
+#fx-filter-search,
+#fx-master-search {
   width: 100%;
+  box-sizing: border-box;
   background: var(--fx-bg-surface);
   border: 1px solid var(--fx-border-subtle);
   border-radius: 6px;
@@ -761,11 +765,16 @@ body {
   transition: var(--fx-transition-fast);
 }
 
-#fx-filter-search:focus {
+.fx-search-wrap input:focus,
+#fx-filter-search:focus,
+#fx-master-search:focus {
   border-color: var(--fx-border-strong);
+  background: #18181B;
 }
 
-#fx-filter-search::placeholder {
+.fx-search-wrap input::placeholder,
+#fx-filter-search::placeholder,
+#fx-master-search::placeholder {
   color: var(--fx-text-muted);
 }
 
@@ -1416,7 +1425,24 @@ body {
 }
 
 .fx-master-filters-bar {
-  margin-bottom: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.fx-master-filters-bar .fx-tabs-group {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.fx-master-filters-bar .fx-filter-controls {
+  flex: 0 1 360px;
+  min-width: 240px;
 }
 
 .fx-master-grid {

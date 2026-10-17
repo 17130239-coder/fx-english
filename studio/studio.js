@@ -758,6 +758,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(['fxWordStates'], (res) => {
           this.wordStates = (res && typeof res.fxWordStates === 'object' && res.fxWordStates !== null) ? res.fxWordStates : {};
+          this.syncWordStatesToMasterList();
           this.updateStats();
           if (this.analysis) this.renderVocabularyGrid();
         });
@@ -2016,6 +2017,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       try {
         await ml.load();
+        await this.syncWordStatesToMasterList();
         this.updateMasterCount();
 
         // Optional sync from Neon DB if available
@@ -2041,6 +2043,44 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       }
     },
 
+    async syncWordStatesToMasterList() {
+      const ml = this.getMasterList();
+      if (!ml) return;
+
+      let changed = false;
+      for (const [rawKey, state] of Object.entries(this.wordStates || {})) {
+        if (state && state.mastered) {
+          const cleanKey = rawKey.trim().toLowerCase();
+          if (!ml.has(cleanKey)) {
+            let meaning = '';
+            let pos = 'N';
+            let type = cleanKey.includes(' ') ? 'sentence' : 'word';
+            if (this.analysis?.allWords) {
+              const found = this.analysis.allWords.find((w) => (w.word || '').toLowerCase() === cleanKey);
+              if (found) {
+                meaning = (found.vietnamese || found.translation || '').trim();
+                pos = found.pos || 'N';
+              }
+            }
+            await ml.addOrAccumulate({
+              text: cleanKey,
+              type,
+              pos,
+              meanings: (meaning && meaning !== 'Đang tra nghĩa...' && meaning !== 'Đang cập nhật') ? [meaning] : ['Đã thuộc']
+            });
+            changed = true;
+          }
+        }
+      }
+
+      if (changed) {
+        this.updateMasterCount();
+        if (this.activeView === 'master') {
+          this.renderMasterList();
+        }
+      }
+    },
+
     switchView(viewName) {
       this.activeView = viewName;
       const isStudio = (viewName === 'studio');
@@ -2051,7 +2091,19 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (this.studioView) this.studioView.style.display = isStudio ? 'block' : 'none';
       if (this.masterView) this.masterView.style.display = isStudio ? 'none' : 'block';
 
+      // Hide movie-specific action buttons from the top navbar when in Master view
+      if (this.btnToggleFlashcards) {
+        this.btnToggleFlashcards.style.display = (isStudio && this.analysis) ? 'inline-flex' : 'none';
+      }
+      if (this.btnExportAnkiTop) {
+        this.btnExportAnkiTop.style.display = (isStudio && this.analysis) ? 'inline-flex' : 'none';
+      }
+      if (this.btnExportCsvTop) {
+        this.btnExportCsvTop.style.display = (isStudio && this.analysis) ? 'inline-flex' : 'none';
+      }
+
       if (!isStudio) {
+        this.syncWordStatesToMasterList();
         this.renderMasterList();
       }
     },
@@ -2089,6 +2141,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (!this.masterGridEl) return;
       const ml = this.getMasterList();
       if (!ml) return;
+
+      if (this.masterTabsGroup) {
+        this.masterTabsGroup.querySelectorAll('.fx-tab-btn').forEach((btn) => {
+          btn.classList.toggle('active', (btn.dataset.type || 'all') === this.activeMasterFilter);
+        });
+      }
 
       const items = ml.search(this.masterSearchQuery, this.activeMasterFilter);
       this.masterGridEl.innerHTML = '';
