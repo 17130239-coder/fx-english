@@ -221,7 +221,12 @@
       chrome.runtime.sendMessage({ action: 'get_active_media_status' }, (res) => {
         if (res && res.isMedia) {
           this.detectedMediaTab = res;
-          this.bannerTitleEl.textContent = res.title || (res.platform === 'netflix' ? 'Netflix Movie' : 'YouTube Video');
+          const displayTitle = res.title || (res.platform === 'netflix' ? 'Netflix Movie' : 'YouTube Video');
+          if (res.url) {
+            this.bannerTitleEl.innerHTML = `<a href="${this.escape(res.url)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(displayTitle)} <span class="fx-banner-arrow">↗</span></a>`;
+          } else {
+            this.bannerTitleEl.textContent = displayTitle;
+          }
           this.bannerEl.style.display = 'flex';
           this.btnLoadDetected.onclick = () => {
             this.loadFromMediaTab(res.tabId);
@@ -245,15 +250,37 @@
           let resolvedTitle = title || mediaTab.title || '';
           const finalUrl = videoUrl || url || '';
 
-          // If title is generic (e.g. "Netflix") and we have a Netflix URL, extract watch ID
+          // If title is generic (e.g. "Netflix") and we have a URL, extract title via background resolver
           if (this.isGenericTitle(resolvedTitle) && finalUrl) {
             const m = finalUrl.match(/\/watch\/(\d+)/);
             if (m) {
               resolvedTitle = `Netflix Phim #${m[1]}`;
+              try {
+                chrome.runtime.sendMessage({ action: 'resolve_netflix_title', watchId: m[1] }, (nfRes) => {
+                  if (nfRes && nfRes.success && nfRes.title && nfRes.title.toLowerCase() !== 'netflix') {
+                    this.movieTitle = nfRes.title;
+                    if (this.bannerTitleEl) {
+                      this.bannerTitleEl.innerHTML = `<a href="${this.escape(finalUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(nfRes.title)} <span class="fx-banner-arrow">↗</span></a>`;
+                    }
+                    this.saveCurrentToHistory();
+                  }
+                });
+              } catch (e) {}
             } else {
               const yt = finalUrl.match(/(?:v=|\/shorts\/)([a-zA-Z0-9_-]+)/);
               if (yt) {
                 resolvedTitle = `YouTube Video #${yt[1]}`;
+                try {
+                  chrome.runtime.sendMessage({ action: 'resolve_youtube_title', url: finalUrl }, (ytRes) => {
+                    if (ytRes && ytRes.success && ytRes.title && ytRes.title.toLowerCase() !== 'youtube') {
+                      this.movieTitle = ytRes.title;
+                      if (this.bannerTitleEl) {
+                        this.bannerTitleEl.innerHTML = `<a href="${this.escape(finalUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(ytRes.title)} <span class="fx-banner-arrow">↗</span></a>`;
+                      }
+                      this.saveCurrentToHistory();
+                    }
+                  });
+                } catch (e) {}
               }
             }
           }
@@ -799,14 +826,85 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         lower === 'netflix' ||
         lower === 'netflix movie' ||
         lower === 'netflix video' ||
+        lower.startsWith('netflix phim #') ||
+        lower.startsWith('netflix video #') ||
         lower === 'youtube' ||
         lower === 'youtube video' ||
+        lower.startsWith('youtube video #') ||
         lower === 'không tên' ||
         lower === 'movie' ||
         lower === 'movie_sample' ||
         lower === 'fx_vocab' ||
         lower === 'video đang phát'
       );
+    },
+
+    repairGenericTitles(items) {
+      if (!Array.isArray(items) || items.length === 0) return;
+
+      items.forEach((item) => {
+        if (!this.isGenericTitle(item.title) || !item.url) return;
+
+        // Netflix title repair
+        if (item.platform === 'netflix' || item.url.includes('netflix.com/watch/')) {
+          const m = item.url.match(/\/watch\/(\d+)/);
+          if (m && m[1]) {
+            chrome.runtime.sendMessage({ action: 'resolve_netflix_title', watchId: m[1] }, (res) => {
+              if (res && res.success && res.title && res.title.toLowerCase() !== 'netflix' && !res.title.startsWith('Netflix Phim #')) {
+                item.title = res.title;
+                if (this.historyGridEl) {
+                  const card = this.historyGridEl.querySelector(`.fx-history-card[data-id="${item.id}"]`);
+                  if (card) {
+                    const titleEl = card.querySelector('.fx-history-title');
+                    if (titleEl) {
+                      titleEl.textContent = res.title;
+                      titleEl.title = res.title;
+                    }
+                  }
+                }
+                this.persistUpdatedHistoryItem(item);
+              }
+            });
+          }
+        }
+
+        // YouTube title repair
+        if (item.platform === 'youtube' || item.url.includes('youtube.com')) {
+          chrome.runtime.sendMessage({ action: 'resolve_youtube_title', url: item.url }, (res) => {
+            if (res && res.success && res.title && res.title.toLowerCase() !== 'youtube') {
+              item.title = res.title;
+              if (this.historyGridEl) {
+                const card = this.historyGridEl.querySelector(`.fx-history-card[data-id="${item.id}"]`);
+                if (card) {
+                  const titleEl = card.querySelector('.fx-history-title');
+                  if (titleEl) {
+                    titleEl.textContent = res.title;
+                    titleEl.title = res.title;
+                  }
+                }
+              }
+              this.persistUpdatedHistoryItem(item);
+            }
+          });
+        }
+      });
+    },
+
+    persistUpdatedHistoryItem(updatedItem) {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['fxScanHistory'], (res) => {
+          let list = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+          const idx = list.findIndex(x => x.id === updatedItem.id || (x.url && x.url === updatedItem.url));
+          if (idx !== -1) {
+            list[idx].title = updatedItem.title;
+            chrome.storage.local.set({ fxScanHistory: list });
+          }
+        });
+      }
+      const neon = this.getNeonClient();
+      if (neon) {
+        neon.saveMovie(updatedItem).catch(() => {});
+      }
     },
 
     setNeonSyncStatus(status, text) {
@@ -915,6 +1013,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         });
         if (localHistory.length > 0) {
           this.renderHistoryList(localHistory);
+          this.repairGenericTitles(localHistory);
         }
       }
 
@@ -956,6 +1055,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
 
         this.renderHistoryList(merged);
+        this.repairGenericTitles(merged);
         this.setNeonSyncStatus('synced', 'Neon DB (Đã đồng bộ)');
 
         // Background sync: push any local-only movie up to Neon
@@ -970,6 +1070,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.setNeonSyncStatus('offline', 'Neon DB (Offline)');
         if (localHistory.length > 0) {
           this.renderHistoryList(localHistory);
+          this.repairGenericTitles(localHistory);
         }
       }
     },
@@ -998,25 +1099,53 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       this.historyGridEl.innerHTML = history.map((item) => {
         let badgeClass = 'badge-file';
-        let badgeText = '📁 File / Mẫu';
+        let badgeIcon = '📁';
+        let platformName = 'File / Mẫu';
+
         if (item.platform === 'youtube') {
           badgeClass = 'badge-yt';
-          badgeText = '▶ YouTube';
+          badgeIcon = '▶';
+          platformName = 'YouTube';
         } else if (item.platform === 'netflix') {
           badgeClass = 'badge-nf';
-          badgeText = '🍿 Netflix';
+          badgeIcon = '🍿';
+          platformName = 'Netflix';
+        }
+
+        let resourceUrl = (item.url && item.url.trim()) ? item.url.trim() : '';
+        if (!resourceUrl) {
+          if (item.platform === 'youtube') {
+            resourceUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}`;
+          } else if (item.platform === 'netflix') {
+            resourceUrl = `https://www.netflix.com/search?q=${encodeURIComponent(item.title)}`;
+          }
         }
 
         const isCurrentActive = this.movieTitle === item.title;
 
+        // Interactive badge: If resourceUrl exists, render as <a> link; otherwise <span>
+        const badgeHtml = resourceUrl
+          ? `<a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-history-badge ${badgeClass} fx-badge-link" title="Nhấp để mở ${platformName} gốc (tab mới)" onclick="event.stopPropagation();">
+              <span class="fx-badge-icon">${badgeIcon}</span>
+              <span class="fx-badge-text">${platformName}</span>
+              <span class="fx-badge-arrow">↗</span>
+            </a>`
+          : `<span class="fx-history-badge ${badgeClass}">
+              <span class="fx-badge-icon">${badgeIcon}</span>
+              <span class="fx-badge-text">${platformName}</span>
+            </span>`;
+
         return `
           <div class="fx-history-card ${isCurrentActive ? 'active' : ''}" data-id="${item.id}">
             <div class="fx-history-card-header">
-              <span class="fx-history-badge ${badgeClass}">${badgeText}</span>
+              ${badgeHtml}
               <span class="fx-history-date">${item.dateFormatted || ''}</span>
               <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này khỏi máy & Neon">×</button>
             </div>
-            <h4 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h4>
+            <div class="fx-history-title-row-card">
+              <h4 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h4>
+              ${resourceUrl ? `<a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-title-link-icon" title="Mở link gốc (tab mới)" onclick="event.stopPropagation();">↗</a>` : ''}
+            </div>
             <div class="fx-history-stats">
               <span class="fx-hist-pill hist-total">${item.wordCount} từ</span>
               <span class="fx-hist-pill hist-noun">N: ${item.nounCount}</span>
@@ -1036,9 +1165,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const item = history.find((h) => h.id === id);
         if (!item) return;
 
-        // Card click -> open item
+        // Card click -> open item (ignore clicks on delete, badge link, or title external link)
         card.addEventListener('click', (e) => {
-          if (e.target.closest('.fx-btn-del-hist')) return;
+          if (e.target.closest('.fx-btn-del-hist') || e.target.closest('.fx-badge-link') || e.target.closest('.fx-title-link-icon')) return;
           this.openHistoryItem(item);
         });
 

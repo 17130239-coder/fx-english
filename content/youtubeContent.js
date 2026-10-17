@@ -100,10 +100,20 @@
     },
 
     getTitle() {
-      return this.videoTitle ||
-        document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1, h1.title')?.textContent?.trim() ||
-        document.title.replace(' - YouTube', '').trim() ||
-        'YouTube Video';
+      let t = this.videoTitle;
+      if (!t || t.toLowerCase() === 'youtube' || t === 'YouTube Video') {
+        const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1, h1.title, ytd-watch-metadata #title, #above-the-fold #title');
+        if (titleEl && titleEl.textContent && titleEl.textContent.trim()) {
+          t = titleEl.textContent.trim();
+        }
+      }
+      if (!t || t.toLowerCase() === 'youtube' || t === 'YouTube Video') {
+        const docClean = (document.title || '').replace(/\s*-\s*YouTube.*$/i, '').trim();
+        if (docClean && docClean.toLowerCase() !== 'youtube') {
+          t = docClean;
+        }
+      }
+      return t || 'YouTube Video';
     },
 
     listenBridge() {
@@ -367,6 +377,7 @@
         success: true,
         platform: 'youtube',
         title: YouTubeManager.getTitle(),
+        url: window.location.href,
         hasTracks: YouTubeManager.tracks && YouTubeManager.tracks.length > 0,
         selectedTrack: YouTubeManager.selectedTrack ? {
           label: YouTubeManager.selectedTrack.label || 'English'
@@ -390,6 +401,7 @@
           success: true,
           platform: 'youtube',
           title: YouTubeManager.getTitle(),
+          url: window.location.href,
           cues: cues
         });
       }).catch((err) => {

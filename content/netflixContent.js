@@ -115,29 +115,111 @@
     }
   });
 
+  async function resolveTitleFromWeb(watchId) {
+    if (!watchId) return null;
+    try {
+      const resp = await fetch(`https://www.netflix.com/title/${watchId}`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
+      });
+      if (resp.ok) {
+        const html = await resp.text();
+        // 1. Netflix public page main heading <h1>Title</h1>
+        const h1 = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+        if (h1 && h1[1] && h1[1].trim() && h1[1].toLowerCase() !== 'netflix') {
+          return h1[1].trim();
+        }
+        // 2. OpenGraph og:title
+        const og = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
+                   html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+        if (og && og[1] && og[1].toLowerCase() !== 'netflix') {
+          return og[1].replace(/\s*[-–—|]\s*Netflix.*$/i, '').trim();
+        }
+        // 3. Document <title>
+        const tm = html.match(/<title>([^<]+)<\/title>/i);
+        if (tm && tm[1]) {
+          const c = tm[1]
+            .replace(/^Watch\s+/i, '')
+            .replace(/\s*[-–—|]\s*Netflix.*$/i, '')
+            .replace(/^Netflix\s*[-–—|]\s*/i, '')
+            .trim();
+          if (c && c.toLowerCase() !== 'netflix') return c;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
   function getFullDisplayTitle() {
     let title = currentMovieData.title;
 
     // 1. Try DOM elements in Netflix player
     if (!title || title.trim().toLowerCase() === 'netflix') {
+      // Wake up controls overlay if dormant
+      try {
+        const playerView = document.querySelector('.watch-video--player-view-container, .netflix-sans-font-loaded');
+        if (playerView) {
+          playerView.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: 200, clientY: 200 }));
+        }
+      } catch (e) {}
+
       const titleEl = document.querySelector('[data-uia="video-title"], .video-title, h4.ellipsize-text');
       if (titleEl) {
-        const text = (titleEl.innerText || titleEl.textContent || '').trim();
-        if (text && text.toLowerCase() !== 'netflix') {
-          title = text.replace(/\n+/g, ' - ');
+        const h4El = titleEl.querySelector('h4');
+        const spanEl = titleEl.querySelector('span');
+        if (h4El && spanEl) {
+          const h4Text = (h4El.textContent || '').trim();
+          const spanText = (spanEl.textContent || '').trim();
+          if (h4Text && h4Text.toLowerCase() !== 'netflix') {
+            title = spanText ? `${h4Text} - ${spanText}` : h4Text;
+          }
+        }
+        if (!title || title.toLowerCase() === 'netflix') {
+          const text = (titleEl.textContent || titleEl.innerText || '').trim();
+          if (text && text.toLowerCase() !== 'netflix') {
+            title = text.replace(/\n+/g, ' - ').replace(/\s{2,}/g, ' ');
+          }
         }
       }
     }
 
-    // 2. Try document.title
+    // 2. Try Back to Browse button (aria-label: "Back to Browse: Movie Title")
     if (!title || title.trim().toLowerCase() === 'netflix') {
-      const docClean = (document.title || '').replace(' - Netflix', '').replace('Netflix - ', '').trim();
+      const backBtn = document.querySelector('button[data-uia="nested-back-button"], a[data-uia="back-to-browse"]');
+      if (backBtn) {
+        const label = backBtn.getAttribute('aria-label') || '';
+        const m = label.match(/:\s*(.+)$/);
+        if (m && m[1] && m[1].toLowerCase() !== 'netflix') {
+          title = m[1].trim();
+        }
+      }
+    }
+
+    // 3. Try document.title
+    if (!title || title.trim().toLowerCase() === 'netflix') {
+      const docClean = (document.title || '')
+        .replace(/\s*[-–—|]\s*Netflix.*$/i, '')
+        .replace(/^Netflix\s*[-–—|]\s*/i, '')
+        .trim();
       if (docClean && docClean.toLowerCase() !== 'netflix') {
         title = docClean;
       }
     }
 
-    // 3. Fallback: Extract watch ID from URL so different Netflix movies/episodes never have identical titles
+    // 4. Try <meta property="og:title">
+    if (!title || title.trim().toLowerCase() === 'netflix') {
+      const ogMeta = document.querySelector('meta[property="og:title"], meta[name="twitter:title"]');
+      if (ogMeta && ogMeta.content) {
+        const ogClean = ogMeta.content.replace(/\s*[-–—|]\s*Netflix.*$/i, '').trim();
+        if (ogClean && ogClean.toLowerCase() !== 'netflix') {
+          title = ogClean;
+        }
+      }
+    }
+
+    // 5. Fallback: Extract watch ID from URL so different Netflix movies/episodes never have identical titles
     const match = window.location.pathname.match(/\/watch\/(\d+)/);
     const watchId = match ? match[1] : (currentMovieData.movieId || '');
 
@@ -156,6 +238,11 @@
         title += ` - ${currentMovieData.episodeTitle}`;
       }
     }
+
+    if (title && title.toLowerCase() !== 'netflix' && !title.startsWith('Netflix Phim #')) {
+      currentMovieData.title = title;
+    }
+
     return title;
   }
 
@@ -222,10 +309,20 @@
   // Runtime message listener for Popup & Studio
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === 'get_media_info') {
+      let title = getFullDisplayTitle();
+      const match = window.location.pathname.match(/\/watch\/(\d+)/);
+      const watchId = match ? match[1] : (currentMovieData.movieId || '');
+
+      if ((!title || title.toLowerCase() === 'netflix' || title.startsWith('Netflix Phim #')) && watchId) {
+        resolveTitleFromWeb(watchId).then((webTitle) => {
+          if (webTitle) currentMovieData.title = webTitle;
+        }).catch(() => {});
+      }
+
       sendResponse({
         success: true,
         platform: 'netflix',
-        title: getFullDisplayTitle(),
+        title: title,
         url: window.location.href,
         hasTracks: currentMovieData.tracks && currentMovieData.tracks.length > 0,
         selectedTrack: currentMovieData.selectedTrack ? {
@@ -245,17 +342,30 @@
     }
 
     if (msg.action === 'get_subtitles') {
-      fetchSubtitles().then((cues) => {
-        sendResponse({
-          success: true,
-          platform: 'netflix',
-          title: getFullDisplayTitle(),
-          url: window.location.href,
-          cues: cues
-        });
-      }).catch((err) => {
-        sendResponse({ success: false, error: err.message });
-      });
+      (async () => {
+        try {
+          const cues = await fetchSubtitles();
+          let title = getFullDisplayTitle();
+          const match = window.location.pathname.match(/\/watch\/(\d+)/);
+          const watchId = match ? match[1] : (currentMovieData.movieId || '');
+          if ((!title || title.toLowerCase() === 'netflix' || title.startsWith('Netflix Phim #')) && watchId) {
+            const webTitle = await resolveTitleFromWeb(watchId);
+            if (webTitle) {
+              title = webTitle;
+              currentMovieData.title = webTitle;
+            }
+          }
+          sendResponse({
+            success: true,
+            platform: 'netflix',
+            title: title,
+            url: window.location.href,
+            cues: cues
+          });
+        } catch (err) {
+          sendResponse({ success: false, error: err.message });
+        }
+      })();
       return true;
     }
   });

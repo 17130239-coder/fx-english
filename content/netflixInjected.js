@@ -178,6 +178,125 @@
     };
   })(JSON.parse, window.fetch, XMLHttpRequest.prototype.open);
 
+  function extractNetflixMetadata(targetMovieId) {
+    try {
+      // 1. Check Falcor Cache (Netflix virtual JSON graph)
+      const falcor = window.netflix?.falcorCache ||
+                     window.netflix?.appContext?.state?.falcorCache ||
+                     window.netflix?.appContext?.falcorCache;
+
+      if (falcor && falcor.videos) {
+        const urlMatch = window.location.pathname.match(/\/watch\/(\d+)/);
+        const urlId = urlMatch ? urlMatch[1] : null;
+        const id = targetMovieId || activeVideoData.movieId || urlId;
+
+        let video = null;
+        if (id && falcor.videos[id]) {
+          video = falcor.videos[id];
+        } else {
+          for (const [vId, v] of Object.entries(falcor.videos)) {
+            if (v && (v.title || v.summary?.value?.title || v.itemSummary?.value?.title)) {
+              video = v;
+              if (!activeVideoData.movieId) activeVideoData.movieId = vId;
+              break;
+            }
+          }
+        }
+
+        if (video) {
+          let title = '';
+          if (typeof video.title === 'string') title = video.title;
+          else if (video.title?.value && typeof video.title.value === 'string') title = video.title.value;
+          else if (video.summary?.value?.title) title = video.summary.value.title;
+          else if (video.itemSummary?.value?.title) title = video.itemSummary.value.title;
+
+          // Check ancestor show title (for TV series episodes)
+          let showTitle = '';
+          if (video.ancestor) {
+            const ancId = Array.isArray(video.ancestor) ? video.ancestor[1] : (video.ancestor.value ? video.ancestor.value[1] : null);
+            if (ancId && falcor.videos[ancId]) {
+              const p = falcor.videos[ancId];
+              showTitle = p.title?.value || (typeof p.title === 'string' ? p.title : null) || p.summary?.value?.title || '';
+            }
+          }
+
+          const s = video.seasonSequence?.value ?? video.seasonSequence;
+          const ep = video.episodeSequence?.value ?? video.episodeSequence;
+
+          if (showTitle && showTitle.toLowerCase() !== 'netflix') {
+            let full = showTitle;
+            if (s !== undefined && ep !== undefined) {
+              full += ` S${String(s).padStart(2, '0')}E${String(ep).padStart(2, '0')}`;
+            }
+            if (title && title !== showTitle) {
+              full += ` - ${title}`;
+            }
+            activeVideoData.title = full;
+            return full;
+          } else if (title && title.toLowerCase() !== 'netflix') {
+            activeVideoData.title = title;
+            return title;
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Check React playerApp state
+    try {
+      const playerApp = window.netflix?.appContext?.state?.playerApp;
+      if (playerApp && typeof playerApp.getState === 'function') {
+        const state = playerApp.getState();
+        const playbackState = state?.videoPlayer?.playbackState;
+        if (playbackState) {
+          for (const k of Object.keys(playbackState)) {
+            const item = playbackState[k];
+            const t = item?.videoDetails?.title || item?.videoTitle || item?.title;
+            if (t && typeof t === 'string' && t.trim() && t.toLowerCase() !== 'netflix') {
+              activeVideoData.title = t.trim();
+              return activeVideoData.title;
+            }
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 3. Check DOM elements (Netflix video player controls)
+    try {
+      const titleEl = document.querySelector('[data-uia="video-title"], .video-title, h4.ellipsize-text');
+      if (titleEl) {
+        const text = (titleEl.textContent || titleEl.innerText || '').trim();
+        if (text && text.toLowerCase() !== 'netflix') {
+          const cleaned = text.replace(/\n+/g, ' - ').replace(/\s{2,}/g, ' ');
+          activeVideoData.title = cleaned;
+          return cleaned;
+        }
+      }
+
+      // Check Back to Browse button (aria-label: "Back to Browse: Movie Title")
+      const backBtn = document.querySelector('button[data-uia="nested-back-button"], a[data-uia="back-to-browse"]');
+      if (backBtn) {
+        const label = backBtn.getAttribute('aria-label') || '';
+        const m = label.match(/:\s*(.+)$/);
+        if (m && m[1] && m[1].toLowerCase() !== 'netflix') {
+          activeVideoData.title = m[1].trim();
+          return activeVideoData.title;
+        }
+      }
+
+      // Check document.title
+      const docClean = (document.title || '')
+        .replace(/\s*[-–—|]\s*Netflix.*$/i, '')
+        .replace(/^Netflix\s*[-–—|]\s*/i, '')
+        .trim();
+      if (docClean && docClean.toLowerCase() !== 'netflix') {
+        activeVideoData.title = docClean;
+        return docClean;
+      }
+    } catch (e) {}
+
+    return activeVideoData.title;
+  }
+
   // Fallback player check
   function checkPlayerAPI() {
     try {
@@ -190,6 +309,14 @@
         const movieId = player?.getMovieId?.();
         if (movieId && !activeVideoData.movieId) {
           activeVideoData.movieId = movieId;
+        }
+
+        // Try player.getPlaybackMetadata if available
+        if (typeof player?.getPlaybackMetadata === 'function') {
+          const pm = player.getPlaybackMetadata();
+          if (pm?.title && pm.title.toLowerCase() !== 'netflix') {
+            activeVideoData.title = pm.title;
+          }
         }
 
         // Extract tracks directly from player if not already captured
@@ -208,17 +335,32 @@
           }
         }
       }
+
+      // Extract metadata from Falcor or state
+      const prevTitle = activeVideoData.title;
+      extractNetflixMetadata(activeVideoData.movieId);
+      if (activeVideoData.title && activeVideoData.title !== prevTitle && activeVideoData.title.toLowerCase() !== 'netflix') {
+        dispatchToContent('metadata_ready', {
+          movieId: activeVideoData.movieId,
+          title: activeVideoData.title,
+          season: activeVideoData.season,
+          episode: activeVideoData.episode,
+          episodeTitle: activeVideoData.episodeTitle,
+          isSeries: activeVideoData.isSeries
+        });
+      }
     } catch (e) {}
   }
 
-  setInterval(checkPlayerAPI, 3000);
+  setInterval(checkPlayerAPI, 2500);
 
   // Listen for request from content script
   window.addEventListener('fx_netflix_request_info', () => {
     checkPlayerAPI();
+    extractNetflixMetadata(activeVideoData.movieId);
     dispatchToContent('tracks_ready', {
       movieId: activeVideoData.movieId,
-      title: activeVideoData.title || document.title.replace(' - Netflix', '').trim(),
+      title: activeVideoData.title || document.title.replace(/\s*[-–—|]\s*Netflix.*$/i, '').trim(),
       season: activeVideoData.season,
       episode: activeVideoData.episode,
       episodeTitle: activeVideoData.episodeTitle,
@@ -241,6 +383,10 @@
       }
     } catch (err) {}
   });
+
+  // Initial check
+  setTimeout(checkPlayerAPI, 1000);
+  setTimeout(checkPlayerAPI, 2500);
 
   console.log('[FX English] Netflix Injected Script initialized');
 })();

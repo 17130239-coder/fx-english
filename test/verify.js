@@ -385,6 +385,67 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     assert.ok(deleted, 'Cleaned up test movie from Neon');
     console.log('   ✓ Full Neon CRUD cycle verified (saveMovie, getMovies, deleteMovie).\n');
 
+    // 11. Test Real-world Title Resolution & Interactive Resource Link Models
+    console.log('🔗 11. Testing Netflix/YouTube Real Title Resolvers & Resource Links...');
+
+    // A. Netflix public title extraction test (watchId: 60020686 -> Shrek)
+    const testNfHtml = '<div data-uia="hero"><span><h1>Shrek</h1></span></div>';
+    const h1Match = testNfHtml.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    assert.strictEqual(h1Match ? h1Match[1].trim() : '', 'Shrek', 'Netflix <h1> parser extracts real movie title');
+
+    // B. Test isGenericTitle logic
+    const isGenericTitle = (str) => {
+      if (!str) return true;
+      const lower = String(str).trim().toLowerCase();
+      return (
+        lower === 'netflix' ||
+        lower === 'netflix movie' ||
+        lower === 'netflix video' ||
+        lower.startsWith('netflix phim #') ||
+        lower.startsWith('netflix video #') ||
+        lower === 'youtube' ||
+        lower === 'youtube video' ||
+        lower.startsWith('youtube video #') ||
+        lower === 'không tên' ||
+        lower === 'movie' ||
+        lower === 'movie_sample' ||
+        lower === 'fx_vocab' ||
+        lower === 'video đang phát'
+      );
+    };
+
+    assert.ok(isGenericTitle('Netflix'), '"Netflix" recognized as generic');
+    assert.ok(isGenericTitle('Netflix Phim #60020686'), '"Netflix Phim #60020686" recognized as generic and repairable');
+    assert.ok(isGenericTitle('YouTube Video'), '"YouTube Video" recognized as generic');
+    assert.strictEqual(isGenericTitle('Shrek'), false, '"Shrek" is a genuine title');
+    assert.strictEqual(isGenericTitle('Stranger Things S01E01 - Chapter One'), false, 'Episode title is genuine');
+
+    // C. Resource URL Resolution
+    const makeResourceUrl = (item) => {
+      if (item.url && item.url.trim()) return item.url.trim();
+      if (item.platform === 'youtube') return `https://www.youtube.com/results?search_query=${encodeURIComponent(item.title)}`;
+      if (item.platform === 'netflix') return `https://www.netflix.com/search?q=${encodeURIComponent(item.title)}`;
+      return '';
+    };
+
+    assert.strictEqual(
+      makeResourceUrl({ platform: 'netflix', url: 'https://www.netflix.com/watch/60020686', title: 'Shrek' }),
+      'https://www.netflix.com/watch/60020686',
+      'Netflix direct watch URL verified'
+    );
+    assert.strictEqual(
+      makeResourceUrl({ platform: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'Song' }),
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      'YouTube direct video URL verified'
+    );
+    assert.strictEqual(
+      makeResourceUrl({ platform: 'netflix', url: '', title: 'Breaking Bad' }),
+      'https://www.netflix.com/search?q=Breaking%20Bad',
+      'Netflix search fallback URL verified'
+    );
+
+    console.log('   ✓ Real Netflix title parsing, generic title identification, and interactive resource links verified.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');

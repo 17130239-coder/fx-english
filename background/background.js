@@ -137,24 +137,76 @@ const MessageDispatcher = {
       return { success: true, text };
     },
 
+    // Web Title Resolvers for accurate naming of Netflix movies & YouTube videos
+    ['resolve_netflix_title']: async (message) => {
+      const watchId = message.watchId;
+      const title = await resolveNetflixTitleFromWeb(watchId);
+      return { success: Boolean(title), title: title || '' };
+    },
+
+    ['resolve_youtube_title']: async (message) => {
+      const url = message.url;
+      const title = await resolveYouTubeTitleFromWeb(url);
+      return { success: Boolean(title), title: title || '' };
+    },
+
     // Query active tab media status for Popup & Studio
     ['get_active_media_status']: async () => {
+      const inspectTab = async (tab) => {
+        if (!tab || !tab.url) return null;
+        const isYT = tab.url.includes('youtube.com/watch') || tab.url.includes('youtube.com/shorts/') || tab.url.includes('youtube.com/live/');
+        const isNF = tab.url.includes('netflix.com/watch/');
+        if (!isYT && !isNF) return null;
+
+        let realTitle = '';
+
+        // 1. Ask content script for active player title
+        try {
+          const resp = await new Promise((resolve) => {
+            chrome.tabs.sendMessage(tab.id, { action: 'get_media_info' }, (r) => {
+              if (!chrome.runtime.lastError && r && r.success && r.title) resolve(r.title);
+              else resolve('');
+            });
+          });
+          if (resp && resp.toLowerCase() !== 'netflix' && resp.toLowerCase() !== 'youtube' && !resp.startsWith('Netflix Phim #')) {
+            realTitle = resp;
+          }
+        } catch (e) {}
+
+        // 2. Fallback resolution for Netflix: extract watchId and fetch public HTML
+        if (isNF && (!realTitle || realTitle.toLowerCase() === 'netflix' || realTitle.startsWith('Netflix Phim #'))) {
+          const m = tab.url.match(/\/watch\/(\d+)/);
+          if (m) {
+            const webTitle = await resolveNetflixTitleFromWeb(m[1]);
+            if (webTitle) realTitle = webTitle;
+          }
+        }
+
+        // 3. Fallback resolution for YouTube: clean document.title or call oEmbed
+        if (isYT && !realTitle) {
+          const docClean = (tab.title || '').replace(/\s*-\s*YouTube.*$/i, '').trim();
+          if (docClean && docClean.toLowerCase() !== 'youtube' && docClean !== 'YouTube Video') {
+            realTitle = docClean;
+          } else {
+            const ytOembed = await resolveYouTubeTitleFromWeb(tab.url);
+            if (ytOembed) realTitle = ytOembed;
+          }
+        }
+
+        return {
+          isMedia: true,
+          platform: isNF ? 'netflix' : 'youtube',
+          tabId: tab.id,
+          title: realTitle || tab.title || (isNF ? 'Netflix Movie' : 'YouTube Video'),
+          url: tab.url
+        };
+      };
+
       // 1. Try currently active tab first (Popup context)
       try {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (activeTab && activeTab.url) {
-          const isYT = activeTab.url.includes('youtube.com/watch') || activeTab.url.includes('youtube.com/shorts/') || activeTab.url.includes('youtube.com/live/');
-          const isNF = activeTab.url.includes('netflix.com/watch/');
-          if (isYT || isNF) {
-            return {
-              isMedia: true,
-              platform: isNF ? 'netflix' : 'youtube',
-              tabId: activeTab.id,
-              title: activeTab.title || '',
-              url: activeTab.url
-            };
-          }
-        }
+        const res = await inspectTab(activeTab);
+        if (res) return res;
       } catch (e) {}
 
       // 2. Fallback: Search any open Netflix or YouTube tab across all windows (Studio context)
@@ -169,15 +221,10 @@ const MessageDispatcher = {
         });
 
         if (mediaTabs && mediaTabs.length > 0) {
-          const tab = mediaTabs[0];
-          const isNF = tab.url.includes('netflix.com/watch/');
-          return {
-            isMedia: true,
-            platform: isNF ? 'netflix' : 'youtube',
-            tabId: tab.id,
-            title: tab.title || '',
-            url: tab.url
-          };
+          for (const tab of mediaTabs) {
+            const res = await inspectTab(tab);
+            if (res) return res;
+          }
         }
       } catch (e) {}
 
@@ -254,5 +301,63 @@ const MessageDispatcher = {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return MessageDispatcher.dispatch(message, sender, sendResponse);
 });
+
+/**
+ * Helper to resolve accurate Netflix movie / series title by public URL
+ */
+async function resolveNetflixTitleFromWeb(watchId) {
+  if (!watchId) return '';
+  try {
+    const resp = await fetch(`https://www.netflix.com/title/${watchId}`, {
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (resp.ok) {
+      const html = await resp.text();
+      // 1. Netflix public page main heading <h1>Title</h1>
+      const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+      if (h1Match && h1Match[1] && h1Match[1].trim() && h1Match[1].toLowerCase() !== 'netflix') {
+        return h1Match[1].trim();
+      }
+      // 2. OpenGraph og:title
+      const ogMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
+                      html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+      if (ogMatch && ogMatch[1] && ogMatch[1].toLowerCase() !== 'netflix') {
+        return ogMatch[1].replace(/\s*[-–—|]\s*Netflix.*$/i, '').trim();
+      }
+      // 3. Document <title>
+      const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+      if (titleMatch && titleMatch[1]) {
+        const clean = titleMatch[1]
+          .replace(/^Watch\s+/i, '')
+          .replace(/\s*[-–—|]\s*Netflix.*$/i, '')
+          .replace(/^Netflix\s*[-–—|]\s*/i, '')
+          .trim();
+        if (clean && clean.toLowerCase() !== 'netflix') return clean;
+      }
+    }
+  } catch (e) {}
+  return '';
+}
+
+/**
+ * Helper to resolve accurate YouTube video title using YouTube oEmbed
+ */
+async function resolveYouTubeTitleFromWeb(url) {
+  if (!url) return '';
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const resp = await fetch(oembedUrl);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.title && data.title.toLowerCase() !== 'youtube') {
+        return data.title.trim();
+      }
+    }
+  } catch (e) {}
+  return '';
+}
 
 console.log('[FX English] Background Service Worker ready');
