@@ -240,8 +240,24 @@
         this.btnLoadDetected.disabled = false;
         this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
         if (Array.isArray(cues) && cues.length > 0) {
-          this.movieTitle = title || mediaTab.title || 'Movie';
-          this.movieUrl = videoUrl || url;
+          let resolvedTitle = title || mediaTab.title || '';
+          const finalUrl = videoUrl || url || '';
+
+          // If title is generic (e.g. "Netflix") and we have a Netflix URL, extract watch ID
+          if (this.isGenericTitle(resolvedTitle) && finalUrl) {
+            const m = finalUrl.match(/\/watch\/(\d+)/);
+            if (m) {
+              resolvedTitle = `Netflix Phim #${m[1]}`;
+            } else {
+              const yt = finalUrl.match(/(?:v=|\/shorts\/)([a-zA-Z0-9_-]+)/);
+              if (yt) {
+                resolvedTitle = `YouTube Video #${yt[1]}`;
+              }
+            }
+          }
+
+          this.movieTitle = resolvedTitle || 'Movie';
+          this.movieUrl = finalUrl;
           this.cues = cues;
           this.runAnalysis();
         } else {
@@ -677,6 +693,23 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     // Scanned Movies & Videos History Feature (Neon Cloud Sync)
     // ==========================================
 
+    isGenericTitle(str) {
+      if (!str) return true;
+      const lower = String(str).trim().toLowerCase();
+      return (
+        lower === 'netflix' ||
+        lower === 'netflix movie' ||
+        lower === 'netflix video' ||
+        lower === 'youtube' ||
+        lower === 'youtube video' ||
+        lower === 'không tên' ||
+        lower === 'movie' ||
+        lower === 'movie_sample' ||
+        lower === 'fx_vocab' ||
+        lower === 'video đang phát'
+      );
+    },
+
     setNeonSyncStatus(status, text) {
       if (!this.neonSyncPill) return;
       this.neonSyncPill.classList.remove('syncing', 'offline');
@@ -734,8 +767,17 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         chrome.storage.local.get(['fxScanHistory'], (res) => {
           let history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
           history = history.filter((item) => {
-            if (this.movieUrl && item.url && item.url === this.movieUrl) return false;
-            if (item.title && item.title === title) return false;
+            // Case A: Both have URLs -> deduplicate ONLY if exact same URL
+            if (this.movieUrl && item.url) {
+              return item.url !== this.movieUrl;
+            }
+            // Case B: Neither has a URL -> deduplicate ONLY if both have identical non-generic title
+            if (!this.movieUrl && !item.url) {
+              if (!this.isGenericTitle(title) && item.title === title) {
+                return false;
+              }
+            }
+            // Case C: Distinct items -> keep both
             return true;
           });
           history.unshift(newItem);
@@ -792,13 +834,13 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
         // Add cloud movies first
         cloudMovies.forEach((m) => {
-          const key = m.id || m.title;
+          const key = (m.url && m.url.trim()) ? m.url.trim() : m.id;
           map.set(key, m);
         });
 
         // Merge local movies
         localHistory.forEach((loc) => {
-          const key = loc.id || loc.title;
+          const key = (loc.url && loc.url.trim()) ? loc.url.trim() : loc.id;
           const existing = map.get(key);
           if (!existing || (loc.timestamp && loc.timestamp > (existing.timestamp || 0))) {
             map.set(key, loc);
@@ -818,7 +860,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
         // Background sync: push any local-only movie up to Neon
         localHistory.forEach((loc) => {
-          const existsInCloud = cloudMovies.some((c) => c.id === loc.id || c.title === loc.title);
+          const existsInCloud = cloudMovies.some((c) => (c.url && loc.url && c.url === loc.url) || c.id === loc.id);
           if (!existsInCloud) {
             neon.saveMovie(loc).catch(() => {});
           }

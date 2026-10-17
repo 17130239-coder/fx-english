@@ -211,9 +211,35 @@ console.log('📂 7. Testing Scanned History Data Architecture...');
 const mockHistory = [];
 const mockMovieAnalysis = analyzer.analyzeSubtitles(cues);
 
+function isGenericTitle(str) {
+  if (!str) return true;
+  const lower = String(str).trim().toLowerCase();
+  return (
+    lower === 'netflix' ||
+    lower === 'netflix movie' ||
+    lower === 'netflix video' ||
+    lower === 'youtube' ||
+    lower === 'youtube video' ||
+    lower === 'không tên' ||
+    lower === 'movie' ||
+    lower === 'movie_sample' ||
+    lower === 'fx_vocab' ||
+    lower === 'video đang phát'
+  );
+}
+
 function saveToMockHistory(history, item) {
-  // Deduplicate
-  let updated = history.filter(h => !(h.title === item.title || (item.url && h.url === item.url)));
+  let updated = history.filter((h) => {
+    if (item.url && h.url) {
+      return h.url !== item.url;
+    }
+    if (!item.url && !h.url) {
+      if (!isGenericTitle(item.title) && h.title === item.title) {
+        return false;
+      }
+    }
+    return true;
+  });
   updated.unshift(item);
   return updated.slice(0, 50);
 }
@@ -239,13 +265,36 @@ assert.strictEqual(currentHistory.length, 1, 'History has 1 item');
 assert.strictEqual(currentHistory[0].platform, 'youtube', 'Platform correctly tagged as youtube');
 assert.strictEqual(currentHistory[0].advCount, 1, 'Adverb count stored correctly');
 
-// Re-saving same title updates and deduplicates
+// Re-saving same URL updates and deduplicates
 const item1Updated = { ...item1, wordCount: 99 };
 currentHistory = saveToMockHistory(currentHistory, item1Updated);
-assert.strictEqual(currentHistory.length, 1, 'Deduplication works when scanning same title');
+assert.strictEqual(currentHistory.length, 1, 'Deduplication works when scanning same URL');
 assert.strictEqual(currentHistory[0].wordCount, 99, 'Item updated to latest stats');
 
-console.log('   ✓ Scanned history model & deduplication logic verified.\n');
+// Scanning 2 different movies on Netflix (both titled 'Netflix' or with watch IDs) PRESERVES BOTH
+const nfMovie1 = {
+  id: 'scan_nf_1',
+  title: 'Netflix',
+  platform: 'netflix',
+  url: 'https://www.netflix.com/watch/80057281',
+  timestamp: Date.now() - 1000,
+  wordCount: 500
+};
+const nfMovie2 = {
+  id: 'scan_nf_2',
+  title: 'Netflix',
+  platform: 'netflix',
+  url: 'https://www.netflix.com/watch/80186931',
+  timestamp: Date.now(),
+  wordCount: 750
+};
+
+let nfHistory = saveToMockHistory([], nfMovie1);
+assert.strictEqual(nfHistory.length, 1, 'First Netflix movie saved');
+nfHistory = saveToMockHistory(nfHistory, nfMovie2);
+assert.strictEqual(nfHistory.length, 2, 'Second Netflix movie preserved, NOT overwritten even if title is "Netflix"!');
+
+console.log('   ✓ Scanned history model & multi-movie deduplication logic verified.\n');
 
 // 8. Testing Real-World Subtitle POS Analysis with Repeated Lexemes
 console.log('⚡ 8. Testing Real-World Subtitle POS Multi-Pass Lexemes...');

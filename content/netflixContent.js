@@ -116,12 +116,43 @@
   });
 
   function getFullDisplayTitle() {
-    let title = currentMovieData.title || document.title.replace(' - Netflix', '').trim() || 'Netflix Movie';
+    let title = currentMovieData.title;
+
+    // 1. Try DOM elements in Netflix player
+    if (!title || title.trim().toLowerCase() === 'netflix') {
+      const titleEl = document.querySelector('[data-uia="video-title"], .video-title, h4.ellipsize-text');
+      if (titleEl) {
+        const text = (titleEl.innerText || titleEl.textContent || '').trim();
+        if (text && text.toLowerCase() !== 'netflix') {
+          title = text.replace(/\n+/g, ' - ');
+        }
+      }
+    }
+
+    // 2. Try document.title
+    if (!title || title.trim().toLowerCase() === 'netflix') {
+      const docClean = (document.title || '').replace(' - Netflix', '').replace('Netflix - ', '').trim();
+      if (docClean && docClean.toLowerCase() !== 'netflix') {
+        title = docClean;
+      }
+    }
+
+    // 3. Fallback: Extract watch ID from URL so different Netflix movies/episodes never have identical titles
+    const match = window.location.pathname.match(/\/watch\/(\d+)/);
+    const watchId = match ? match[1] : (currentMovieData.movieId || '');
+
+    if (!title || title.trim().toLowerCase() === 'netflix') {
+      title = watchId ? `Netflix Phim #${watchId}` : 'Netflix Video';
+    }
+
     if (currentMovieData.isSeries && currentMovieData.season && currentMovieData.episode) {
       const s = String(currentMovieData.season).padStart(2, '0');
       const ep = String(currentMovieData.episode).padStart(2, '0');
-      title = `${title} S${s}E${ep}`;
-      if (currentMovieData.episodeTitle) {
+      const epCode = `S${s}E${ep}`;
+      if (!title.includes(epCode)) {
+        title = `${title} ${epCode}`;
+      }
+      if (currentMovieData.episodeTitle && !title.includes(currentMovieData.episodeTitle)) {
         title += ` - ${currentMovieData.episodeTitle}`;
       }
     }
@@ -195,6 +226,7 @@
         success: true,
         platform: 'netflix',
         title: getFullDisplayTitle(),
+        url: window.location.href,
         hasTracks: currentMovieData.tracks && currentMovieData.tracks.length > 0,
         selectedTrack: currentMovieData.selectedTrack ? {
           label: currentMovieData.selectedTrack.label || 'English'
@@ -218,6 +250,7 @@
           success: true,
           platform: 'netflix',
           title: getFullDisplayTitle(),
+          url: window.location.href,
           cues: cues
         });
       }).catch((err) => {
