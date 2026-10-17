@@ -413,6 +413,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
         const posLabel = this.getPosLabel(item.pos);
         const contextHtml = this.highlightWordInContext(item.contexts?.[0]?.text || '', item.word);
+        const lemmaHtml = (item.lemma && item.lemma !== item.word)
+          ? `<span class="fx-lemma-chip" title="Dạng từ gốc">Gốc: <b>${this.escape(item.lemma)}</b></span>`
+          : '';
+        const timeHtml = item.contexts?.[0]?.start
+          ? `<span class="fx-context-time">⏱ ${this.escape(item.contexts[0].start)}</span>`
+          : '';
 
         card.innerHTML = `
           <div class="fx-word-card-top">
@@ -420,6 +426,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
               <span class="fx-word-head">${this.escape(item.word)}</span>
               <span class="fx-pos-badge ${item.pos}">${posLabel}</span>
               ${item.cefr ? `<span class="fx-cefr-badge">${item.cefr}</span>` : ''}
+              ${lemmaHtml}
             </div>
             <span class="fx-freq-pill">${item.frequency}x</span>
           </div>
@@ -433,7 +440,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
           ${contextHtml ? `
             <div class="fx-context-snippet">
-              "${contextHtml}"
+              <div class="fx-context-top-row">
+                <span class="fx-context-label">Ngữ cảnh phim:</span>
+                ${timeHtml}
+              </div>
+              <p class="fx-context-quote">"${contextHtml}"</p>
             </div>
           ` : ''}
         `;

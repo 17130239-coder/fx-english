@@ -1,4 +1,28 @@
-/* FX English - Popup Styling */
+/* ==========================================================================
+   FX English — Popup Styling
+   Phoenix & Evondev UI System
+   ========================================================================== */
+
+:root {
+  --fx-font-main: 'Plus Jakarta Sans', 'Nunito Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --fx-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --fx-bg-canvas: #090a10;
+  --fx-bg-surface: #11131e;
+  --fx-bg-surface-elevated: #161928;
+  --fx-bg-surface-hover: #1d2136;
+
+  --fx-border-subtle: rgba(255, 255, 255, 0.08);
+  --fx-border-medium: rgba(255, 255, 255, 0.14);
+
+  --fx-gradient-primary: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #06b6d4 100%);
+  --fx-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #0891b2 100%);
+  --fx-shadow-primary: 0 4px 16px rgba(99, 102, 241, 0.35);
+
+  --fx-text-primary: #f8fafc;
+  --fx-text-secondary: #94a3b8;
+  --fx-text-muted: #64748b;
+}
 
 * {
   box-sizing: border-box;
@@ -7,28 +31,35 @@
 }
 
 body {
-  width: 360px;
-  min-height: 400px;
-  background-color: #0d0d12;
-  color: #f4f4f5;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  width: 370px;
+  min-height: 410px;
+  background-color: var(--fx-bg-canvas);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 55%),
+    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 55%);
+  color: var(--fx-text-primary);
+  font-family: var(--fx-font-main);
   user-select: none;
   overflow: hidden;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
 }
 
 .fx-popup-container {
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  gap: 14px;
+  padding: 16px 18px;
+  gap: 15px;
 }
 
-/* Header */
+/* --------------------------------------------------------------------------
+   Header (Glassmorphic Phoenix Header)
+   -------------------------------------------------------------------------- */
 .fx-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--fx-border-subtle);
   padding-bottom: 12px;
 }
 
@@ -39,49 +70,66 @@ body {
 }
 
 .fx-logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #6366f1, #06b6d4);
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  background: var(--fx-gradient-primary);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 17px;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fx-brand:hover .fx-logo-icon {
+  transform: rotate(10deg) scale(1.06);
 }
 
 .fx-brand-text h1 {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 15.5px;
+  font-weight: 800;
   color: #ffffff;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .fx-brand-sub {
-  font-size: 10.5px;
-  color: #a1a1aa;
+  font-size: 11px;
+  color: var(--fx-text-muted);
+  font-weight: 500;
 }
 
 .fx-version-badge {
   font-size: 10px;
-  font-weight: 600;
-  color: #818cf8;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  padding: 2px 6px;
+  font-weight: 700;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 2.5px 7px;
   border-radius: 9999px;
+  letter-spacing: 0.04em;
 }
 
-/* Cards */
-.fx-card {
-  background: #15151c;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px;
+/* --------------------------------------------------------------------------
+   Main Content Cards
+   -------------------------------------------------------------------------- */
+.fx-main {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+}
+
+.fx-card {
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .fx-card-header {
@@ -92,80 +140,93 @@ body {
 
 .fx-badge {
   font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
+  font-weight: 800;
+  padding: 3px 9px;
   border-radius: 6px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
 }
 
 .fx-badge-yt {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.16);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .fx-badge-nf {
-  background: rgba(229, 9, 20, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(229, 9, 20, 0.4);
+  background: rgba(229, 9, 20, 0.16);
+  color: #ff5252;
+  border: 1px solid rgba(229, 9, 20, 0.35);
 }
 
 .fx-track-status {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #34d399;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .fx-media-title {
   font-size: 13.5px;
-  font-weight: 600;
-  color: #f4f4f5;
-  line-height: 1.35;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  letter-spacing: -0.01em;
 }
 
-/* Buttons */
+/* --------------------------------------------------------------------------
+   Buttons & Interactive Elements
+   -------------------------------------------------------------------------- */
 .fx-btn {
-  height: 36px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.16s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   outline: none;
+  font-family: var(--fx-font-main);
+}
+
+.fx-btn:active {
+  transform: scale(0.97);
 }
 
 .fx-btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  background: var(--fx-gradient-primary);
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  box-shadow: var(--fx-shadow-primary);
 }
 
 .fx-btn-primary:hover {
-  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  background: var(--fx-gradient-hover);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.55);
 }
 
 .fx-download-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 10px;
+  border-top: 1px solid var(--fx-border-subtle);
 }
 
 .fx-dl-label {
-  font-size: 11px;
-  color: #a1a1aa;
+  font-size: 11.5px;
+  color: var(--fx-text-muted);
+  font-weight: 600;
 }
 
 .fx-dl-buttons {
@@ -177,97 +238,111 @@ body {
   height: 28px;
   padding: 0 10px;
   font-size: 11px;
-  background: #20202a;
-  color: #e4e4e7;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  font-weight: 700;
+  border-radius: 7px;
+  background: var(--fx-bg-surface-elevated);
+  border: 1px solid var(--fx-border-medium);
+  color: var(--fx-text-secondary);
 }
 
 .fx-btn-dl:hover {
-  background: #2e2e3c;
+  background: var(--fx-bg-surface-hover);
   color: #ffffff;
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
 }
 
 /* Idle State Card */
 .fx-idle-card {
-  text-align: center;
   align-items: center;
-  padding: 20px 14px;
+  text-align: center;
+  padding: 24px 18px;
+  gap: 8px;
 }
 
 .fx-idle-icon {
-  font-size: 28px;
-  margin-bottom: 2px;
+  font-size: 34px;
+  filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
 }
 
 .fx-idle-title {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 14.5px;
+  font-weight: 800;
   color: #ffffff;
 }
 
 .fx-idle-desc {
-  font-size: 11.5px;
-  color: #a1a1aa;
-  line-height: 1.45;
+  font-size: 12px;
+  color: var(--fx-text-secondary);
+  line-height: 1.5;
 }
 
 .fx-idle-desc b {
-  color: #06b6d4;
+  color: #38bdf8;
 }
 
 /* Studio CTA */
 .fx-studio-cta {
-  margin-top: 2px;
+  width: 100%;
 }
 
 .fx-btn-studio {
   width: 100%;
-  height: 40px;
-  background: rgba(6, 182, 212, 0.12);
-  border: 1px solid rgba(6, 182, 212, 0.35);
-  color: #22d3ee;
-  font-size: 12.5px;
-  font-weight: 600;
+  height: 42px;
+  background: var(--fx-bg-surface-elevated);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #c7d2fe;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .fx-btn-studio:hover {
-  background: rgba(6, 182, 212, 0.22);
-  border-color: #22d3ee;
+  background: rgba(99, 102, 241, 0.16);
+  border-color: #6366f1;
+  color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3);
 }
 
 .fx-arrow {
-  margin-left: 2px;
-  transition: transform 0.15s ease;
+  font-size: 15px;
+  transition: transform 0.2s ease;
 }
 
 .fx-btn-studio:hover .fx-arrow {
   transform: translate(2px, -2px);
 }
 
-/* Footer */
+/* --------------------------------------------------------------------------
+   Footer & Tags
+   -------------------------------------------------------------------------- */
 .fx-footer {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--fx-border-subtle);
+  padding-top: 12px;
 }
 
 .fx-tags {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 4px;
 }
 
 .fx-tag {
   font-size: 10px;
-  color: #d4d4d8;
-  background: #181822;
+  font-weight: 700;
+  color: var(--fx-text-secondary);
+  background: rgba(255, 255, 255, 0.04);
   padding: 3px 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  border: 1px solid var(--fx-border-subtle);
 }
 
 .fx-sub-tags {
@@ -275,6 +350,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 9.5px;
-  color: #71717a;
+  font-size: 10.5px;
+  color: var(--fx-text-muted);
+  font-weight: 500;
 }
