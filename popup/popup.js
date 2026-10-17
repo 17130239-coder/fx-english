@@ -126,26 +126,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnQuickVocab.innerHTML = '<span>⏳ Đang lấy phụ đề & mở Studio...</span>';
       btnQuickVocab.disabled = true;
 
-      chrome.tabs.sendMessage(activeTabId, { action: 'get_subtitles' }, (res) => {
-        if (!chrome.runtime.lastError && res && res.success && res.cues && res.cues.length > 0) {
-          chrome.storage.local.set({
-            fxPendingStudio: {
-              title: res.title || info.title || 'Movie / Video',
-              url: res.url || activeTabUrl || '',
-              cues: res.cues
-            }
-          }, () => {
-            chrome.runtime.sendMessage({ action: 'open_studio' }, () => {
-              window.close();
-            });
+      const openStudioWithCues = (cues, title, url) => {
+        chrome.storage.local.set({
+          fxPendingStudio: {
+            title: title || info.title || 'Movie / Video',
+            url: url || activeTabUrl || '',
+            cues: cues
+          }
+        }, () => {
+          chrome.runtime.sendMessage({ action: 'open_studio' }, () => {
+            window.close();
           });
-        } else {
-          btnQuickVocab.innerHTML = originalHtml;
-          btnQuickVocab.disabled = false;
-          const errMsg = res?.error || chrome.runtime.lastError?.message || 'Chưa tìm thấy phụ đề tiếng Anh cho video này. Hãy bật biểu tượng [CC] trên video rồi thử lại.';
-          alert(errMsg);
-        }
-      });
+        });
+      };
+
+      if (info.platform === 'youtube' && activeTabUrl) {
+        chrome.runtime.sendMessage({ action: 'fetch_youtube_captions', url: activeTabUrl }, (ytRes) => {
+          if (ytRes && ytRes.success && Array.isArray(ytRes.cues) && ytRes.cues.length > 0) {
+            openStudioWithCues(ytRes.cues, ytRes.title, activeTabUrl);
+            return;
+          }
+          queryTabForVocab();
+        });
+      } else {
+        queryTabForVocab();
+      }
+
+      function queryTabForVocab() {
+        chrome.tabs.sendMessage(activeTabId, { action: 'get_subtitles' }, (res) => {
+          if (!chrome.runtime.lastError && res && res.success && res.cues && res.cues.length > 0) {
+            openStudioWithCues(res.cues, res.title, res.url);
+          } else {
+            btnQuickVocab.innerHTML = originalHtml;
+            btnQuickVocab.disabled = false;
+            const errMsg = res?.error || chrome.runtime.lastError?.message || 'Chưa tìm thấy phụ đề tiếng Anh cho video này. Hãy bật biểu tượng [CC] trên video rồi thử lại.';
+            alert(errMsg);
+          }
+        });
+      }
     };
 
     // Subtitle Downloads

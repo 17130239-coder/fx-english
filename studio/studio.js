@@ -228,26 +228,79 @@
 
     loadFromMediaTab(tabId) {
       this.btnLoadDetected.disabled = true;
-      this.btnLoadDetected.textContent = 'Đang tải phụ đề...';
+      this.btnLoadDetected.innerHTML = '<span>⏳ Đang tải & phân tích phụ đề...</span>';
 
-      chrome.tabs.sendMessage(tabId, { action: 'get_subtitles' }, (res) => {
+      const mediaTab = this.detectedMediaTab || {};
+      const url = mediaTab.url || '';
+      const platform = mediaTab.platform || (url.includes('netflix') ? 'netflix' : 'youtube');
+
+      const onSubtitlesLoaded = (cues, title, videoUrl) => {
         this.btnLoadDetected.disabled = false;
-        this.btnLoadDetected.textContent = '⚡ Phân tích ngay';
-
-        if (chrome.runtime.lastError || !res || !res.success) {
-          const err = res?.error || chrome.runtime.lastError?.message || 'Không thể tải phụ đề từ tab phim. Hãy đảm bảo video đã bật CC.';
-          alert(err);
-          return;
-        }
-
-        if (Array.isArray(res.cues) && res.cues.length > 0) {
-          this.movieTitle = res.title || 'Movie';
-          this.movieUrl = res.url || (this.detectedMediaTab ? this.detectedMediaTab.url : '');
-          this.cues = res.cues;
+        this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+        if (Array.isArray(cues) && cues.length > 0) {
+          this.movieTitle = title || mediaTab.title || 'Movie';
+          this.movieUrl = videoUrl || url;
+          this.cues = cues;
           this.runAnalysis();
         } else {
           alert('Không tìm thấy câu phụ đề nào trong video này.');
         }
+      };
+
+      // 1. For YouTube: Try background InnerTube first (bypasses disconnected tab, 0.3s load)
+      if (platform === 'youtube' && url) {
+        chrome.runtime.sendMessage({ action: 'fetch_youtube_captions', url }, (ytRes) => {
+          if (ytRes && ytRes.success && Array.isArray(ytRes.cues) && ytRes.cues.length > 0) {
+            onSubtitlesLoaded(ytRes.cues, ytRes.title, url);
+            return;
+          }
+
+          // Fallback to querying the tab
+          this.queryTabForSubtitles(tabId, onSubtitlesLoaded);
+        });
+      } else {
+        // 2. For Netflix or others: query tab directly
+        this.queryTabForSubtitles(tabId, onSubtitlesLoaded);
+      }
+    },
+
+    queryTabForSubtitles(tabId, onLoaded) {
+      chrome.tabs.sendMessage(tabId, { action: 'get_subtitles' }, (res) => {
+        if (!chrome.runtime.lastError && res && res.success && Array.isArray(res.cues) && res.cues.length > 0) {
+          onLoaded(res.cues, res.title, res.url);
+          return;
+        }
+
+        // Auto-inject script if tab was opened before extension reload
+        if (chrome.scripting && chrome.scripting.executeScript && tabId) {
+          const isNF = this.detectedMediaTab?.platform === 'netflix';
+          chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['lib/subtitleParser.js', isNF ? 'content/netflixContent.js' : 'content/youtubeContent.js']
+          }).then(() => {
+            setTimeout(() => {
+              chrome.tabs.sendMessage(tabId, { action: 'get_subtitles' }, (retryRes) => {
+                this.btnLoadDetected.disabled = false;
+                this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+                if (!chrome.runtime.lastError && retryRes && retryRes.success && Array.isArray(retryRes.cues) && retryRes.cues.length > 0) {
+                  onLoaded(retryRes.cues, retryRes.title, retryRes.url);
+                } else {
+                  const err = retryRes?.error || 'Không thể tải phụ đề từ tab này. Hãy đảm bảo video đã bật CC rồi thử lại.';
+                  alert(err);
+                }
+              });
+            }, 400);
+          }).catch(() => {
+            this.btnLoadDetected.disabled = false;
+            this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+            alert('Không thể kết nối với tab video. Hãy tải lại (F5) tab video đó rồi bấm Phân tích ngay.');
+          });
+          return;
+        }
+
+        this.btnLoadDetected.disabled = false;
+        this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+        alert(res?.error || chrome.runtime.lastError?.message || 'Không thể tải phụ đề từ tab phim. Hãy đảm bảo video đã bật CC.');
       });
     },
 

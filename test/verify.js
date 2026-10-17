@@ -247,6 +247,20 @@ assert.strictEqual(currentHistory[0].wordCount, 99, 'Item updated to latest stat
 
 console.log('   ✓ Scanned history model & deduplication logic verified.\n');
 
+// 8. Testing Real-World Subtitle POS Analysis with Repeated Lexemes
+console.log('⚡ 8. Testing Real-World Subtitle POS Multi-Pass Lexemes...');
+const testParagraph = [
+  { startSec: 1, endSec: 4, text: "I've been living in a Tesla for 2 years without rent." },
+  { startSec: 4, endSec: 8, text: "Living here is cheap, but rent in the city is high." },
+  { startSec: 8, endSec: 12, text: "He lived there, smiled warmly, and drove fast." }
+];
+const testMultiPassAnalysis = analyzer.analyzeSubtitles(testParagraph);
+assert.ok(testMultiPassAnalysis.totals.uniqueWords > 0, 'Unique words counted');
+assert.ok(testMultiPassAnalysis.categories.noun.count > 0, 'Extracted nouns without scope errors');
+assert.ok(testMultiPassAnalysis.categories.verb.count > 0, 'Extracted verbs without scope errors');
+assert.ok(testMultiPassAnalysis.categories.adverb.count > 0, 'Extracted adverbs without scope errors');
+console.log('   ✓ Multi-pass repeated lexeme analysis passed without ReferenceErrors.\n');
+
 console.log('====================================================');
 console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
 console.log('====================================================');

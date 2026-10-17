@@ -57,6 +57,77 @@ const MessageDispatcher = {
     },
 
 
+    // Robust YouTube Subtitle Extractor using Android InnerTube API (bypasses botwall, poToken, and exp=xpe)
+    ['fetch_youtube_captions']: async (message) => {
+      let videoId = message.videoId;
+      if (!videoId && message.url) {
+        try {
+          const u = new URL(message.url);
+          videoId = u.searchParams.get('v');
+          if (!videoId) {
+            const m = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+            if (m) videoId = m[1];
+          }
+        } catch (e) {}
+      }
+      if (!videoId) throw new Error('Missing videoId');
+
+      const parser = (typeof APP_SUBTITLE_PARSER !== 'undefined') ? APP_SUBTITLE_PARSER : null;
+
+      const resp = await fetch('https://www.youtube.com/youtubei/v1/player', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)'
+        },
+        body: JSON.stringify({
+          context: {
+            client: {
+              clientName: 'ANDROID',
+              clientVersion: '20.10.38'
+            }
+          },
+          videoId: videoId
+        })
+      });
+
+      if (!resp.ok) throw new Error(`YouTube API Error: ${resp.status}`);
+      const data = await resp.json();
+
+      const rawTracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
+      const title = data?.videoDetails?.title || '';
+
+      if (rawTracks.length === 0) {
+        throw new Error('Video này không có phụ đề (No captions available for this video).');
+      }
+
+      // Prioritize English track, then any available track
+      const selectedTrack = rawTracks.find(t => (t.languageCode || '').toLowerCase().startsWith('en') && t.kind !== 'asr') ||
+                            rawTracks.find(t => (t.languageCode || '').toLowerCase().startsWith('en')) ||
+                            rawTracks[0];
+
+      let rawXml = '';
+      if (selectedTrack && selectedTrack.baseUrl) {
+        const subResp = await fetch(selectedTrack.baseUrl);
+        if (subResp.ok) {
+          rawXml = await subResp.text();
+        }
+      }
+
+      const cues = (parser && rawXml) ? parser.parse(rawXml) : [];
+      if (!cues || cues.length === 0) {
+        throw new Error('Không phân tích được nội dung phụ đề từ YouTube.');
+      }
+
+      return {
+        success: true,
+        title: title,
+        tracks: rawTracks,
+        selectedTrack,
+        cues: cues
+      };
+    },
+
     // Proxy external fetch (bypasses CSP on YouTube/Netflix when downloading captions)
     ['fetch_external_url']: async (message) => {
       const resp = await fetch(message.url);
