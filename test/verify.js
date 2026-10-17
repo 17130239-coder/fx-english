@@ -552,15 +552,21 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     assert.strictEqual(initialConfig.baseUrl, 'https://api.9router.com/v1', 'Default baseUrl is https://api.9router.com/v1');
     assert.strictEqual(initialConfig.model, 'gemini-3.8-flash', 'Default model is gemini-3.8-flash');
 
-    // 15.2 Verify saveConfig and isConfigured
+    // 15.2 Verify normalizeBaseUrl
+    assert.strictEqual(aiClientModule.normalizeBaseUrl('http://localhost:20128'), 'http://localhost:20128/v1', 'Appends /v1 if missing');
+    assert.strictEqual(aiClientModule.normalizeBaseUrl('http://localhost:20128/v1/'), 'http://localhost:20128/v1', 'Trims trailing slash');
+    assert.strictEqual(aiClientModule.normalizeBaseUrl('https://api.9router.com/v1'), 'https://api.9router.com/v1');
+
+    // 15.3 Verify saveConfig and isConfigured
     await aiClientModule.saveConfig({
-      baseUrl: 'https://api.9router.com/v1',
+      baseUrl: 'http://localhost:20128',
       apiKey: 'test-key-123456',
       model: 'gemini-3.8-flash'
     });
     assert.strictEqual(aiClientModule.isConfigured(), true, 'isConfigured() returns true after saving valid API key');
     const updatedConfig = await aiClientModule.getConfig();
     assert.strictEqual(updatedConfig.apiKey, 'test-key-123456');
+    assert.strictEqual(updatedConfig.baseUrl, 'http://localhost:20128/v1', 'saveConfig auto-normalizes baseUrl with /v1');
 
     // 15.3 Verify Zero-Token Client Pre-processing (prepareSubtitleChunks)
     const mockCues = [

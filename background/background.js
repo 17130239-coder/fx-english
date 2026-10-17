@@ -43,6 +43,44 @@ const MessageDispatcher = {
       return result;
     },
 
+    // Robust HTTP proxy for AI endpoints (bypasses CORS / Private Network Access from extension UI tabs)
+    ['ai_http_request']: async (message) => {
+      const { url, apiKey, payload } = message;
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey || ''}`
+          },
+          body: JSON.stringify(payload || {})
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text().catch(() => '');
+          let errMsg = `Lỗi HTTP ${resp.status}`;
+          try {
+            const errJson = JSON.parse(errText);
+            if (errJson?.error?.message) {
+              errMsg = errJson.error.message;
+            }
+          } catch (e) {
+            if (errText) errMsg += `: ${errText.slice(0, 150)}`;
+          }
+          return { ok: false, status: resp.status, error: errMsg };
+        }
+
+        const data = await resp.json();
+        return { ok: true, status: resp.status, data };
+      } catch (err) {
+        let msg = err.message || 'Lỗi kết nối mạng từ background worker';
+        if (msg === 'Failed to fetch') {
+          msg = `Failed to fetch: Không thể kết nối tới ${url}. Vui lòng kiểm tra server AI đã bật chưa.`;
+        }
+        return { ok: false, status: 0, error: msg };
+      }
+    },
+
     // NLP Subtitle Vocabulary Analysis (Offline fallback)
     ['analyze_subtitles']: async (message) => {
       const analyzer = (typeof APP_VOCAB_ANALYZER !== 'undefined') ? APP_VOCAB_ANALYZER : null;

@@ -595,7 +595,8 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const ai = this.getAiClient();
       if (!ai) return;
 
-      const baseUrl = (this.inputAiBaseUrl?.value || '').trim() || 'https://api.9router.com/v1';
+      const rawBase = (this.inputAiBaseUrl?.value || '').trim() || 'https://api.9router.com/v1';
+      const baseUrl = ai.normalizeBaseUrl ? ai.normalizeBaseUrl(rawBase) : rawBase;
       const apiKey = (this.inputAiApiKey?.value || '').trim();
       const model = (this.inputAiModel?.value || '').trim() || 'gemini-3.8-flash';
 
@@ -604,18 +605,19 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         return;
       }
 
-      this.showSettingsStatus('loading', 'Đang kiểm tra kết nối với 9router...');
+      this.showSettingsStatus('loading', 'Đang kiểm tra kết nối với AI...');
       if (this.btnSaveSettings) this.btnSaveSettings.disabled = true;
 
       try {
         const testRes = await ai.testConnection({ baseUrl, apiKey, model });
         if (testRes.ok) {
           await ai.saveConfig({ baseUrl, apiKey, model });
-          this.showSettingsStatus('success', 'Đã kết nối và lưu cấu hình 9router thành công!');
+          if (this.inputAiBaseUrl) this.inputAiBaseUrl.value = baseUrl;
+          this.showSettingsStatus('success', testRes.message || 'Đã kết nối và lưu cấu hình thành công!');
           setTimeout(() => {
             this.closeSettingsModal();
             if (this.btnSaveSettings) this.btnSaveSettings.disabled = false;
-          }, 1000);
+          }, 1200);
         } else {
           this.showSettingsStatus('error', testRes.error || 'Kiểm tra kết nối thất bại.');
           if (this.btnSaveSettings) this.btnSaveSettings.disabled = false;
