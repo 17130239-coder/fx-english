@@ -150,6 +150,40 @@ const MessageDispatcher = {
       return { success: Boolean(title), title: title || '' };
     },
 
+    // Batch English-to-Vietnamese word translator using Google Translate API
+    ['translate_words']: async (message) => {
+      const words = message.words;
+      if (!Array.isArray(words) || words.length === 0) return { success: true, translations: {} };
+
+      const results = {};
+      const BATCH_SIZE = 35;
+
+      for (let i = 0; i < words.length; i += BATCH_SIZE) {
+        const batch = words.slice(i, i + BATCH_SIZE);
+        try {
+          const text = batch.join('\n');
+          const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
+          const resp = await fetch(url);
+          if (resp.ok) {
+            const data = await resp.json();
+            const sentences = data?.[0] || [];
+            const fullTranslated = sentences.map(s => s[0]).join('');
+            const lines = fullTranslated.split('\n');
+            batch.forEach((w, idx) => {
+              const trans = (lines[idx] || '').trim();
+              if (trans) {
+                results[w.toLowerCase()] = trans.toLowerCase();
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('[FX Translate] Batch error:', err);
+        }
+      }
+
+      return { success: true, translations: results };
+    },
+
     // Query active tab media status for Popup & Studio
     ['get_active_media_status']: async () => {
       const inspectTab = async (tab) => {

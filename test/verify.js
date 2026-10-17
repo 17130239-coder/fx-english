@@ -446,6 +446,31 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
     console.log('   ✓ Real Netflix title parsing, generic title identification, and interactive resource links verified.\n');
 
+    // 12. Test Expanded Vocabulary Dictionary & Real-time Translation
+    console.log('📖 12. Testing Expanded Vocabulary Definitions (production, race, ring)...');
+    const cefrDict = require('../lib/cefrDict.js');
+
+    const prodEntry = cefrDict.lookup('production');
+    assert.ok(prodEntry, 'production must exist in cefrDict');
+    assert.ok(prodEntry.vi && prodEntry.vi !== 'Đang cập nhật', 'production must have valid Vietnamese translation');
+    assert.strictEqual(prodEntry.cefr, 'B2', 'production CEFR level is B2');
+
+    const raceEntry = cefrDict.lookup('race');
+    assert.ok(raceEntry, 'race must exist in cefrDict');
+    assert.ok(raceEntry.vi && raceEntry.vi !== 'Đang cập nhật', 'race must have valid Vietnamese translation');
+
+    const ringEntry = cefrDict.lookup('ring');
+    assert.ok(ringEntry, 'ring must exist in cefrDict');
+    assert.ok(ringEntry.vi && ringEntry.vi !== 'Đang cập nhật', 'ring must have valid Vietnamese translation');
+
+    const honeyEntry = cefrDict.lookup('honey');
+    assert.ok(honeyEntry, 'honey must exist in cefrDict');
+
+    const sueEntry = cefrDict.lookup('sue');
+    assert.ok(sueEntry, 'sue must exist in cefrDict');
+
+    console.log('   ✓ Expanded dictionary verified: production, race, ring, honey, sue all have accurate Vietnamese meanings.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');

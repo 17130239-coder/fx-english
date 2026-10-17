@@ -414,6 +414,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.analysis = ANALYZER.analyzeSubtitles(this.cues);
       this.updateStats();
       this.renderVocabularyGrid();
+      this.translateMissingWords();
       if (!skipSaveHistory) {
         this.saveCurrentToHistory();
       }
@@ -578,6 +579,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         return;
       }
 
+      let hasMissingDefinitions = false;
       words.forEach((item) => {
         const card = document.createElement('div');
         card.className = 'fx-word-card';
@@ -590,6 +592,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const timeHtml = item.contexts?.[0]?.start
           ? `<span class="fx-context-time">⏱ ${this.escape(item.contexts[0].start)}</span>`
           : '';
+
+        const trans = (item.vietnamese || item.translation || '').trim();
+        if (!trans || trans === 'Đang cập nhật') {
+          hasMissingDefinitions = true;
+        }
 
         card.innerHTML = `
           <div class="fx-word-card-top">
@@ -607,7 +614,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             <button class="fx-btn-audio" title="Phát âm">🔊</button>
           </div>
 
-          <p class="fx-trans-text">${this.escape(item.vietnamese || 'Đang cập nhật')}</p>
+          <p class="fx-trans-text" data-word="${this.escape(item.word)}">${this.escape(trans || 'Đang tra nghĩa...')}</p>
 
           ${contextHtml ? `
             <div class="fx-context-snippet">
@@ -626,6 +633,107 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         };
 
         this.cardsGrid.appendChild(card);
+      });
+
+      if (hasMissingDefinitions) {
+        this.translateMissingWords();
+      }
+    },
+
+    translateMissingWords() {
+      if (!this.analysis) return;
+
+      const allWords = this.analysis.allWords || [];
+      const wordsToTranslate = [];
+      const seen = new Set();
+      const cefr = (typeof APP_CEFR_DICT !== 'undefined') ? APP_CEFR_DICT : null;
+      let updatedLocally = false;
+
+      // 1. First pass: Check offline dictionary (rapid 0ms resolution)
+      allWords.forEach((item) => {
+        const trans = (item.vietnamese || item.translation || '').trim();
+        if (!trans || trans === 'Đang cập nhật') {
+          const w = (item.word || '').trim().toLowerCase();
+          if (cefr) {
+            const entry = cefr.lookup(w) || cefr.lookup(item.lemma || '');
+            if (entry && entry.vi) {
+              item.vietnamese = entry.vi;
+              item.translation = entry.vi;
+              if (entry.ipa && !item.ipa) item.ipa = entry.ipa;
+              if (entry.cefr) item.cefr = entry.cefr;
+              updatedLocally = true;
+
+              const cardTrans = this.cardsGrid.querySelector(`.fx-trans-text[data-word="${item.word}"]`);
+              if (cardTrans) {
+                cardTrans.textContent = entry.vi;
+              }
+              return;
+            }
+          }
+          if (w && !seen.has(w)) {
+            seen.add(w);
+            wordsToTranslate.push(w);
+          }
+        }
+      });
+
+      // Synchronize offline dictionary updates to categorized lists
+      if (updatedLocally) {
+        ['noun', 'verb', 'adjective', 'adverb'].forEach((cat) => {
+          if (this.analysis.categories?.[cat]?.words) {
+            this.analysis.categories[cat].words.forEach((item) => {
+              const match = allWords.find(x => x.word.toLowerCase() === item.word.toLowerCase());
+              if (match && match.vietnamese && match.vietnamese !== 'Đang cập nhật') {
+                item.vietnamese = match.vietnamese;
+                item.translation = match.vietnamese;
+                if (match.ipa && !item.ipa) item.ipa = match.ipa;
+              }
+            });
+          }
+        });
+      }
+
+      if (wordsToTranslate.length === 0) {
+        if (updatedLocally) this.saveCurrentToHistory();
+        return;
+      }
+
+      // 2. Second pass: Batch translate remaining missing words via background worker (Google Translate API)
+      chrome.runtime.sendMessage({ action: 'translate_words', words: wordsToTranslate }, (res) => {
+        if (!res || !res.success || !res.translations) return;
+
+        let hasNewTrans = false;
+        allWords.forEach((item) => {
+          const w = (item.word || '').trim().toLowerCase();
+          const translated = res.translations[w];
+          if (translated) {
+            item.vietnamese = translated;
+            item.translation = translated;
+            hasNewTrans = true;
+
+            const cardTrans = this.cardsGrid.querySelector(`.fx-trans-text[data-word="${item.word}"]`);
+            if (cardTrans) {
+              cardTrans.textContent = translated;
+            }
+          }
+        });
+
+        ['noun', 'verb', 'adjective', 'adverb'].forEach((cat) => {
+          if (this.analysis.categories?.[cat]?.words) {
+            this.analysis.categories[cat].words.forEach((item) => {
+              const w = (item.word || '').trim().toLowerCase();
+              if (res.translations[w]) {
+                item.vietnamese = res.translations[w];
+                item.translation = res.translations[w];
+                hasNewTrans = true;
+              }
+            });
+          }
+        });
+
+        if (hasNewTrans || updatedLocally) {
+          this.saveCurrentToHistory();
+        }
       });
     },
 
@@ -1193,6 +1301,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.analysis = item.analysis;
         this.updateStats();
         this.renderVocabularyGrid();
+        this.translateMissingWords();
       } else if (this.cues.length > 0 && ANALYZER) {
         this.runAnalysis(true);
       }
