@@ -6,85 +6,69 @@
   <title>FX English</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="fx-popup-container">
-    <!-- Header -->
+    <!-- Minimal Tesla Header -->
     <header class="fx-header">
       <div class="fx-brand">
-        <div class="fx-logo-icon">⚡</div>
-        <div class="fx-brand-text">
-          <h1>FX English</h1>
-          <span class="fx-brand-sub">Subtitle & Vocab Studio</span>
-        </div>
+        <span class="fx-brand-title">FX English</span>
       </div>
-      <span class="fx-version-badge">v1.0.0</span>
+      <button id="fx-btn-open-studio" class="fx-btn-icon-header" title="Mở FX Studio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 17L17 7"/>
+          <path d="M7 7h10v10"/>
+        </svg>
+      </button>
     </header>
 
     <!-- Main Content Area -->
     <main class="fx-main">
       <!-- Media Active State (YouTube / Netflix) -->
       <section id="fx-media-card" class="fx-card fx-media-card" style="display:none;">
-        <div class="fx-card-header">
-          <span id="fx-platform-badge" class="fx-badge fx-badge-yt">YouTube</span>
-          <span id="fx-track-status" class="fx-track-status">Đang tìm phụ đề...</span>
+        <div class="fx-card-meta-row">
+          <div class="fx-platform-wrap">
+            <span class="fx-platform-dot"></span>
+            <span id="fx-platform-badge" class="fx-platform-tag">NETFLIX</span>
+          </div>
+          <span id="fx-track-status" class="fx-track-status">EN</span>
         </div>
 
-        <h3 id="fx-media-title" class="fx-media-title">Đang tải thông tin video...</h3>
+        <h2 id="fx-media-title" class="fx-media-title">Đang tải thông tin video...</h2>
 
         <div class="fx-card-actions">
-          <button id="fx-btn-quick-vocab" class="fx-btn fx-btn-primary">
-            <span>⚡ Tách từ vựng (4 loại từ)</span>
+          <button id="fx-btn-quick-vocab" class="fx-btn-tesla-primary">
+            <span>Tách từ vựng</span>
           </button>
         </div>
 
         <div class="fx-download-bar">
-          <span class="fx-dl-label">Tải phụ đề:</span>
-          <div class="fx-dl-buttons">
-            <button id="fx-btn-dl-srt" class="fx-btn fx-btn-dl" title="Tải file SRT">.SRT</button>
-            <button id="fx-btn-dl-vtt" class="fx-btn fx-btn-dl" title="Tải file WebVTT">.VTT</button>
-            <button id="fx-btn-dl-txt" class="fx-btn fx-btn-dl" title="Tải transcript TXT">.TXT</button>
+          <span class="fx-dl-label">Tải xuống</span>
+          <div class="fx-dl-group">
+            <button id="fx-btn-dl-srt" class="fx-btn-text-dl" title="Tải file SRT">SRT</button>
+            <span class="fx-dl-divider">|</span>
+            <button id="fx-btn-dl-vtt" class="fx-btn-text-dl" title="Tải file WebVTT">VTT</button>
+            <span class="fx-dl-divider">|</span>
+            <button id="fx-btn-dl-txt" class="fx-btn-text-dl" title="Tải transcript TXT">TXT</button>
           </div>
         </div>
       </section>
 
-      <!-- Media Inactive / Standalone State -->
+      <!-- Media Inactive / Idle State -->
       <section id="fx-idle-card" class="fx-card fx-idle-card">
-        <div class="fx-idle-icon">🎬</div>
-        <h3 class="fx-idle-title">Học tiếng Anh qua phim</h3>
+        <div class="fx-idle-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </div>
+        <h3 class="fx-idle-title">Không phát hiện video</h3>
         <p class="fx-idle-desc">
-          Mở một bộ phim trên <b>Netflix</b> hoặc video trên <b>YouTube</b> để tự động tải phụ đề và bóc tách từ vựng theo 4 loại từ.
+          Mở một video trên YouTube hoặc bộ phim trên Netflix có phụ đề để tự động trích xuất từ vựng.
         </p>
       </section>
-
-      <!-- Open Studio CTA -->
-      <div class="fx-studio-cta">
-        <button id="fx-btn-open-studio" class="fx-btn fx-btn-studio">
-          <span class="fx-btn-icon">🚀</span>
-          <span>Mở FX Vocabulary Studio</span>
-          <span class="fx-arrow">↗</span>
-        </button>
-      </div>
     </main>
-
-    <!-- Footer Features -->
-    <footer class="fx-footer">
-      <div class="fx-tags">
-        <span class="fx-tag">📘 Danh từ</span>
-        <span class="fx-tag">📙 Động từ</span>
-        <span class="fx-tag">📗 Tính từ</span>
-        <span class="fx-tag">📕 Trạng từ</span>
-      </div>
-      <div class="fx-sub-tags">
-        <span>Offline CEFR A1-C2</span>
-        <span>•</span>
-        <span>3D Flashcards</span>
-        <span>•</span>
-        <span>Xuất Anki</span>
-      </div>
-    </footer>
   </div>
 
   <script src="../lib/subtitleParser.js"></script>

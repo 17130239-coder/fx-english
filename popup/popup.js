@@ -102,20 +102,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     mediaCard.style.display = 'flex';
 
     const isYT = info.platform === 'youtube';
-    platformBadge.textContent = isYT ? 'YouTube' : 'Netflix';
-    platformBadge.className = `fx-badge ${isYT ? 'fx-badge-yt' : 'fx-badge-nf'}`;
+    platformBadge.textContent = isYT ? 'YOUTUBE' : 'NETFLIX';
+    const dot = mediaCard.querySelector('.fx-platform-dot');
+    if (dot) {
+      dot.className = isYT ? 'fx-platform-dot yt' : 'fx-platform-dot';
+    }
 
     mediaTitle.textContent = info.title || (isYT ? 'YouTube Video' : 'Netflix Movie');
 
+    trackStatus.className = 'fx-track-status';
+    trackStatus.style.color = '';
     if (info.selectedTrack && info.selectedTrack.label) {
-      trackStatus.textContent = `✓ ${info.selectedTrack.label}`;
-      trackStatus.style.color = '#34d399';
+      trackStatus.textContent = (info.selectedTrack.label || 'EN').toUpperCase();
+      trackStatus.classList.add('active');
     } else if (info.hasTracks) {
-      trackStatus.textContent = '✓ Có phụ đề';
-      trackStatus.style.color = '#34d399';
+      trackStatus.textContent = 'CC SẴN SÀNG';
+      trackStatus.classList.add('active');
     } else {
-      trackStatus.textContent = 'Chưa bật CC';
-      trackStatus.style.color = '#f59e0b';
+      trackStatus.textContent = 'CHƯA BẬT CC';
     }
 
     // Quick Vocab: open Studio directly with extracted subtitles & 4 POS analysis
@@ -123,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!activeTabId) return;
 
       const originalHtml = btnQuickVocab.innerHTML;
-      btnQuickVocab.innerHTML = '<span>⏳ Đang lấy phụ đề & mở Studio...</span>';
+      btnQuickVocab.innerHTML = '<span>Đang lấy phụ đề...</span>';
       btnQuickVocab.disabled = true;
 
       const openStudioWithCues = (cues, title, url) => {

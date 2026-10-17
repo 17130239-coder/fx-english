@@ -276,7 +276,7 @@
 
     loadFromMediaTab(tabId) {
       this.btnLoadDetected.disabled = true;
-      this.btnLoadDetected.innerHTML = '<span>⏳ Đang tải & phân tích phụ đề...</span>';
+      this.btnLoadDetected.innerHTML = '<span>Đang tải...</span>';
 
       const mediaTab = this.detectedMediaTab || {};
       const url = mediaTab.url || '';
@@ -284,7 +284,7 @@
 
       const onSubtitlesLoaded = (cues, title, videoUrl) => {
         this.btnLoadDetected.disabled = false;
-        this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+        this.btnLoadDetected.innerHTML = '<span>Phân tích</span>';
         if (Array.isArray(cues) && cues.length > 0) {
           let resolvedTitle = title || mediaTab.title || '';
           const finalUrl = videoUrl || url || '';
@@ -299,7 +299,7 @@
                   if (nfRes && nfRes.success && nfRes.title && nfRes.title.toLowerCase() !== 'netflix') {
                     this.movieTitle = nfRes.title;
                     if (this.bannerTitleEl) {
-                      this.bannerTitleEl.innerHTML = `<a href="${this.escape(finalUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(nfRes.title)} <span class="fx-banner-arrow">↗</span></a>`;
+                      this.bannerTitleEl.innerHTML = `<a href="${this.escape(finalUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(nfRes.title)}</a>`;
                     }
                     this.saveCurrentToHistory();
                   }
@@ -314,7 +314,7 @@
                     if (ytRes && ytRes.success && ytRes.title && ytRes.title.toLowerCase() !== 'youtube') {
                       this.movieTitle = ytRes.title;
                       if (this.bannerTitleEl) {
-                        this.bannerTitleEl.innerHTML = `<a href="${this.escape(finalUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(ytRes.title)} <span class="fx-banner-arrow">↗</span></a>`;
+                        this.bannerTitleEl.innerHTML = `<a href="${this.escape(finalUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" title="Mở link video/phim trên tab mới">${this.escape(ytRes.title)}</a>`;
                       }
                       this.saveCurrentToHistory();
                     }
@@ -367,7 +367,7 @@
             setTimeout(() => {
               chrome.tabs.sendMessage(tabId, { action: 'get_subtitles' }, (retryRes) => {
                 this.btnLoadDetected.disabled = false;
-                this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+                this.btnLoadDetected.innerHTML = '<span>Phân tích</span>';
                 if (!chrome.runtime.lastError && retryRes && retryRes.success && Array.isArray(retryRes.cues) && retryRes.cues.length > 0) {
                   onLoaded(retryRes.cues, retryRes.title, retryRes.url);
                 } else {
@@ -378,14 +378,14 @@
             }, 400);
           }).catch(() => {
             this.btnLoadDetected.disabled = false;
-            this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
-            alert('Không thể kết nối với tab video. Hãy tải lại (F5) tab video đó rồi bấm Phân tích ngay.');
+            this.btnLoadDetected.innerHTML = '<span>Phân tích</span>';
+            alert('Không thể kết nối với tab video. Hãy tải lại (F5) tab video đó rồi bấm Phân tích.');
           });
           return;
         }
 
         this.btnLoadDetected.disabled = false;
-        this.btnLoadDetected.innerHTML = '<span>⚡ Phân tích ngay</span>';
+        this.btnLoadDetected.innerHTML = '<span>Phân tích</span>';
         alert(res?.error || chrome.runtime.lastError?.message || 'Không thể tải phụ đề từ tab phim. Hãy đảm bảo video đã bật CC.');
       });
     },
@@ -691,7 +691,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         if (this.activePosFilter === 'sentences') {
           emptyMsg = 'Không tìm thấy câu giao tiếp nào khớp với bộ lọc.';
         } else if (this.activePosFilter === 'starred') {
-          emptyMsg = 'Bạn chưa lưu từ hoặc câu nào vào danh sách Yêu thích (⭐). Nhấn biểu tượng ☆ trên thẻ để lưu lại.';
+          emptyMsg = 'Bạn chưa lưu từ hoặc câu nào vào danh sách đã lưu. Nhấn biểu tượng ngôi sao trên thẻ để lưu lại.';
         }
         this.cardsGrid.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: #71717a;">
@@ -712,37 +712,55 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           let phraseHtml = this.escape(item.sentence);
           if (item.highlightPhrase) {
             const escapedHl = this.escapeRegExp(item.highlightPhrase);
-            phraseHtml = phraseHtml.replace(new RegExp(`(${escapedHl})`, 'gi'), '<mark class="fx-sent-highlight">$1</mark>');
+            phraseHtml = phraseHtml.replace(new RegExp(`(${escapedHl})`, 'gi'), '<span class="fx-quote-highlight">$1</span>');
           }
 
           const videoUrl = item.videoUrl || this.movieUrl || '';
           const timeHtml = item.startTime
-            ? `<span class="fx-sent-time fx-jump-link" data-sec="${item.startSec || 0}" data-url="${this.escape(videoUrl)}" title="Nhấp để nhảy đến phân cảnh phim">⏱ ${this.escape(item.startTime)} ↗</span>`
+            ? `<span class="fx-card-time fx-jump-link" data-sec="${item.startSec || 0}" data-url="${this.escape(videoUrl)}" title="Nhảy đến phân cảnh phim">${this.escape(item.startTime)}</span>`
             : '';
+
+          const cleanTag = (item.tag || 'Giao tiếp').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
 
           card.innerHTML = `
             <div class="fx-sent-top">
-              <div class="fx-sent-tags-wrap">
-                <span class="fx-sent-tag">${this.escape(item.tag || '💡 Giao tiếp')}</span>
+              <div class="fx-sent-meta-left">
+                <span class="fx-sent-tag">${this.escape(cleanTag)}</span>
                 ${timeHtml}
               </div>
               <div class="fx-sent-actions">
-                <button class="fx-btn-icon-sm fx-btn-star ${isSentStarred ? 'active' : ''}" title="${isSentStarred ? 'Bỏ lưu yêu thích' : 'Lưu câu yêu thích'}">${isSentStarred ? '⭐' : '☆'}</button>
-                <button class="fx-btn-icon-sm fx-btn-speak" title="Nghe phát âm toàn câu">🔊</button>
-                <button class="fx-btn-icon-sm fx-btn-copy" title="Sao chép câu">📋</button>
+                <button type="button" class="fx-btn-icon-raw fx-btn-star ${isSentStarred ? 'active' : ''}" title="${isSentStarred ? 'Bỏ lưu' : 'Lưu câu'}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="${isSentStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+                <button type="button" class="fx-btn-icon-raw fx-btn-speak" title="Phát âm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  </svg>
+                </button>
+                <button type="button" class="fx-btn-icon-raw fx-btn-copy" title="Sao chép">
+                  <svg class="fx-icon-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <svg class="fx-icon-copied" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </button>
               </div>
             </div>
 
             <div class="fx-sent-body">
-              "${phraseHtml}"
+              <p class="fx-sent-quote">"${phraseHtml}"</p>
+              <p class="fx-sent-trans">${this.escape(item.vietnamese || '')}</p>
             </div>
 
-            <p class="fx-sent-trans">${this.escape(item.vietnamese || '')}</p>
-
-            <div class="fx-sent-footer">
-              ${item.highlightPhrase ? `<span class="fx-sent-core-phrase">✨ Cụm từ cốt lõi: <b>${this.escape(item.highlightPhrase)}</b></span>` : ''}
-              ${item.usageNote ? `<span class="fx-sent-note">💡 ${this.escape(item.usageNote)}</span>` : ''}
-            </div>
+            ${(item.highlightPhrase || item.usageNote) ? `
+              <div class="fx-sent-footer">
+                ${item.highlightPhrase ? `<span class="fx-sent-core">Cốt lõi: <b>${this.escape(item.highlightPhrase)}</b></span>` : ''}
+                ${item.usageNote ? `<span class="fx-sent-note">${this.escape(item.usageNote.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim())}</span>` : ''}
+              </div>
+            ` : ''}
           `;
 
           card.querySelector('.fx-btn-star').onclick = (e) => {
@@ -756,11 +774,19 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           };
 
           const copyBtn = card.querySelector('.fx-btn-copy');
+          const iconCopy = copyBtn.querySelector('.fx-icon-copy');
+          const iconCopied = copyBtn.querySelector('.fx-icon-copied');
           copyBtn.onclick = (e) => {
             e.stopPropagation();
             navigator.clipboard.writeText(item.sentence).then(() => {
-              copyBtn.textContent = '✓';
-              setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
+              if (iconCopy && iconCopied) {
+                iconCopy.style.display = 'none';
+                iconCopied.style.display = 'inline-block';
+                setTimeout(() => {
+                  iconCopy.style.display = 'inline-block';
+                  iconCopied.style.display = 'none';
+                }, 1500);
+              }
             }).catch(() => {});
           };
 
@@ -776,7 +802,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           return;
         }
 
-        // Standard Vocabulary Word Card
+        // Standard Vocabulary Word Card (Tesla 3-line format)
         const card = document.createElement('div');
         const isStarred = this.isStarred(item.word);
         const isMastered = this.isMastered(item.word);
@@ -799,63 +825,65 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const contextHtml = this.highlightWordInContext(contextText, item.word);
 
         const lemmaHtml = (item.lemma && item.lemma !== item.word)
-          ? `<span class="fx-lemma-chip" title="Dạng từ gốc">Gốc: <b>${this.escape(item.lemma)}</b></span>`
+          ? `<span class="fx-card-lemma" title="Dạng từ gốc">(${this.escape(item.lemma)})</span>`
           : '';
 
         const startSec = matchedContext?.startSec || 0;
         const startTimeStr = matchedContext?.startTime || matchedContext?.start || '';
         const videoUrl = item.videoUrl || this.movieUrl || '';
         const timeHtml = startTimeStr
-          ? `<span class="fx-context-time fx-jump-link" data-sec="${startSec}" data-url="${this.escape(videoUrl)}" title="Nhấp để nhảy đến phân cảnh phim">⏱ ${this.escape(startTimeStr)} ↗</span>`
+          ? `<span class="fx-card-time fx-jump-link" data-sec="${startSec}" data-url="${this.escape(videoUrl)}" title="Nhảy đến phân cảnh phim">${this.escape(startTimeStr)}</span>`
           : '';
-
-        // Multi-POS distribution badge
-        let multiPosHtml = '';
-        if (item.hasMultiPos && Array.isArray(item.posDistribution) && item.posDistribution.length > 1) {
-          const shortDist = item.posDistribution
-            .map(p => `${p.pos === 'verb' ? 'V' : p.pos === 'noun' ? 'N' : p.pos === 'adjective' ? 'Adj' : 'Adv'}: ${p.percent}%`)
-            .join(' • ');
-          const fullDist = item.posDistribution
-            .map(p => `${p.posLabelVi} (${p.count} lần, ${p.percent}%)`)
-            .join(', ');
-          multiPosHtml = `<span class="fx-pos-alt-badge" title="Tần suất loại từ trong phim: ${this.escape(fullDist)}">${this.escape(shortDist)}</span>`;
-        }
 
         const trans = (item.vietnamese || item.translation || '').trim();
         if (!trans || trans === 'Đang cập nhật') {
           hasMissingDefinitions = true;
         }
 
+        const specsParts = [posLabel];
+        if (item.cefr) specsParts.push(item.cefr);
+        specsParts.push(`${item.frequency}x`);
+        const specsText = specsParts.join(' · ');
+
         card.innerHTML = `
-          <div class="fx-word-card-top">
-            <div class="fx-word-card-left">
-              <span class="fx-word-head">${this.escape(item.word)}</span>
-              <span class="fx-pos-badge ${currentPos}">${posLabel}</span>
-              ${item.cefr ? `<span class="fx-cefr-badge">${item.cefr}</span>` : ''}
+          <!-- Dòng 1: Từ vựng (18px, trắng đậm) + Thông tin phụ xám: Động từ · C1 · 1x + Nút Star/Check -->
+          <div class="fx-card-line-1">
+            <div class="fx-card-word-wrap">
+              <span class="fx-card-word">${this.escape(item.word)}</span>
               ${lemmaHtml}
-              ${multiPosHtml}
             </div>
-            <div class="fx-card-top-actions">
-              <span class="fx-freq-pill">${item.frequency}x</span>
-              <button class="fx-btn-card-action fx-btn-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Bỏ lưu yêu thích' : 'Lưu từ yêu thích (⭐)'}" data-word="${this.escape(item.word)}">${isStarred ? '⭐' : '☆'}</button>
-              <button class="fx-btn-card-action fx-btn-check ${isMastered ? 'active' : ''}" title="${isMastered ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc (✅)'}" data-word="${this.escape(item.word)}">${isMastered ? '✅' : '✓'}</button>
+            <div class="fx-card-meta-actions">
+              <span class="fx-card-specs">${specsText}</span>
+              <button type="button" class="fx-btn-icon-raw fx-btn-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Bỏ lưu yêu thích' : 'Lưu từ yêu thích'}" data-word="${this.escape(item.word)}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="${isStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </button>
+              <button type="button" class="fx-btn-icon-raw fx-btn-check ${isMastered ? 'active' : ''}" title="${isMastered ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc'}" data-word="${this.escape(item.word)}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${isMastered ? '#10B981' : 'currentColor'}" stroke-width="${isMastered ? '2' : '1.5'}" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div class="fx-word-sub">
-            <span class="fx-ipa-text">${item.ipa ? item.ipa : ''}</span>
-            <button class="fx-btn-audio" title="Phát âm">🔊</button>
+          <!-- Dòng 2: Phiên âm IPA + icon loa mảnh (bỏ viền xám) + Nghĩa tiếng Việt rõ ràng -->
+          <div class="fx-card-line-2">
+            ${item.ipa ? `<span class="fx-card-ipa">${this.escape(item.ipa)}</span>` : ''}
+            <button type="button" class="fx-btn-icon-raw fx-btn-audio" title="Phát âm">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+            </button>
+            <span class="fx-card-dot-sep">·</span>
+            <span class="fx-card-trans" data-word="${this.escape(item.word)}">${this.escape(trans || 'Đang tra nghĩa...')}</span>
           </div>
 
-          <p class="fx-trans-text" data-word="${this.escape(item.word)}">${this.escape(trans || 'Đang tra nghĩa...')}</p>
-
+          <!-- Dòng 3: Ngữ cảnh trực tiếp trong ngoặc kép (#8E8E93, từ khóa trắng gạch chân mảnh) -->
           ${contextHtml ? `
-            <div class="fx-context-snippet">
-              <div class="fx-context-top-row">
-                <span class="fx-context-label">Ngữ cảnh phim:</span>
-                ${timeHtml}
-              </div>
-              <p class="fx-context-quote">"${contextHtml}"</p>
+            <div class="fx-card-line-3">
+              <p class="fx-card-quote">"${contextHtml}"</p>
+              ${timeHtml}
             </div>
           ` : ''}
         `;
@@ -914,7 +942,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
               if (entry.cefr) item.cefr = entry.cefr;
               updatedLocally = true;
 
-              const cardTrans = this.cardsGrid.querySelector(`.fx-trans-text[data-word="${item.word}"]`);
+              const cardTrans = this.cardsGrid.querySelector(`.fx-card-trans[data-word="${item.word}"], .fx-trans-text[data-word="${item.word}"]`);
               if (cardTrans) {
                 cardTrans.textContent = entry.vi;
               }
@@ -962,7 +990,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             item.translation = translated;
             hasNewTrans = true;
 
-            const cardTrans = this.cardsGrid.querySelector(`.fx-trans-text[data-word="${item.word}"]`);
+            const cardTrans = this.cardsGrid.querySelector(`.fx-card-trans[data-word="${item.word}"], .fx-trans-text[data-word="${item.word}"]`);
             if (cardTrans) {
               cardTrans.textContent = translated;
             }
@@ -992,7 +1020,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (!sentence) return '';
       const safe = this.escape(sentence);
       const reg = new RegExp(`\\b(${this.escapeRegExp(word)})\\b`, 'gi');
-      return safe.replace(reg, '<b>$1</b>');
+      return safe.replace(reg, '<b class="fx-quote-highlight">$1</b>');
     },
 
     getPosLabel(pos) {
@@ -1069,20 +1097,21 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       // Sentence Flashcard
       if (item.isCommunicative || item.sentence) {
-        this.fcPos.textContent = (item.tag || 'CÂU GIAO TIẾP').toUpperCase();
+        const cleanTag = (item.tag || 'GIAO TIẾP').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+        this.fcPos.textContent = cleanTag.toUpperCase();
         this.fcPos.className = 'fx-pos-badge sentences';
         this.fcCefr.textContent = 'GIAO TIẾP';
         this.fcFreq.textContent = `${item.frequency || 1}x xuất hiện`;
         this.fcWord.textContent = item.sentence;
-        this.fcIpa.textContent = item.startTime ? `⏱ ${item.startTime}` : '';
+        this.fcIpa.textContent = item.startTime || '';
 
         this.fcContext.innerHTML = item.highlightPhrase
-          ? `Cụm từ cốt lõi: <b style="color:#fbbf24;">${this.escape(item.highlightPhrase)}</b>`
+          ? `Cụm từ cốt lõi: <b>${this.escape(item.highlightPhrase)}</b>`
           : '';
 
         this.fcTrans.textContent = item.vietnamese || 'Đang cập nhật nghĩa';
         this.fcLemma.innerHTML = item.usageNote
-          ? `💡 Ứng dụng: <b>${this.escape(item.usageNote)}</b>`
+          ? `Ứng dụng: <b>${this.escape(item.usageNote.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim())}</b>`
           : '';
         this.fcBackSentence.innerHTML = `"${this.escape(item.sentence)}"`;
 
@@ -1094,11 +1123,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const isMastered = this.isMastered(currentKey);
         if (this.fcStar) {
           this.fcStar.classList.toggle('active', isStarred);
-          this.fcStar.textContent = isStarred ? '⭐ Đã lưu' : '☆ Lưu';
+          this.fcStar.textContent = isStarred ? 'Đã lưu' : 'Lưu';
         }
         if (this.fcMaster) {
           this.fcMaster.classList.toggle('active', isMastered);
-          this.fcMaster.textContent = isMastered ? '✅ Đã thuộc' : '✓ Thuộc';
+          this.fcMaster.textContent = isMastered ? 'Đã thuộc' : 'Thuộc';
         }
         return;
       }
@@ -1127,11 +1156,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const isMastered = this.isMastered(currentKey);
       if (this.fcStar) {
         this.fcStar.classList.toggle('active', isStarred);
-        this.fcStar.textContent = isStarred ? '⭐ Đã lưu' : '☆ Lưu';
+        this.fcStar.textContent = isStarred ? 'Đã lưu' : 'Lưu';
       }
       if (this.fcMaster) {
         this.fcMaster.classList.toggle('active', isMastered);
-        this.fcMaster.textContent = isMastered ? '✅ Đã thuộc' : '✓ Thuộc';
+        this.fcMaster.textContent = isMastered ? 'Đã thuộc' : 'Thuộc';
       }
     },
 
@@ -1481,18 +1510,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (this.btnClearHistory) this.btnClearHistory.style.display = 'inline-flex';
 
       this.historyGridEl.innerHTML = history.map((item) => {
-        let badgeClass = 'badge-file';
-        let badgeIcon = '📁';
-        let platformName = 'File / Mẫu';
+        let platformClass = 'platform-file';
+        let platformLabel = 'FILE';
 
         if (item.platform === 'youtube') {
-          badgeClass = 'badge-yt';
-          badgeIcon = '▶';
-          platformName = 'YouTube';
+          platformClass = 'platform-yt';
+          platformLabel = 'YOUTUBE';
         } else if (item.platform === 'netflix') {
-          badgeClass = 'badge-nf';
-          badgeIcon = '🍿';
-          platformName = 'Netflix';
+          platformClass = 'platform-nf';
+          platformLabel = 'NETFLIX';
         }
 
         let resourceUrl = (item.url && item.url.trim()) ? item.url.trim() : '';
@@ -1505,39 +1531,43 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
 
         const isCurrentActive = this.movieTitle === item.title;
+        const sCount = item.sentencesCount || item.analysis?.categories?.sentences?.count || 0;
 
-        // Interactive badge: If resourceUrl exists, render as <a> link; otherwise <span>
-        const badgeHtml = resourceUrl
-          ? `<a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-history-badge ${badgeClass} fx-badge-link" title="Nhấp để mở ${platformName} gốc (tab mới)" onclick="event.stopPropagation();">
-              <span class="fx-badge-icon">${badgeIcon}</span>
-              <span class="fx-badge-text">${platformName}</span>
-              <span class="fx-badge-arrow">↗</span>
+        const platformBadgeHtml = resourceUrl
+          ? `<a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-hist-platform-link" title="Mở ${platformLabel} (tab mới)" onclick="event.stopPropagation();">
+              <span class="fx-platform-dot ${platformClass}"></span>
+              <span class="fx-platform-tag">${platformLabel}</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="fx-arrow-icon">
+                <line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>
+              </svg>
             </a>`
-          : `<span class="fx-history-badge ${badgeClass}">
-              <span class="fx-badge-icon">${badgeIcon}</span>
-              <span class="fx-badge-text">${platformName}</span>
+          : `<span class="fx-hist-platform-wrap">
+              <span class="fx-platform-dot ${platformClass}"></span>
+              <span class="fx-platform-tag">${platformLabel}</span>
             </span>`;
 
         return `
           <div class="fx-history-card ${isCurrentActive ? 'active' : ''}" data-id="${item.id}">
             <div class="fx-history-card-header">
-              ${badgeHtml}
-              <span class="fx-history-date">${item.dateFormatted || ''}</span>
-              <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này khỏi máy & Neon">×</button>
+              ${platformBadgeHtml}
+              <div class="fx-history-header-right">
+                <span class="fx-history-date">${item.dateFormatted || ''}</span>
+                <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
             </div>
+
             <div class="fx-history-title-row-card">
               <h4 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h4>
-              ${resourceUrl ? `<a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-title-link-icon" title="Mở link gốc (tab mới)" onclick="event.stopPropagation();">↗</a>` : ''}
             </div>
-            <div class="fx-history-stats">
-              <span class="fx-hist-pill hist-total">${item.wordCount} từ</span>
-              <span class="fx-hist-pill hist-noun">N: ${item.nounCount}</span>
-              <span class="fx-hist-pill hist-verb">V: ${item.verbCount}</span>
-              <span class="fx-hist-pill hist-adj">Adj: ${item.adjCount}</span>
-              <span class="fx-hist-pill hist-adv">Adv: ${item.advCount}</span>
-              ${(item.sentencesCount || item.analysis?.categories?.sentences?.count) ? `<span class="fx-hist-pill" style="color:#fbbf24;background:rgba(245,158,11,0.15);">💬 ${item.sentencesCount || item.analysis?.categories?.sentences?.count} câu</span>` : ''}
+
+            <div class="fx-history-stats-block">
+              <div class="fx-hist-total-num">${(item.wordCount || 0).toLocaleString()} từ</div>
+              <div class="fx-hist-specs">${item.nounCount || 0} N  ·  ${item.verbCount || 0} V  ·  ${item.adjCount || 0} Adj  ·  ${item.advCount || 0} Adv${sCount ? `  ·  ${sCount} câu` : ''}</div>
             </div>
-            <button type="button" class="fx-btn-open-hist" data-id="${item.id}">Xem từ loại & câu hay 👉</button>
           </div>
         `;
       }).join('');
@@ -1548,9 +1578,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const item = history.find((h) => h.id === id);
         if (!item) return;
 
-        // Card click -> open item (ignore clicks on delete, badge link, or title external link)
+        // Card click -> open item (ignore clicks on delete or external link)
         card.addEventListener('click', (e) => {
-          if (e.target.closest('.fx-btn-del-hist') || e.target.closest('.fx-badge-link') || e.target.closest('.fx-title-link-icon')) return;
+          if (e.target.closest('.fx-btn-del-hist') || e.target.closest('.fx-hist-platform-link')) return;
           this.openHistoryItem(item);
         });
 

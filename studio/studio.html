@@ -3,142 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FX English - Vocabulary Studio & 3D Flashcards</title>
+  <title>FX English - Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="studio.css">
   <link rel="icon" type="image/png" href="../icons/icon32.png">
 </head>
 <body>
   <div class="fx-studio-layout">
-    <!-- Navigation / Header -->
+    <!-- Minimal Tesla Navigation / Header -->
     <header class="fx-navbar">
       <div class="fx-nav-brand">
-        <span class="fx-nav-logo">⚡</span>
-        <div>
-          <h1 class="fx-nav-title">FX English Studio</h1>
-          <p class="fx-nav-sub">Phân tích từ vựng phụ đề phim • 4 Loại từ: Danh, Động, Tính, Trạng</p>
-        </div>
+        <h1 class="fx-nav-title">FX English</h1>
       </div>
 
       <div class="fx-nav-actions">
-        <button id="fx-btn-toggle-flashcards" class="fx-nav-btn fx-nav-btn-highlight" style="display:none;">
-          <span>🎴 Chế độ 3D Flashcards</span>
+        <button id="fx-btn-toggle-flashcards" class="fx-btn-tesla-primary-sm" style="display:none;" title="Ôn tập từ vựng bằng Flashcards">
+          <span>Flashcards</span>
         </button>
-        <button id="fx-btn-export-anki-top" class="fx-nav-btn" style="display:none;">
-          <span>🗂️ Xuất Anki</span>
+        <button id="fx-btn-export-anki-top" class="fx-btn-tesla-ghost-sm" style="display:none;" title="Xuất bộ thẻ Anki (.txt)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Anki</span>
         </button>
-        <button id="fx-btn-export-csv-top" class="fx-nav-btn" style="display:none;">
-          <span>📊 Xuất CSV</span>
+        <button id="fx-btn-export-csv-top" class="fx-btn-tesla-ghost-sm" style="display:none;" title="Xuất file CSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>CSV</span>
         </button>
+        <!-- Minimal Neon Status Dot (6px circle) -->
+        <span id="fx-neon-sync-pill" class="fx-neon-dot-wrap" title="Neon DB: Đã kết nối">
+          <span class="fx-neon-dot"></span>
+          <span id="fx-neon-sync-text" style="display:none;">Neon DB</span>
+        </span>
       </div>
     </header>
 
     <!-- Main Container -->
     <div class="fx-container">
-      <!-- Media Detection Banner -->
+      <!-- Media Detection Banner (Minimal Flat Status Bar) -->
       <section id="fx-detected-banner" class="fx-banner" style="display:none;">
         <div class="fx-banner-content">
-          <span class="fx-banner-icon">🎬</span>
+          <span class="fx-banner-pulse-dot"></span>
           <div class="fx-banner-text">
-            <span class="fx-banner-label">Phát hiện phụ đề từ tab đang mở:</span>
-            <strong id="fx-banner-title" class="fx-banner-title">Movie Title</strong>
+            <span class="fx-banner-label">Phát hiện video:</span>
+            <span id="fx-banner-title" class="fx-banner-title">Movie Title</span>
           </div>
         </div>
-        <button id="fx-btn-load-detected" class="fx-btn fx-btn-primary">
-          <span>⚡ Phân tích ngay</span>
+        <button id="fx-btn-load-detected" class="fx-btn-tesla-primary-sm">
+          <span>Phân tích</span>
         </button>
       </section>
 
       <!-- Scanned History Section -->
       <section id="fx-history-section" class="fx-history-section">
         <div class="fx-section-header">
-          <div class="fx-history-title-group">
-            <div class="fx-history-title-row">
-              <h2>📂 Phim & Video Đã Quét (<span id="fx-history-count">0</span>)</h2>
-              <span id="fx-neon-sync-pill" class="fx-neon-pill" title="Đồng bộ cơ sở dữ liệu đám mây Neon PostgreSQL">
-                <span class="fx-neon-dot"></span>
-                <span id="fx-neon-sync-text">Neon DB</span>
-              </span>
-            </div>
-            <span class="fx-section-hint">Nhấp vào một bộ phim để mở lại danh sách 4 loại từ tương ứng (Đã lưu & đồng bộ Neon)</span>
+          <div class="fx-history-title-row">
+            <h2>Phim & Video Đã Quét (<span id="fx-history-count">0</span>)</h2>
           </div>
-          <button type="button" id="fx-btn-clear-history" class="fx-btn fx-btn-ghost-sm" style="display:none;">🗑️ Xóa lịch sử</button>
+          <button type="button" id="fx-btn-clear-history" class="fx-btn-ghost-text" style="display:none;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+            </svg>
+            <span>Xóa tất cả</span>
+          </button>
         </div>
         <div id="fx-history-empty" class="fx-history-empty">
-          <p>Chưa có lịch sử phim nào. Khi bạn quét từ vựng trên YouTube/Netflix hoặc tải file phụ đề, các bộ phim sẽ tự động lưu vào đây để bạn học lại bất cứ lúc nào!</p>
+          <p>Chưa có lịch sử. Khi bạn quét từ vựng trên YouTube/Netflix hoặc nhập phụ đề, các bộ phim sẽ tự động lưu vào đây.</p>
         </div>
         <div id="fx-history-grid" class="fx-history-grid" style="display:none;"></div>
       </section>
 
-      <!-- Input / Subtitle Source Section -->
+      <!-- Unified Subtitle Input Section -->
       <section class="fx-input-section" id="fx-input-section">
         <div class="fx-section-header">
-          <h2>📥 Nguồn Phụ Đề</h2>
-          <span class="fx-section-hint">Hỗ trợ định dạng SRT, WebVTT, hoặc dán nội dung phụ đề</span>
+          <h2>Nguồn Phụ Đề</h2>
         </div>
 
-        <div class="fx-input-grid">
-          <!-- Dropzone -->
-          <div class="fx-dropzone" id="fx-dropzone">
-            <input type="file" id="fx-file-input" accept=".srt,.vtt,.txt,.xml" style="display:none;">
-            <div class="fx-dropzone-content">
-              <span class="fx-drop-icon">📁</span>
-              <p class="fx-drop-main">Kéo thả file phụ đề vào đây</p>
-              <p class="fx-drop-sub">hoặc <button type="button" id="fx-btn-browse" class="fx-link-btn">chọn file từ máy</button> (.srt, .vtt, .txt)</p>
-            </div>
-          </div>
+        <!-- Unified Input Box (Dropzone + Paste + File Attachment) -->
+        <div class="fx-unified-input-box" id="fx-dropzone">
+          <input type="file" id="fx-file-input" accept=".srt,.vtt,.txt,.xml" style="display:none;">
+          <textarea id="fx-raw-subtitles" placeholder="Dán nội dung phụ đề tiếng Anh vào đây, hoặc kéo thả file .srt, .vtt, .txt trực tiếp vào khung này..."></textarea>
 
-          <!-- Textarea -->
-          <div class="fx-textarea-box">
-            <textarea id="fx-raw-subtitles" placeholder="Hoặc dán trực tiếp nội dung phụ đề tiếng Anh vào đây...
-Ví dụ:
-1
-00:00:01,200 --> 00:00:04,500
-Learning English through movies is fascinating and effective."></textarea>
-            <div class="fx-textarea-actions">
-              <button id="fx-btn-paste-sample" class="fx-btn fx-btn-ghost">Dán mẫu thử</button>
-              <button id="fx-btn-clear" class="fx-btn fx-btn-ghost">Xóa trắng</button>
-              <button id="fx-btn-analyze" class="fx-btn fx-btn-accent">⚡ Bắt đầu phân tích</button>
+          <div class="fx-unified-toolbar">
+            <div class="fx-unified-left">
+              <button type="button" id="fx-btn-browse" class="fx-btn-attach" title="Chọn file từ máy (.srt, .vtt, .txt)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+                <span>Đính kèm file</span>
+              </button>
+            </div>
+            <div class="fx-unified-right">
+              <button type="button" id="fx-btn-paste-sample" class="fx-btn-text">Dán mẫu thử</button>
+              <button type="button" id="fx-btn-clear" class="fx-btn-text">Xóa</button>
+              <button type="button" id="fx-btn-analyze" class="fx-btn-tesla-primary">Bắt đầu phân tích</button>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Stats Summary Strip -->
+      <!-- Stats Summary Strip (Tesla Dashboard KPIs) -->
       <section id="fx-stats-section" class="fx-stats-strip" style="display:none;">
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-total">0</span>
-          <span class="fx-stat-name">Tổng từ</span>
+          <span class="fx-stat-name">Tổng từ vựng</span>
         </div>
-        <div class="fx-stat-card stat-noun">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-noun">0</span>
-          <span class="fx-stat-name">📘 Danh từ (Nouns)</span>
+          <span class="fx-stat-name">Danh từ (Nouns)</span>
         </div>
-        <div class="fx-stat-card stat-verb">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-verb">0</span>
-          <span class="fx-stat-name">📙 Động từ (Verbs)</span>
+          <span class="fx-stat-name">Động từ (Verbs)</span>
         </div>
-        <div class="fx-stat-card stat-adj">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-adj">0</span>
-          <span class="fx-stat-name">📗 Tính từ (Adjectives)</span>
+          <span class="fx-stat-name">Tính từ (Adjectives)</span>
         </div>
-        <div class="fx-stat-card stat-adv">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-adv">0</span>
-          <span class="fx-stat-name">📕 Trạng từ (Adverbs)</span>
+          <span class="fx-stat-name">Trạng từ (Adverbs)</span>
         </div>
-        <div class="fx-stat-card stat-sentences">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-sentences">0</span>
-          <span class="fx-stat-name">💬 Câu giao tiếp hay</span>
+          <span class="fx-stat-name">Câu giao tiếp</span>
         </div>
-        <div class="fx-stat-card stat-starred" id="fx-stat-card-starred">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-starred">0</span>
-          <span class="fx-stat-name">⭐ Từ đã lưu</span>
+          <span class="fx-stat-name">Từ đã lưu (Starred)</span>
         </div>
-        <div class="fx-stat-card stat-mastered" id="fx-stat-card-mastered">
+        <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-mastered">0</span>
-          <span class="fx-stat-name">✅ Đã thuộc</span>
+          <span class="fx-stat-name">Đã thuộc (Mastered)</span>
         </div>
       </section>
 
@@ -148,27 +148,29 @@ Learning English through movies is fascinating and effective."></textarea>
         <div class="fx-filters-bar">
           <div class="fx-tabs-group">
             <button class="fx-tab-btn active" data-pos="all">Tất cả (<span id="fx-tab-count-all">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="noun">📘 Danh từ (<span id="fx-tab-count-noun">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="verb">📙 Động từ (<span id="fx-tab-count-verb">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="adjective">📗 Tính từ (<span id="fx-tab-count-adj">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="adverb">📕 Trạng từ (<span id="fx-tab-count-adv">0</span>)</button>
-            <button class="fx-tab-btn tab-sentences" data-pos="sentences">💬 Câu hay giao tiếp (<span id="fx-tab-count-sentences">0</span>)</button>
-            <button class="fx-tab-btn tab-starred" data-pos="starred">⭐ Đã lưu (<span id="fx-tab-count-starred">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="noun">Danh từ (<span id="fx-tab-count-noun">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="verb">Động từ (<span id="fx-tab-count-verb">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="adjective">Tính từ (<span id="fx-tab-count-adj">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="adverb">Trạng từ (<span id="fx-tab-count-adv">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="sentences">Câu giao tiếp (<span id="fx-tab-count-sentences">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="starred">Đã lưu (<span id="fx-tab-count-starred">0</span>)</button>
           </div>
 
           <div class="fx-filter-controls">
             <div class="fx-search-wrap">
-              <span class="fx-search-icon">🔍</span>
-              <input type="text" id="fx-filter-search" placeholder="Tìm kiếm từ hoặc nghĩa tiếng Việt...">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="fx-search-icon">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="fx-filter-search" placeholder="Tìm kiếm từ hoặc nghĩa...">
             </div>
 
             <label class="fx-toggle-wrap" title="Ẩn các từ bạn đã đánh dấu thuộc để tập trung vào từ mới">
               <input type="checkbox" id="fx-toggle-hide-mastered" class="fx-toggle-checkbox">
-              <span class="fx-toggle-label">Ẩn từ đã thuộc (✅)</span>
+              <span class="fx-toggle-label">Ẩn từ đã thuộc</span>
             </label>
 
             <select id="fx-filter-cefr" class="fx-select-sm">
-              <option value="all">Mọi trình độ CEFR</option>
+              <option value="all">Mọi cấp độ CEFR</option>
               <option value="A1">A1 - Cơ bản</option>
               <option value="A2">A2 - Sơ cấp</option>
               <option value="B1">B1 - Trung cấp</option>
@@ -191,14 +193,14 @@ Learning English through movies is fascinating and effective."></textarea>
       </section>
     </div>
 
-    <!-- 3D Flashcards Modal -->
+    <!-- 3D Flashcards Modal (Tesla Carbon Style) -->
     <div id="fx-flashcard-modal" class="fx-flashcard-modal" style="display:none;">
       <div class="fx-fc-backdrop" id="fx-fc-backdrop"></div>
       <div class="fx-fc-container">
         <div class="fx-fc-topbar">
           <span class="fx-fc-counter" id="fx-fc-counter">1 / 100</span>
-          <span class="fx-fc-tip">Nhấn <b>Space</b> để lật thẻ • <b>← / →</b> để chuyển thẻ</span>
-          <button class="fx-fc-close" id="fx-fc-close">&times;</button>
+          <span class="fx-fc-tip">Space: lật thẻ · ← / →: chuyển thẻ</span>
+          <button class="fx-fc-close" id="fx-fc-close" title="Đóng">&times;</button>
         </div>
 
         <!-- 3D Card Scene -->
@@ -206,45 +208,48 @@ Learning English through movies is fascinating and effective."></textarea>
           <div class="fx-fc-card" id="fx-fc-card">
             <!-- Card Front -->
             <div class="fx-fc-face fx-fc-front">
-              <div class="fx-fc-badges">
-                <span id="fx-fc-pos" class="fx-pos-badge noun">NOUN</span>
-                <span id="fx-fc-cefr" class="fx-cefr-badge">B2</span>
-                <span id="fx-fc-freq" class="fx-freq-badge">3x</span>
+              <div class="fx-fc-meta-specs">
+                <span id="fx-fc-pos" class="fx-fc-spec-tag">NOUN</span>
+                <span class="fx-fc-dot-sep">·</span>
+                <span id="fx-fc-cefr" class="fx-fc-spec-tag">B2</span>
+                <span class="fx-fc-dot-sep">·</span>
+                <span id="fx-fc-freq" class="fx-fc-spec-tag">3x</span>
               </div>
               <h2 id="fx-fc-word" class="fx-fc-word">fascinating</h2>
               <div class="fx-fc-phonetic-row">
                 <span id="fx-fc-ipa" class="fx-fc-ipa">/ˈfæsɪneɪtɪŋ/</span>
-                <button id="fx-fc-speak" class="fx-fc-audio-btn" title="Phát âm">🔊</button>
+                <button id="fx-fc-speak" class="fx-btn-icon-raw" title="Phát âm">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                  </svg>
+                </button>
               </div>
               <div class="fx-fc-context-box">
-                <p id="fx-fc-context" class="fx-fc-context">
-                  Learning English through movies is <b>fascinating</b> and effective.
-                </p>
+                <p id="fx-fc-context" class="fx-fc-context"></p>
               </div>
-              <span class="fx-fc-flip-hint">Nhấp chuột hoặc phím Space để xem nghĩa ↻</span>
+              <span class="fx-fc-flip-hint">Nhấp chuột hoặc phím Space để xem nghĩa</span>
             </div>
 
             <!-- Card Back -->
             <div class="fx-fc-face fx-fc-back">
               <span class="fx-fc-back-label">Nghĩa tiếng Việt</span>
               <h3 id="fx-fc-trans" class="fx-fc-trans">hấp dẫn, lôi cuốn</h3>
-              <p id="fx-fc-lemma" class="fx-fc-lemma">Từ gốc: <b>fascinate</b> (động từ)</p>
+              <p id="fx-fc-lemma" class="fx-fc-lemma"></p>
               <div class="fx-fc-back-context">
-                <span class="fx-fc-back-sub">Ngữ cảnh gốc:</span>
                 <p id="fx-fc-back-sentence" class="fx-fc-context"></p>
               </div>
-              <span class="fx-fc-flip-hint">Nhấp chuột hoặc phím Space để quay lại ↺</span>
+              <span class="fx-fc-flip-hint">Nhấp chuột hoặc phím Space để quay lại</span>
             </div>
           </div>
         </div>
 
         <!-- Card Controls -->
         <div class="fx-fc-controls">
-          <button id="fx-fc-prev" class="fx-fc-btn">← Trước</button>
-          <button id="fx-fc-star" class="fx-fc-btn fx-fc-btn-star" title="Lưu từ yêu thích">⭐ Lưu</button>
-          <button id="fx-fc-flip" class="fx-fc-btn fx-fc-btn-flip">↻ Lật thẻ (Space)</button>
-          <button id="fx-fc-master" class="fx-fc-btn fx-fc-btn-master" title="Đánh dấu đã thuộc">✅ Đã thuộc</button>
-          <button id="fx-fc-next" class="fx-fc-btn">Sau →</button>
+          <button id="fx-fc-prev" class="fx-btn-tesla-ghost">Trước</button>
+          <button id="fx-fc-star" class="fx-btn-tesla-ghost" title="Lưu từ yêu thích">Lưu</button>
+          <button id="fx-fc-flip" class="fx-btn-tesla-primary">Lật thẻ</button>
+          <button id="fx-fc-master" class="fx-btn-tesla-ghost" title="Đánh dấu đã thuộc">Đã thuộc</button>
+          <button id="fx-fc-next" class="fx-btn-tesla-ghost">Sau</button>
         </div>
       </div>
     </div>

@@ -1,27 +1,31 @@
 /* ==========================================================================
    FX English — Popup Styling
-   Phoenix & Evondev UI System
+   Tesla OS / Minimalist Hardware-grade Design System
    ========================================================================== */
 
 :root {
-  --fx-font-main: 'Plus Jakarta Sans', 'Nunito Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --fx-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --fx-font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --fx-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --fx-bg-canvas: #090a10;
-  --fx-bg-surface: #11131e;
-  --fx-bg-surface-elevated: #161928;
-  --fx-bg-surface-hover: #1d2136;
+  /* Tesla Palette: Matte Deep Black & Dark Carbon */
+  --fx-bg-canvas: #0A0A0B;
+  --fx-bg-surface: #141416;
+  --fx-bg-surface-hover: #1C1C1F;
+  --fx-bg-input: #101012;
 
-  --fx-border-subtle: rgba(255, 255, 255, 0.08);
-  --fx-border-medium: rgba(255, 255, 255, 0.14);
+  --fx-border: rgba(255, 255, 255, 0.06);
+  --fx-border-hover: rgba(255, 255, 255, 0.12);
 
-  --fx-gradient-primary: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #06b6d4 100%);
-  --fx-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #0891b2 100%);
-  --fx-shadow-primary: 0 4px 16px rgba(99, 102, 241, 0.35);
+  --fx-text-primary: #F4F4F6;
+  --fx-text-secondary: #A1A1AA;
+  --fx-text-muted: #71717A;
 
-  --fx-text-primary: #f8fafc;
-  --fx-text-secondary: #94a3b8;
-  --fx-text-muted: #64748b;
+  --fx-accent-netflix: #E50914;
+  --fx-accent-youtube: #EF4444;
+  --fx-accent-active: #10B981;
+
+  --fx-radius: 8px;
+  --fx-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -31,326 +35,256 @@
 }
 
 body {
-  width: 370px;
-  min-height: 410px;
+  width: 360px;
+  min-height: 240px;
   background-color: var(--fx-bg-canvas);
-  background-image:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 55%),
-    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 55%);
   color: var(--fx-text-primary);
   font-family: var(--fx-font-main);
   user-select: none;
   overflow: hidden;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   -webkit-font-smoothing: antialiased;
 }
 
 .fx-popup-container {
   display: flex;
   flex-direction: column;
-  padding: 16px 18px;
-  gap: 15px;
+  padding: 16px;
+  gap: 14px;
 }
 
 /* --------------------------------------------------------------------------
-   Header (Glassmorphic Phoenix Header)
+   Header: Minimalist Tesla Header
    -------------------------------------------------------------------------- */
 .fx-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--fx-border-subtle);
-  padding-bottom: 12px;
+  padding-bottom: 2px;
 }
 
-.fx-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.fx-logo-icon {
-  width: 34px;
-  height: 34px;
-  background: var(--fx-gradient-primary);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  color: #ffffff;
-  box-shadow: 0 0 16px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.fx-brand:hover .fx-logo-icon {
-  transform: rotate(10deg) scale(1.06);
-}
-
-.fx-brand-text h1 {
-  font-size: 15.5px;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.15;
+.fx-brand-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fx-text-primary);
   letter-spacing: -0.02em;
 }
 
-.fx-brand-sub {
-  font-size: 11px;
-  color: var(--fx-text-muted);
-  font-weight: 500;
+.fx-btn-icon-header {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border);
+  color: var(--fx-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--fx-transition);
+  outline: none;
 }
 
-.fx-version-badge {
-  font-size: 10px;
-  font-weight: 700;
-  color: #a5b4fc;
-  background: rgba(99, 102, 241, 0.14);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  padding: 2.5px 7px;
-  border-radius: 9999px;
-  letter-spacing: 0.04em;
+.fx-btn-icon-header:hover {
+  background: var(--fx-bg-surface-hover);
+  border-color: var(--fx-border-hover);
+  color: var(--fx-text-primary);
 }
 
 /* --------------------------------------------------------------------------
-   Main Content Cards
+   Main Cards
    -------------------------------------------------------------------------- */
 .fx-main {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .fx-card {
   background: var(--fx-bg-surface);
-  border: 1px solid var(--fx-border-subtle);
-  border-radius: 14px;
+  border: 1px solid var(--fx-border);
+  border-radius: var(--fx-radius);
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  gap: 14px;
+  transition: background var(--fx-transition);
 }
 
-.fx-card-header {
+/* Meta status row */
+.fx-card-meta-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.fx-badge {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 3px 9px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.fx-platform-wrap {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
 }
 
-.fx-badge-yt {
-  background: rgba(239, 68, 68, 0.16);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+.fx-platform-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fx-accent-netflix);
+  flex-shrink: 0;
 }
 
-.fx-badge-nf {
-  background: rgba(229, 9, 20, 0.16);
-  color: #ff5252;
-  border: 1px solid rgba(229, 9, 20, 0.35);
+.fx-platform-dot.yt {
+  background: var(--fx-accent-youtube);
+}
+
+.fx-platform-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fx-text-secondary);
 }
 
 .fx-track-status {
-  font-size: 11.5px;
-  color: #34d399;
+  font-size: 11px;
   font-weight: 600;
+  color: var(--fx-text-muted);
+  letter-spacing: 0.02em;
 }
 
+.fx-track-status.active {
+  color: var(--fx-accent-active);
+}
+
+/* Media title */
 .fx-media-title {
-  font-size: 13.5px;
+  font-size: 18px;
   font-weight: 700;
-  color: #ffffff;
-  line-height: 1.4;
+  color: var(--fx-text-primary);
+  line-height: 1.3;
+  letter-spacing: -0.025em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  letter-spacing: -0.01em;
 }
 
-/* --------------------------------------------------------------------------
-   Buttons & Interactive Elements
-   -------------------------------------------------------------------------- */
-.fx-btn {
-  height: 38px;
-  border-radius: 10px;
-  font-size: 12.5px;
-  font-weight: 700;
+/* Primary CTA Button (Tesla White Block) */
+.fx-btn-tesla-primary {
+  width: 100%;
+  height: 40px;
+  border-radius: var(--fx-radius);
+  background: #FFFFFF;
+  color: #000000;
+  border: none;
+  outline: none;
+  font-family: var(--fx-font-main);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
-  outline: none;
-  font-family: var(--fx-font-main);
+  transition: all var(--fx-transition);
 }
 
-.fx-btn:active {
-  transform: scale(0.97);
+.fx-btn-tesla-primary:hover:not(:disabled) {
+  background: #E4E4E7;
 }
 
-.fx-btn-primary {
-  width: 100%;
-  background: var(--fx-gradient-primary);
-  color: #ffffff;
-  box-shadow: var(--fx-shadow-primary);
+.fx-btn-tesla-primary:active:not(:disabled) {
+  background: #D4D4D8;
 }
 
-.fx-btn-primary:hover {
-  background: var(--fx-gradient-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.55);
+.fx-btn-tesla-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
+/* Subtitle Download Row */
 .fx-download-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-top: 10px;
-  border-top: 1px solid var(--fx-border-subtle);
+  border-top: 1px solid var(--fx-border);
 }
 
 .fx-dl-label {
   font-size: 11.5px;
+  font-weight: 500;
   color: var(--fx-text-muted);
-  font-weight: 600;
 }
 
-.fx-dl-buttons {
-  display: flex;
-  gap: 6px;
-}
-
-.fx-btn-dl {
-  height: 28px;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 7px;
-  background: var(--fx-bg-surface-elevated);
-  border: 1px solid var(--fx-border-medium);
-  color: var(--fx-text-secondary);
-}
-
-.fx-btn-dl:hover {
-  background: var(--fx-bg-surface-hover);
-  color: #ffffff;
-  border-color: rgba(99, 102, 241, 0.4);
-  transform: translateY(-1px);
-}
-
-/* Idle State Card */
-.fx-idle-card {
+.fx-dl-group {
+  display: inline-flex;
   align-items: center;
-  text-align: center;
-  padding: 24px 18px;
   gap: 8px;
 }
 
-.fx-idle-icon {
-  font-size: 34px;
-  filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
+.fx-btn-text-dl {
+  background: none;
+  border: none;
+  color: var(--fx-text-muted);
+  font-family: var(--fx-font-main);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color var(--fx-transition);
+}
+
+.fx-btn-text-dl:hover {
+  color: var(--fx-text-primary);
+}
+
+.fx-btn-text-dl:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fx-dl-divider {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   Idle State Card
+   -------------------------------------------------------------------------- */
+.fx-idle-card {
+  align-items: center;
+  text-align: center;
+  padding: 28px 18px;
+  gap: 10px;
+}
+
+.fx-idle-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1C1C1F;
+  border: 1px solid var(--fx-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fx-text-muted);
+  margin-bottom: 2px;
 }
 
 .fx-idle-title {
   font-size: 14.5px;
-  font-weight: 800;
-  color: #ffffff;
+  font-weight: 600;
+  color: var(--fx-text-primary);
+  letter-spacing: -0.015em;
 }
 
 .fx-idle-desc {
   font-size: 12px;
-  color: var(--fx-text-secondary);
-  line-height: 1.5;
-}
-
-.fx-idle-desc b {
-  color: #38bdf8;
-}
-
-/* Studio CTA */
-.fx-studio-cta {
-  width: 100%;
-}
-
-.fx-btn-studio {
-  width: 100%;
-  height: 42px;
-  background: var(--fx-bg-surface-elevated);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #c7d2fe;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-}
-
-.fx-btn-studio:hover {
-  background: rgba(99, 102, 241, 0.16);
-  border-color: #6366f1;
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3);
-}
-
-.fx-arrow {
-  font-size: 15px;
-  transition: transform 0.2s ease;
-}
-
-.fx-btn-studio:hover .fx-arrow {
-  transform: translate(2px, -2px);
-}
-
-/* --------------------------------------------------------------------------
-   Footer & Tags
-   -------------------------------------------------------------------------- */
-.fx-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-top: 1px solid var(--fx-border-subtle);
-  padding-top: 12px;
-}
-
-.fx-tags {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.fx-tag {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--fx-text-secondary);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 3px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--fx-border-subtle);
-}
-
-.fx-sub-tags {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 10.5px;
   color: var(--fx-text-muted);
-  font-weight: 500;
+  line-height: 1.5;
+  max-width: 280px;
 }
+
