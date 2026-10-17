@@ -11,7 +11,8 @@ importScripts(
   '../lib/subtitleParser.js',
   '../lib/cefrDict.js',
   '../lib/vocabAnalyzer.js',
-  '../lib/neonClient.js'
+  '../lib/neonClient.js',
+  '../lib/aiClient.js'
 );
 
 const MessageDispatcher = {
@@ -23,7 +24,26 @@ const MessageDispatcher = {
       return { success: true };
     },
 
-    // NLP Subtitle Vocabulary Analysis (POS: Nouns, Verbs, Adjectives, Adverbs)
+    // 9Router AI Linguistic Analysis (Contextual Translation, Lemmatization, Idioms)
+    ['analyze_with_ai']: async (message) => {
+      const ai = (typeof APP_AI_CLIENT !== 'undefined') ? APP_AI_CLIENT : null;
+      if (!ai) throw new Error('AIClient is not available in background worker');
+
+      const cues = message.cues || [];
+      const analysis = await ai.analyzeSubtitles(cues);
+      return { success: true, analysis };
+    },
+
+    // Test 9Router API Connection
+    ['test_ai_connection']: async (message) => {
+      const ai = (typeof APP_AI_CLIENT !== 'undefined') ? APP_AI_CLIENT : null;
+      if (!ai) throw new Error('AIClient is not available in background worker');
+
+      const result = await ai.testConnection(message.config);
+      return result;
+    },
+
+    // NLP Subtitle Vocabulary Analysis (Offline fallback)
     ['analyze_subtitles']: async (message) => {
       const analyzer = (typeof APP_VOCAB_ANALYZER !== 'undefined') ? APP_VOCAB_ANALYZER : null;
       if (!analyzer) throw new Error('VocabAnalyzer is not available in background worker');

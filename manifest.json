@@ -33,7 +33,9 @@
     "*://*.youtube.com/*",
     "*://*.googlevideo.com/*",
     "https://*.neon.tech/*",
-    "https://translate.googleapis.com/*"
+    "https://translate.googleapis.com/*",
+    "https://api.9router.com/*",
+    "https://*.9router.com/*"
   ],
   "background": {
     "service_worker": "background/background.js"

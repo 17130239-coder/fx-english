@@ -7,6 +7,7 @@
 (function () {
   const PARSER = (typeof APP_SUBTITLE_PARSER !== 'undefined') ? APP_SUBTITLE_PARSER : null;
   const ANALYZER = (typeof APP_VOCAB_ANALYZER !== 'undefined') ? APP_VOCAB_ANALYZER : null;
+  const AI_CLIENT = (typeof APP_AI_CLIENT !== 'undefined') ? APP_AI_CLIENT : null;
 
   const Studio = {
     cues: [],
@@ -113,6 +114,19 @@
       this.fcFlip = document.getElementById('fx-fc-flip');
       this.fcStar = document.getElementById('fx-fc-star');
       this.fcMaster = document.getElementById('fx-fc-master');
+
+      // 9Router AI Settings Modal
+      this.btnOpenSettings = document.getElementById('fx-btn-open-settings');
+      this.settingsModal = document.getElementById('fx-settings-modal');
+      this.settingsBackdrop = document.getElementById('fx-settings-backdrop');
+      this.settingsClose = document.getElementById('fx-settings-close');
+      this.btnCancelSettings = document.getElementById('fx-btn-cancel-settings');
+      this.btnSaveSettings = document.getElementById('fx-btn-save-settings');
+      this.inputAiBaseUrl = document.getElementById('fx-ai-base-url');
+      this.inputAiApiKey = document.getElementById('fx-ai-api-key');
+      this.inputAiModel = document.getElementById('fx-ai-model');
+      this.toggleKeyVis = document.getElementById('fx-toggle-key-vis');
+      this.settingsStatus = document.getElementById('fx-settings-status');
     },
 
     bindEvents() {
@@ -220,8 +234,34 @@
         this.btnClearHistory.addEventListener('click', () => this.clearAllHistory());
       }
 
-      // Keyboard navigation for Flashcards
+      // Settings Modal Events
+      if (this.btnOpenSettings) {
+        this.btnOpenSettings.addEventListener('click', () => this.openSettingsModal());
+      }
+      if (this.settingsClose) {
+        this.settingsClose.addEventListener('click', () => this.closeSettingsModal());
+      }
+      if (this.settingsBackdrop) {
+        this.settingsBackdrop.addEventListener('click', () => this.closeSettingsModal());
+      }
+      if (this.btnCancelSettings) {
+        this.btnCancelSettings.addEventListener('click', () => this.closeSettingsModal());
+      }
+      if (this.btnSaveSettings) {
+        this.btnSaveSettings.addEventListener('click', () => this.saveSettings());
+      }
+      if (this.toggleKeyVis && this.inputAiApiKey) {
+        this.toggleKeyVis.addEventListener('click', () => {
+          this.inputAiApiKey.type = (this.inputAiApiKey.type === 'password') ? 'text' : 'password';
+        });
+      }
+
+      // Keyboard navigation for Flashcards & Modals
       window.addEventListener('keydown', (e) => {
+        if (this.settingsModal && this.settingsModal.style.display === 'flex' && e.code === 'Escape') {
+          this.closeSettingsModal();
+          return;
+        }
         if (this.fcModal.style.display !== 'flex') return;
         if (e.code === 'Space') {
           e.preventDefault();
@@ -428,7 +468,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.analyzeFromTextarea();
     },
 
-    analyzeFromTextarea() {
+    async analyzeFromTextarea() {
       const text = this.rawTextarea.value.trim();
       if (!text) {
         alert('Vui lòng nhập hoặc dán nội dung phụ đề trước.');
@@ -441,19 +481,72 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.cues = [{ text, start: 0, end: 10 }];
       }
 
-      this.runAnalysis();
+      await this.runAnalysis();
     },
 
-    runAnalysis(skipSaveHistory = false) {
-      if (!ANALYZER) {
-        alert('Không tìm thấy VocabAnalyzer.');
+    async runAnalysis(skipSaveHistory = false) {
+      if (!this.cues || this.cues.length === 0) {
+        alert('Chưa có dữ liệu phụ đề để phân tích.');
         return;
       }
 
-      this.analysis = ANALYZER.analyzeSubtitles(this.cues);
+      const ai = this.getAiClient();
+      let analysisResult = null;
+
+      // 1. Try 9Router AI Pipeline if configured
+      if (ai && ai.isConfigured()) {
+        const originalBtnHtml = this.btnAnalyze ? this.btnAnalyze.innerHTML : '';
+        if (this.btnAnalyze) {
+          this.btnAnalyze.disabled = true;
+          this.btnAnalyze.textContent = 'Đang phân tích 9Router AI (0%)...';
+        }
+
+        try {
+          analysisResult = await ai.analyzeSubtitles(this.cues, (done, total) => {
+            if (this.btnAnalyze) {
+              const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+              this.btnAnalyze.textContent = `Đang phân tích AI (${pct}%)...`;
+            }
+          });
+        } catch (err) {
+          console.warn('[FX AI] AI analysis warning, falling back to offline NLP:', err);
+          if (err.code === 'NO_API_KEY') {
+            this.openSettingsModal('Vui lòng nhập 9Router API Key để sử dụng AI phân tích.');
+            if (this.btnAnalyze) {
+              this.btnAnalyze.disabled = false;
+              this.btnAnalyze.innerHTML = originalBtnHtml;
+            }
+            return;
+          }
+          alert('Lỗi gọi 9Router AI: ' + (err.message || 'Lỗi mạng') + '\nĐang chuyển sang bộ tách từ ngoại tuyến.');
+        } finally {
+          if (this.btnAnalyze) {
+            this.btnAnalyze.disabled = false;
+            this.btnAnalyze.innerHTML = originalBtnHtml;
+          }
+        }
+      }
+
+      // 2. Fallback to offline Compromise + CEFR analyzer
+      if (!analysisResult) {
+        if (!ai || !ai.isConfigured()) {
+          this.openSettingsModal('Gợi ý: Nhập 9Router API Key để kích hoạt AI phân tích ngữ cảnh phim & gộp từ gốc thông minh.');
+        }
+
+        if (!ANALYZER) {
+          alert('Không tìm thấy VocabAnalyzer.');
+          return;
+        }
+        analysisResult = ANALYZER.analyzeSubtitles(this.cues);
+      }
+
+      this.analysis = analysisResult;
       this.updateStats();
       this.renderVocabularyGrid();
+
+      // Only translate missing if any cards still have missing definitions (for offline fallback)
       this.translateMissingWords();
+
       if (!skipSaveHistory) {
         this.saveCurrentToHistory();
       }
@@ -467,6 +560,83 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       // Scroll to vocab section smoothly
       this.vocabSection.scrollIntoView({ behavior: 'smooth' });
+    },
+
+    // 9Router AI Settings Modal Handlers
+    async openSettingsModal(notice = '') {
+      if (!this.settingsModal) return;
+      const ai = this.getAiClient();
+      const conf = ai ? await ai.getConfig() : { baseUrl: 'https://api.9router.com/v1', apiKey: '', model: 'gemini-3.8-flash' };
+
+      if (this.inputAiBaseUrl) this.inputAiBaseUrl.value = conf.baseUrl || 'https://api.9router.com/v1';
+      if (this.inputAiApiKey) this.inputAiApiKey.value = conf.apiKey || '';
+      if (this.inputAiModel) this.inputAiModel.value = conf.model || 'gemini-3.8-flash';
+
+      if (this.settingsStatus) {
+        if (notice) {
+          this.settingsStatus.className = 'fx-settings-status loading';
+          this.settingsStatus.textContent = notice;
+          this.settingsStatus.style.display = 'block';
+        } else {
+          this.settingsStatus.style.display = 'none';
+        }
+      }
+
+      this.settingsModal.style.display = 'flex';
+    },
+
+    closeSettingsModal() {
+      if (this.settingsModal) {
+        this.settingsModal.style.display = 'none';
+      }
+    },
+
+    async saveSettings() {
+      const ai = this.getAiClient();
+      if (!ai) return;
+
+      const baseUrl = (this.inputAiBaseUrl?.value || '').trim() || 'https://api.9router.com/v1';
+      const apiKey = (this.inputAiApiKey?.value || '').trim();
+      const model = (this.inputAiModel?.value || '').trim() || 'gemini-3.8-flash';
+
+      if (!apiKey) {
+        this.showSettingsStatus('error', 'Vui lòng nhập 9Router API Key.');
+        return;
+      }
+
+      this.showSettingsStatus('loading', 'Đang kiểm tra kết nối với 9router...');
+      if (this.btnSaveSettings) this.btnSaveSettings.disabled = true;
+
+      try {
+        const testRes = await ai.testConnection({ baseUrl, apiKey, model });
+        if (testRes.ok) {
+          await ai.saveConfig({ baseUrl, apiKey, model });
+          this.showSettingsStatus('success', 'Đã kết nối và lưu cấu hình 9router thành công!');
+          setTimeout(() => {
+            this.closeSettingsModal();
+            if (this.btnSaveSettings) this.btnSaveSettings.disabled = false;
+          }, 1000);
+        } else {
+          this.showSettingsStatus('error', testRes.error || 'Kiểm tra kết nối thất bại.');
+          if (this.btnSaveSettings) this.btnSaveSettings.disabled = false;
+        }
+      } catch (err) {
+        this.showSettingsStatus('error', err.message || 'Lỗi kiểm tra kết nối.');
+        if (this.btnSaveSettings) this.btnSaveSettings.disabled = false;
+      }
+    },
+
+    showSettingsStatus(type, msg) {
+      if (!this.settingsStatus) return;
+      this.settingsStatus.className = `fx-settings-status ${type}`;
+      this.settingsStatus.textContent = msg;
+      this.settingsStatus.style.display = 'block';
+    },
+
+    getAiClient() {
+      if (typeof APP_AI_CLIENT !== 'undefined') return APP_AI_CLIENT;
+      if (typeof window !== 'undefined' && window.aiClient) return window.aiClient;
+      return null;
     },
 
     loadWordStates() {

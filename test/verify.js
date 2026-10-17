@@ -542,6 +542,129 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     assert.strictEqual(starredList[0].word, 'race', 'Starred word is "race"');
     console.log('   ✓ Word mastery & bookmark state logic verified.\n');
 
+    // 15. Test 9Router AI Linguistic Engine Client
+    console.log('🤖 15. Testing 9Router AI Linguistic Engine Client (Lemmatization, Deduplication, Highlights)...');
+    const aiClientModule = require('../lib/aiClient.js');
+    assert.ok(aiClientModule, 'aiClient module loaded successfully');
+
+    // 15.1 Verify default configuration
+    const initialConfig = await aiClientModule.getConfig();
+    assert.strictEqual(initialConfig.baseUrl, 'https://api.9router.com/v1', 'Default baseUrl is https://api.9router.com/v1');
+    assert.strictEqual(initialConfig.model, 'gemini-3.8-flash', 'Default model is gemini-3.8-flash');
+
+    // 15.2 Verify saveConfig and isConfigured
+    await aiClientModule.saveConfig({
+      baseUrl: 'https://api.9router.com/v1',
+      apiKey: 'test-key-123456',
+      model: 'gemini-3.8-flash'
+    });
+    assert.strictEqual(aiClientModule.isConfigured(), true, 'isConfigured() returns true after saving valid API key');
+    const updatedConfig = await aiClientModule.getConfig();
+    assert.strictEqual(updatedConfig.apiKey, 'test-key-123456');
+
+    // 15.3 Verify Zero-Token Client Pre-processing (prepareSubtitleChunks)
+    const mockCues = [
+      { startSec: 1.5, startTime: '00:00:01,500', text: 'The <i>honey industry</i> is booming today.' },
+      { startSec: 4.2, startTime: '00:00:04,200', text: 'All modern industries must adapt quickly.' },
+      { startSec: 8.0, startTime: '00:00:08,000', text: 'We need to [UPBEAT MUSIC] incorporate new ideas.' },
+      { startSec: 12.5, startTime: '00:00:12,500', text: 'Incorporating fresh talent will help us hit the ground running.' }
+    ];
+    const chunks = aiClientModule.prepareSubtitleChunks(mockCues, 70);
+    assert.ok(Array.isArray(chunks), 'prepareSubtitleChunks returns array of chunks');
+    assert.strictEqual(chunks.length, 1, '4 short cues produce 1 chunk');
+    assert.ok(chunks[0].words.length > 0, 'Chunk contains candidate words');
+    assert.ok(!chunks[0].words.some(w => w.context.includes('<i>') || w.context.includes('[UPBEAT MUSIC]')), 'HTML tags and music brackets are cleanly stripped');
+
+    // 15.4 Verify AI Result Consolidation, Lemmatization & Deduplication
+    const mockSettledResults = [
+      {
+        chunk: chunks[0],
+        parsed: {
+          vocabulary: [
+            {
+              word: 'industry',
+              originalForm: 'industry',
+              pos: 'N',
+              cefr: 'B2',
+              ipa: '/ˈɪndəstri/',
+              meaningVi: 'ngành công nghiệp',
+              contextSentence: 'The honey industry is booming today.',
+              frequency: 1
+            },
+            {
+              word: 'industry',
+              originalForm: 'industries',
+              pos: 'N',
+              cefr: 'B2',
+              ipa: '/ˈɪndəstri/',
+              meaningVi: 'ngành công nghiệp',
+              contextSentence: 'All modern industries must adapt quickly.',
+              frequency: 1
+            },
+            {
+              word: 'incorporate',
+              originalForm: 'incorporate',
+              pos: 'V',
+              cefr: 'C1',
+              ipa: '/ɪnˈkɔːrpəreɪt/',
+              meaningVi: 'kết hợp',
+              contextSentence: 'We need to incorporate new ideas.',
+              frequency: 1
+            },
+            {
+              word: 'incorporate',
+              originalForm: 'incorporating',
+              pos: 'V',
+              cefr: 'C1',
+              ipa: '/ɪnˈkɔːrpəreɪt/',
+              meaningVi: 'kết hợp',
+              contextSentence: 'Incorporating fresh talent will help us hit the ground running.',
+              frequency: 1
+            }
+          ],
+          highlights: [
+            {
+              phrase: 'hit the ground running',
+              meaningVi: 'bắt đầu suôn sẻ',
+              contextSentence: 'Incorporating fresh talent will help us hit the ground running.',
+              nuance: 'Hành động nhanh chóng và đạt hiệu quả ngay từ giây phút đầu tiên.'
+            }
+          ]
+        }
+      }
+    ];
+
+    const consolidated = aiClientModule.consolidateAIResults(mockSettledResults, mockCues);
+    assert.ok(consolidated, 'consolidateAIResults returns an analysis object');
+    assert.strictEqual(consolidated.totals.uniqueWords, 2, '2 base lemmas (industry and incorporate) after deduplication');
+    assert.strictEqual(consolidated.totals.nounCount, 1, '1 noun (industry)');
+    assert.strictEqual(consolidated.totals.verbCount, 1, '1 verb (incorporate)');
+
+    // Verify 'industry' lemma frequency summed from 1 + 1 = 2
+    const industryItem = consolidated.allWords.find(w => w.word === 'industry');
+    assert.ok(industryItem, 'Lemma "industry" exists in consolidated results');
+    assert.strictEqual(industryItem.frequency, 2, 'Lemma "industry" frequency summed to 2');
+    assert.strictEqual(industryItem.pos, 'noun', 'Mapped "N" to "noun"');
+    assert.strictEqual(industryItem.posLabelVi, 'Danh từ', 'posLabelVi is "Danh từ"');
+    assert.strictEqual(industryItem.cefr, 'B2', 'CEFR is B2');
+    assert.strictEqual(industryItem.ipa, '/ˈɪndəstri/', 'US IPA is preserved');
+    assert.strictEqual(industryItem.vietnamese, 'ngành công nghiệp', 'Contextual translation preserved');
+    assert.strictEqual(industryItem.contexts.length, 2, 'Preserved both context sentences');
+
+    // Verify 'incorporate' lemma frequency summed from 1 + 1 = 2
+    const incorporateItem = consolidated.allWords.find(w => w.word === 'incorporate');
+    assert.ok(incorporateItem, 'Lemma "incorporate" exists in consolidated results');
+    assert.strictEqual(incorporateItem.frequency, 2, 'Lemma "incorporate" frequency summed to 2');
+    assert.strictEqual(incorporateItem.pos, 'verb', 'Mapped "V" to "verb"');
+    assert.strictEqual(incorporateItem.cefr, 'C1', 'CEFR is C1');
+
+    // Verify highlights / communicative sentences
+    assert.strictEqual(consolidated.highlights.length, 1, '1 highlight extracted');
+    assert.strictEqual(consolidated.highlights[0].highlightPhrase, 'hit the ground running');
+    assert.strictEqual(consolidated.highlights[0].vietnamese, 'bắt đầu suôn sẻ');
+    assert.strictEqual(consolidated.categories.sentences.count, 1, 'sentences category count matches highlights');
+    console.log('   ✓ 9Router AI Linguistic Engine Client verified: lemmatization, deduplication, contextual translations, and highlights working perfectly.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');

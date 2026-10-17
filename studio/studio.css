@@ -1144,7 +1144,167 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   12. Responsive Adjustments
+   12. 9Router AI Settings Modal (Tesla Minimalist Hardware Look)
+   -------------------------------------------------------------------------- */
+.fx-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fx-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.fx-modal-container {
+  width: 90%;
+  max-width: 480px;
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 10px;
+  padding: 24px;
+  position: relative;
+  z-index: 1101;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fx-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--fx-border-subtle);
+  padding-bottom: 14px;
+}
+
+.fx-modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fx-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fx-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.fx-modal-subtitle {
+  font-size: 12px;
+  color: var(--fx-text-secondary);
+}
+
+.fx-modal-close {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.fx-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fx-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fx-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fx-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.fx-input {
+  width: 100%;
+  background: var(--fx-bg-canvas);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: var(--fx-text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: var(--fx-transition-fast);
+}
+
+.fx-input:focus {
+  border-color: var(--fx-border-strong);
+  background: #101012;
+}
+
+.fx-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fx-password-wrap .fx-input {
+  padding-right: 36px;
+}
+
+.fx-password-wrap .fx-btn-icon-raw {
+  position: absolute;
+  right: 6px;
+  color: var(--fx-text-secondary);
+}
+
+.fx-help-text {
+  font-size: 11px;
+  color: var(--fx-text-muted);
+  line-height: 1.4;
+}
+
+.fx-settings-status {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fx-settings-status.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10B981;
+}
+
+.fx-settings-status.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #EF4444;
+}
+
+.fx-settings-status.loading {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--fx-border-subtle);
+  color: var(--fx-text-secondary);
+}
+
+.fx-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--fx-border-subtle);
+  padding-top: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   13. Responsive Adjustments
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
   .fx-container {

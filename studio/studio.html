@@ -34,6 +34,14 @@
           </svg>
           <span>CSV</span>
         </button>
+        <!-- 9Router AI Settings Button -->
+        <button id="fx-btn-open-settings" class="fx-btn-tesla-ghost-sm" title="Cài đặt 9Router AI">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>AI</span>
+        </button>
         <!-- Minimal Neon Status Dot (6px circle) -->
         <span id="fx-neon-sync-pill" class="fx-neon-dot-wrap" title="Neon DB: Đã kết nối">
           <span class="fx-neon-dot"></span>
@@ -130,7 +138,7 @@
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-sentences">0</span>
-          <span class="fx-stat-name">Câu giao tiếp</span>
+          <span class="fx-stat-name">Câu hay & Cụm từ</span>
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-starred">0</span>
@@ -152,7 +160,7 @@
             <button class="fx-tab-btn" data-pos="verb">Động từ (<span id="fx-tab-count-verb">0</span>)</button>
             <button class="fx-tab-btn" data-pos="adjective">Tính từ (<span id="fx-tab-count-adj">0</span>)</button>
             <button class="fx-tab-btn" data-pos="adverb">Trạng từ (<span id="fx-tab-count-adv">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="sentences">Câu giao tiếp (<span id="fx-tab-count-sentences">0</span>)</button>
+            <button class="fx-tab-btn" data-pos="sentences">Câu hay (<span id="fx-tab-count-sentences">0</span>)</button>
             <button class="fx-tab-btn" data-pos="starred">Đã lưu (<span id="fx-tab-count-starred">0</span>)</button>
           </div>
 
@@ -253,6 +261,60 @@
         </div>
       </div>
     </div>
+
+    <!-- 9Router AI Settings Modal (Tesla Minimalist Style) -->
+    <div id="fx-settings-modal" class="fx-modal" style="display:none;">
+      <div class="fx-modal-backdrop" id="fx-settings-backdrop"></div>
+      <div class="fx-modal-container">
+        <div class="fx-modal-header">
+          <div class="fx-modal-title-group">
+            <h3 class="fx-modal-title">Cài đặt 9Router AI</h3>
+            <span class="fx-modal-subtitle">Hệ thống phân tích ngữ cảnh, dịch phim & gộp từ gốc</span>
+          </div>
+          <button type="button" class="fx-btn-icon-raw fx-modal-close" id="fx-settings-close" title="Đóng">&times;</button>
+        </div>
+
+        <div class="fx-modal-body">
+          <div class="fx-form-group">
+            <label for="fx-ai-base-url" class="fx-label">Base URL</label>
+            <input type="text" id="fx-ai-base-url" class="fx-input" placeholder="https://api.9router.com/v1" spellcheck="false">
+            <span class="fx-help-text">OpenAI-compatible endpoint (mặc định: https://api.9router.com/v1)</span>
+          </div>
+
+          <div class="fx-form-group">
+            <label for="fx-ai-api-key" class="fx-label">9Router API Key</label>
+            <div class="fx-password-wrap">
+              <input type="password" id="fx-ai-api-key" class="fx-input" placeholder="9r-..." spellcheck="false" autocomplete="off">
+              <button type="button" id="fx-toggle-key-vis" class="fx-btn-icon-raw" title="Hiện/ẩn API Key">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <span class="fx-help-text">API key của bạn được lưu an toàn tại máy cá nhân (Local Storage)</span>
+          </div>
+
+          <div class="fx-form-group">
+            <label for="fx-ai-model" class="fx-label">Model ID</label>
+            <input type="text" id="fx-ai-model" list="fx-model-list" class="fx-input" placeholder="gemini-3.8-flash" spellcheck="false">
+            <datalist id="fx-model-list">
+              <option value="gemini-3.8-flash">gemini-3.8-flash (Mặc định - Siêu nhanh & chính xác)</option>
+              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              <option value="gpt-4o-mini">gpt-4o-mini</option>
+              <option value="claude-3-5-haiku">claude-3-5-haiku</option>
+            </datalist>
+            <span class="fx-help-text">Gợi ý: gemini-3.8-flash, gemini-2.5-flash, gpt-4o-mini, claude-3-5-haiku</span>
+          </div>
+
+          <div id="fx-settings-status" class="fx-settings-status" style="display:none;"></div>
+        </div>
+
+        <div class="fx-modal-footer">
+          <button type="button" id="fx-btn-cancel-settings" class="fx-btn-tesla-ghost">Hủy</button>
+          <button type="button" id="fx-btn-save-settings" class="fx-btn-tesla-primary">Kiểm tra & Lưu</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -261,6 +323,7 @@
   <script src="../lib/cefrDict.js"></script>
   <script src="../lib/vocabAnalyzer.js"></script>
   <script src="../lib/neonClient.js"></script>
+  <script src="../lib/aiClient.js"></script>
   <script src="studio.js"></script>
 </body>
 </html>
