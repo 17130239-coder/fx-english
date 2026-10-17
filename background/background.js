@@ -71,7 +71,7 @@ const MessageDispatcher = {
       try {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (activeTab && activeTab.url) {
-          const isYT = activeTab.url.includes('youtube.com/watch') || activeTab.url.includes('youtube.com/shorts/');
+          const isYT = activeTab.url.includes('youtube.com/watch') || activeTab.url.includes('youtube.com/shorts/') || activeTab.url.includes('youtube.com/live/');
           const isNF = activeTab.url.includes('netflix.com/watch/');
           if (isYT || isNF) {
             return {
@@ -91,6 +91,7 @@ const MessageDispatcher = {
           url: [
             '*://*.youtube.com/watch*',
             '*://*.youtube.com/shorts/*',
+            '*://*.youtube.com/live/*',
             '*://*.netflix.com/watch/*'
           ]
         });
