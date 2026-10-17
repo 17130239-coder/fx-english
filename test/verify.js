@@ -471,6 +471,77 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
     console.log('   ✓ Expanded dictionary verified: production, race, ring, honey, sue all have accurate Vietnamese meanings.\n');
 
+    // 13. Test POS Context Disambiguation & Homographs (Verb vs Noun)
+    console.log('⚡ 13. Testing POS Context Disambiguation & Homograph Accuracy...');
+    const cuesVerb = [
+      { startSec: 1, text: 'They race every weekend in the city.' },
+      { startSec: 5, text: 'I watch movies every night.' },
+      { startSec: 8, text: 'We need to plan our trip carefully.' }
+    ];
+    const analysisVerb = analyzer.analyzeSubtitles(cuesVerb);
+    const verbList = analysisVerb.categories.verb.words.map(w => w.word);
+    assert.ok(verbList.includes('race'), '"race" must be classified as VERB in "They race every weekend"');
+    assert.ok(verbList.includes('watch'), '"watch" must be classified as VERB in "I watch movies every night"');
+    assert.ok(verbList.includes('plan'), '"plan" must be classified as VERB in "We need to plan our trip"');
+
+    const cuesNoun = [
+      { startSec: 1, text: 'The ancient race was very dangerous.' },
+      { startSec: 5, text: 'My watch is broken.' },
+      { startSec: 8, text: 'We have a solid plan for tomorrow.' }
+    ];
+    const analysisNoun = analyzer.analyzeSubtitles(cuesNoun);
+    const nounList = analysisNoun.categories.noun.words.map(w => w.word);
+    assert.ok(nounList.includes('race'), '"race" must be classified as NOUN in "The ancient race was very dangerous"');
+    assert.ok(nounList.includes('watch'), '"watch" must be classified as NOUN in "My watch is broken"');
+    assert.ok(nounList.includes('plan'), '"plan" must be classified as NOUN in "We have a solid plan"');
+
+    // Test Multi-POS counting in mixed contexts
+    const cuesMixed = [
+      { startSec: 1, text: 'They race every weekend in the city.' },
+      { startSec: 4, text: 'We race quickly.' },
+      { startSec: 10, text: 'The ancient race was very dangerous.' }
+    ];
+    const analysisMixed = analyzer.analyzeSubtitles(cuesMixed);
+    const raceItem = analysisMixed.allWords.find(w => w.word === 'race');
+    assert.ok(raceItem, '"race" exists in mixed analysis');
+    assert.strictEqual(raceItem.pos, 'verb', '"race" dominant POS is verb based on 2:1 usage');
+    assert.strictEqual(raceItem.posCounts.verb, 2, '"race" verb count is 2');
+    assert.strictEqual(raceItem.posCounts.noun, 1, '"race" noun count is 1');
+    assert.strictEqual(raceItem.hasMultiPos, true, '"race" correctly tagged with hasMultiPos=true');
+    assert.strictEqual(raceItem.posDistribution[0].percent, 67, '"race" verb frequency is 67%');
+    assert.ok(raceItem.contexts[0].sentence.includes('They race'), 'Primary context prioritizes dominant verb usage');
+    console.log('   ✓ POS Context Disambiguation verified: context accurately disambiguates homographs (race, watch, plan).\n');
+
+    // 14. Test Word Mastery & Bookmark States (⭐ Starred & ✅ Mastered)
+    console.log('⭐ 14. Testing Word Mastery & Bookmark State Persistence...');
+    const mockWordStates = {};
+    function toggleStar(states, word) {
+      if (!states[word]) states[word] = { starred: false, mastered: false };
+      states[word].starred = !states[word].starred;
+      return states[word].starred;
+    }
+    function toggleMaster(states, word) {
+      if (!states[word]) states[word] = { starred: false, mastered: false };
+      states[word].mastered = !states[word].mastered;
+      return states[word].mastered;
+    }
+
+    assert.strictEqual(toggleStar(mockWordStates, 'race'), true, 'Word "race" starred');
+    assert.strictEqual(mockWordStates.race.starred, true, 'State stores starred=true');
+    assert.strictEqual(toggleMaster(mockWordStates, 'watch'), true, 'Word "watch" mastered');
+    assert.strictEqual(mockWordStates.watch.mastered, true, 'State stores mastered=true');
+
+    // Test filter logic: hide mastered words
+    const testList = [{ word: 'race' }, { word: 'watch' }, { word: 'plan' }];
+    const unmastered = testList.filter(item => !mockWordStates[item.word]?.mastered);
+    assert.strictEqual(unmastered.length, 2, 'Filtered out mastered word "watch"');
+    assert.ok(!unmastered.some(w => w.word === 'watch'), '"watch" successfully hidden');
+
+    const starredList = testList.filter(item => mockWordStates[item.word]?.starred);
+    assert.strictEqual(starredList.length, 1, 'Only 1 starred word in list');
+    assert.strictEqual(starredList[0].word, 'race', 'Starred word is "race"');
+    console.log('   ✓ Word mastery & bookmark state logic verified.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');

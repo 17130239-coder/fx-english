@@ -409,6 +409,19 @@
       });
       return true;
     }
+
+    if (msg.action === 'seek_to_time') {
+      const timeSec = Number(msg.timeSec) || 0;
+      const video = document.querySelector('video');
+      if (video) {
+        try {
+          video.currentTime = timeSec;
+          video.play().catch(() => {});
+        } catch (e) {}
+      }
+      sendResponse({ success: true, timeSec });
+      return false;
+    }
   });
 
   YouTubeManager.init();

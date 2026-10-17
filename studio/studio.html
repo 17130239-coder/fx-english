@@ -132,6 +132,14 @@ Learning English through movies is fascinating and effective."></textarea>
           <span class="fx-stat-num" id="fx-stat-sentences">0</span>
           <span class="fx-stat-name">💬 Câu giao tiếp hay</span>
         </div>
+        <div class="fx-stat-card stat-starred" id="fx-stat-card-starred">
+          <span class="fx-stat-num" id="fx-stat-starred">0</span>
+          <span class="fx-stat-name">⭐ Từ đã lưu</span>
+        </div>
+        <div class="fx-stat-card stat-mastered" id="fx-stat-card-mastered">
+          <span class="fx-stat-num" id="fx-stat-mastered">0</span>
+          <span class="fx-stat-name">✅ Đã thuộc</span>
+        </div>
       </section>
 
       <!-- Vocabulary Explorer Section -->
@@ -145,6 +153,7 @@ Learning English through movies is fascinating and effective."></textarea>
             <button class="fx-tab-btn" data-pos="adjective">📗 Tính từ (<span id="fx-tab-count-adj">0</span>)</button>
             <button class="fx-tab-btn" data-pos="adverb">📕 Trạng từ (<span id="fx-tab-count-adv">0</span>)</button>
             <button class="fx-tab-btn tab-sentences" data-pos="sentences">💬 Câu hay giao tiếp (<span id="fx-tab-count-sentences">0</span>)</button>
+            <button class="fx-tab-btn tab-starred" data-pos="starred">⭐ Đã lưu (<span id="fx-tab-count-starred">0</span>)</button>
           </div>
 
           <div class="fx-filter-controls">
@@ -152,6 +161,11 @@ Learning English through movies is fascinating and effective."></textarea>
               <span class="fx-search-icon">🔍</span>
               <input type="text" id="fx-filter-search" placeholder="Tìm kiếm từ hoặc nghĩa tiếng Việt...">
             </div>
+
+            <label class="fx-toggle-wrap" title="Ẩn các từ bạn đã đánh dấu thuộc để tập trung vào từ mới">
+              <input type="checkbox" id="fx-toggle-hide-mastered" class="fx-toggle-checkbox">
+              <span class="fx-toggle-label">Ẩn từ đã thuộc (✅)</span>
+            </label>
 
             <select id="fx-filter-cefr" class="fx-select-sm">
               <option value="all">Mọi trình độ CEFR</option>
@@ -227,7 +241,9 @@ Learning English through movies is fascinating and effective."></textarea>
         <!-- Card Controls -->
         <div class="fx-fc-controls">
           <button id="fx-fc-prev" class="fx-fc-btn">← Trước</button>
+          <button id="fx-fc-star" class="fx-fc-btn fx-fc-btn-star" title="Lưu từ yêu thích">⭐ Lưu</button>
           <button id="fx-fc-flip" class="fx-fc-btn fx-fc-btn-flip">↻ Lật thẻ (Space)</button>
+          <button id="fx-fc-master" class="fx-fc-btn fx-fc-btn-master" title="Đánh dấu đã thuộc">✅ Đã thuộc</button>
           <button id="fx-fc-next" class="fx-fc-btn">Sau →</button>
         </div>
       </div>

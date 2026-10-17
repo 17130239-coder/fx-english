@@ -368,6 +368,19 @@
       })();
       return true;
     }
+
+    if (msg.action === 'seek_to_time') {
+      const timeSec = Number(msg.timeSec) || 0;
+      window.dispatchEvent(new CustomEvent('fx_netflix_seek', {
+        detail: { seconds: timeSec, timeSec: timeSec }
+      }));
+      const video = document.querySelector('video');
+      if (video) {
+        try { video.currentTime = timeSec; } catch (e) {}
+      }
+      sendResponse({ success: true, timeSec });
+      return false;
+    }
   });
 
   function init() {
