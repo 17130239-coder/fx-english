@@ -12,6 +12,7 @@ importScripts(
   '../lib/cefrDict.js',
   '../lib/vocabAnalyzer.js',
   '../lib/neonClient.js',
+  '../lib/masterList.js',
   '../lib/aiClient.js'
 );
 
@@ -24,14 +25,37 @@ const MessageDispatcher = {
       return { success: true };
     },
 
-    // 9Router AI Linguistic Analysis (Contextual Translation, Lemmatization, Idioms)
+    // 9Router AI Linguistic Analysis (Contextual Translation, Lemmatization, Idioms, Master List filtering)
     ['analyze_with_ai']: async (message) => {
       const ai = (typeof APP_AI_CLIENT !== 'undefined') ? APP_AI_CLIENT : null;
       if (!ai) throw new Error('AIClient is not available in background worker');
 
       const cues = message.cues || [];
-      const analysis = await ai.analyzeSubtitles(cues);
+      const masterList = message.masterList || null;
+      const analysis = await ai.analyzeSubtitles(cues, null, masterList);
       return { success: true, analysis };
+    },
+
+    // Master Known List handlers
+    ['get_master_list']: async () => {
+      const master = (typeof APP_MASTER_LIST !== 'undefined') ? APP_MASTER_LIST : null;
+      if (!master) return { success: false, items: [] };
+      const items = await master.load();
+      return { success: true, items };
+    },
+
+    ['add_master_item']: async (message) => {
+      const master = (typeof APP_MASTER_LIST !== 'undefined') ? APP_MASTER_LIST : null;
+      if (!master) return { success: false };
+      const res = await master.addOrAccumulate(message.item);
+      return { success: true, ...res };
+    },
+
+    ['remove_master_item']: async (message) => {
+      const master = (typeof APP_MASTER_LIST !== 'undefined') ? APP_MASTER_LIST : null;
+      if (!master) return { success: false };
+      const removed = await master.remove(message.identifier);
+      return { success: true, removed };
     },
 
     // Test 9Router API Connection

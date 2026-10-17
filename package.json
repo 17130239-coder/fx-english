@@ -4,7 +4,7 @@
   "description": "FX English - Subtitle Downloader & POS Vocabulary Studio for Netflix & YouTube",
   "scripts": {
     "test": "node test/verify.js",
-    "check-syntax": "node -c lib/aiClient.js && node -c lib/neonClient.js && node -c lib/subtitleParser.js && node -c lib/cefrDict.js && node -c lib/vocabAnalyzer.js && node -c background/background.js && node -c content/netflixInjected.js && node -c content/netflixContent.js && node -c content/youtubeInjected.js && node -c content/youtubeContent.js && node -c popup/popup.js && node -c studio/studio.js"
+    "check-syntax": "node -c lib/masterList.js && node -c lib/aiClient.js && node -c lib/neonClient.js && node -c lib/subtitleParser.js && node -c lib/cefrDict.js && node -c lib/vocabAnalyzer.js && node -c background/background.js && node -c content/netflixInjected.js && node -c content/netflixContent.js && node -c content/youtubeInjected.js && node -c content/youtubeContent.js && node -c popup/popup.js && node -c studio/studio.js"
   },
   "keywords": [
     "chrome-extension",

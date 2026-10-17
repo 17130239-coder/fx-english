@@ -21,6 +21,11 @@
     wordStates: {},
     hideMastered: false,
 
+    // Master List View State
+    activeMasterFilter: 'all',
+    masterSearchQuery: '',
+    activeView: 'studio',
+
     // Flashcard State
     flashcardList: [],
     currentCardIdx: 0,
@@ -30,6 +35,7 @@
       this.bindElements();
       this.bindEvents();
       this.loadWordStates();
+      this.initMasterList();
       this.loadHistory();
       this.checkPendingStorage();
       this.detectActiveMedia();
@@ -127,6 +133,38 @@
       this.inputAiModel = document.getElementById('fx-ai-model');
       this.toggleKeyVis = document.getElementById('fx-toggle-key-vis');
       this.settingsStatus = document.getElementById('fx-settings-status');
+
+      // Master List View & Header Switcher
+      this.navTabStudio = document.getElementById('fx-nav-tab-studio');
+      this.navTabMaster = document.getElementById('fx-nav-tab-master');
+      this.navMasterCount = document.getElementById('fx-nav-master-count');
+      this.studioView = document.getElementById('fx-studio-view');
+      this.masterView = document.getElementById('fx-master-view');
+
+      this.btnOpenAddMaster = document.getElementById('fx-btn-open-add-master');
+      this.btnExportMasterAnki = document.getElementById('fx-btn-export-master-anki');
+      this.btnExportMasterCsv = document.getElementById('fx-btn-export-master-csv');
+      this.btnClearMaster = document.getElementById('fx-btn-clear-master');
+
+      this.masterTabsGroup = document.getElementById('fx-master-tabs');
+      this.masterCountAll = document.getElementById('fx-master-count-all');
+      this.masterCountWord = document.getElementById('fx-master-count-word');
+      this.masterCountSentence = document.getElementById('fx-master-count-sentence');
+      this.masterCountPolysemy = document.getElementById('fx-master-count-polysemy');
+      this.masterSearchInput = document.getElementById('fx-master-search');
+      this.masterEmptyEl = document.getElementById('fx-master-empty');
+      this.masterGridEl = document.getElementById('fx-master-grid');
+
+      // Add Master Item Modal
+      this.addMasterModal = document.getElementById('fx-add-master-modal');
+      this.addMasterBackdrop = document.getElementById('fx-add-master-backdrop');
+      this.addMasterClose = document.getElementById('fx-add-master-close');
+      this.btnCancelAddMaster = document.getElementById('fx-btn-cancel-add-master');
+      this.btnSubmitAddMaster = document.getElementById('fx-btn-submit-add-master');
+      this.inputMasterText = document.getElementById('fx-input-master-text');
+      this.selectMasterPos = document.getElementById('fx-select-master-pos');
+      this.inputMasterMeanings = document.getElementById('fx-input-master-meanings');
+      this.addMasterStatus = document.getElementById('fx-add-master-status');
     },
 
     bindEvents() {
@@ -157,10 +195,10 @@
       // Analyze Button
       this.btnAnalyze.addEventListener('click', () => this.analyzeFromTextarea());
 
-      // POS Tabs
-      document.querySelectorAll('.fx-tab-btn').forEach((btn) => {
+      // POS Tabs (Studio View)
+      document.querySelectorAll('.fx-filters-bar:not(.fx-master-filters-bar) .fx-tab-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.fx-tab-btn').forEach((b) => b.classList.remove('active'));
+          document.querySelectorAll('.fx-filters-bar:not(.fx-master-filters-bar) .fx-tab-btn').forEach((b) => b.classList.remove('active'));
           btn.classList.add('active');
           this.activePosFilter = btn.dataset.pos || 'all';
           this.renderVocabularyGrid();
@@ -219,7 +257,7 @@
           const item = this.flashcardList[this.currentCardIdx];
           const target = item?.word || item?.sentence;
           if (target) {
-            this.toggleMastered(target);
+            this.toggleMastered(target, item);
             this.renderFlashcard();
           }
         });
@@ -256,10 +294,80 @@
         });
       }
 
+      // Master List Header Switcher Events
+      if (this.navTabStudio) {
+        this.navTabStudio.addEventListener('click', () => this.switchView('studio'));
+      }
+      if (this.navTabMaster) {
+        this.navTabMaster.addEventListener('click', () => this.switchView('master'));
+      }
+
+      // Master List Action Buttons
+      if (this.btnOpenAddMaster) {
+        this.btnOpenAddMaster.addEventListener('click', () => this.openAddMasterModal());
+      }
+      if (this.btnExportMasterAnki) {
+        this.btnExportMasterAnki.addEventListener('click', () => this.exportMasterAnki());
+      }
+      if (this.btnExportMasterCsv) {
+        this.btnExportMasterCsv.addEventListener('click', () => this.exportMasterCsv());
+      }
+      if (this.btnClearMaster) {
+        this.btnClearMaster.addEventListener('click', () => this.clearMasterList());
+      }
+
+      // Master List Filter Tabs
+      if (this.masterTabsGroup) {
+        this.masterTabsGroup.querySelectorAll('.fx-tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            this.masterTabsGroup.querySelectorAll('.fx-tab-btn').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.activeMasterFilter = btn.dataset.type || 'all';
+            this.renderMasterList();
+          });
+        });
+      }
+
+      // Master List Search
+      if (this.masterSearchInput) {
+        this.masterSearchInput.addEventListener('input', (e) => {
+          this.masterSearchQuery = e.target.value.trim().toLowerCase();
+          this.renderMasterList();
+        });
+      }
+
+      // Add Master Modal Events
+      if (this.addMasterClose) {
+        this.addMasterClose.addEventListener('click', () => this.closeAddMasterModal());
+      }
+      if (this.addMasterBackdrop) {
+        this.addMasterBackdrop.addEventListener('click', () => this.closeAddMasterModal());
+      }
+      if (this.btnCancelAddMaster) {
+        this.btnCancelAddMaster.addEventListener('click', () => this.closeAddMasterModal());
+      }
+      if (this.btnSubmitAddMaster) {
+        this.btnSubmitAddMaster.addEventListener('click', () => this.submitAddMaster());
+      }
+      if (this.inputMasterText) {
+        this.inputMasterText.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') this.submitAddMaster();
+        });
+      }
+      if (this.inputMasterMeanings) {
+        this.inputMasterMeanings.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') this.submitAddMaster();
+        });
+      }
+
       // Keyboard navigation for Flashcards & Modals
       window.addEventListener('keydown', (e) => {
         if (this.settingsModal && this.settingsModal.style.display === 'flex' && e.code === 'Escape') {
           this.closeSettingsModal();
+          return;
+        }
+        if (this.addMasterModal && this.addMasterModal.style.display === 'flex' && e.code === 'Escape') {
+          this.closeAddMasterModal();
           return;
         }
         if (this.fcModal.style.display !== 'flex') return;
@@ -502,12 +610,13 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
 
         try {
+          const mlItems = this.getMasterList()?.getAll?.() || [];
           analysisResult = await ai.analyzeSubtitles(this.cues, (done, total) => {
             if (this.btnAnalyze) {
               const pct = total > 0 ? Math.round((done / total) * 100) : 0;
               this.btnAnalyze.textContent = `Đang phân tích AI (${pct}%)...`;
             }
-          });
+          }, mlItems);
         } catch (err) {
           console.warn('[FX AI] AI analysis warning, falling back to offline NLP:', err);
           if (err.code === 'NO_API_KEY') {
@@ -686,15 +795,60 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.renderVocabularyGrid();
     },
 
-    toggleMastered(key) {
+    async toggleMastered(key, itemData = null) {
       if (!key) return;
       const cleanKey = String(key).trim().toLowerCase();
       if (!this.wordStates[cleanKey]) {
         this.wordStates[cleanKey] = { starred: false, mastered: false, updatedAt: Date.now() };
       }
-      this.wordStates[cleanKey].mastered = !this.wordStates[cleanKey].mastered;
+      const newState = !this.wordStates[cleanKey].mastered;
+      this.wordStates[cleanKey].mastered = newState;
       this.wordStates[cleanKey].updatedAt = Date.now();
       this.saveWordStates();
+
+      const ml = this.getMasterList();
+      if (ml) {
+        if (newState) {
+          let meaning = '';
+          let pos = 'N';
+          let type = cleanKey.includes(' ') ? 'sentence' : 'word';
+
+          if (itemData) {
+            meaning = (itemData.vietnamese || itemData.translation || '').trim();
+            pos = itemData.pos || 'N';
+            if (itemData.sentence) type = 'sentence';
+          } else if (this.analysis?.allWords) {
+            const found = this.analysis.allWords.find((w) => (w.word || '').toLowerCase() === cleanKey);
+            if (found) {
+              meaning = (found.vietnamese || found.translation || '').trim();
+              pos = found.pos || 'N';
+            }
+          }
+
+          const res = await ml.addOrAccumulate({
+            text: cleanKey,
+            type,
+            pos,
+            meanings: (meaning && meaning !== 'Đang tra nghĩa...' && meaning !== 'Đang cập nhật') ? [meaning] : ['Đã thuộc']
+          });
+
+          const neon = this.getNeonClient();
+          if (neon && res?.item) {
+            neon.saveMasterItem(res.item).catch((err) => console.warn('[FX Neon] saveMasterItem notice:', err));
+          }
+        } else {
+          await ml.remove(cleanKey);
+          const neon = this.getNeonClient();
+          if (neon) {
+            neon.deleteMasterItem(cleanKey).catch((err) => console.warn('[FX Neon] deleteMasterItem notice:', err));
+          }
+        }
+        this.updateMasterCount();
+        if (this.activeView === 'master') {
+          this.renderMasterList();
+        }
+      }
+
       this.updateStats();
       this.renderVocabularyGrid();
     },
@@ -1016,6 +1170,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           hasMissingDefinitions = true;
         }
 
+        const newMeaningHtml = item.isNewMeaning
+          ? `<span class="fx-badge-new-meaning" title="Nghĩa mới trong ngữ cảnh phim này">NGHĨA MỚI</span>`
+          : '';
+
         const specsParts = [posLabel];
         if (item.cefr) specsParts.push(item.cefr);
         specsParts.push(`${item.frequency}x`);
@@ -1027,6 +1185,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             <div class="fx-card-word-wrap">
               <span class="fx-card-word">${this.escape(item.word)}</span>
               ${lemmaHtml}
+              ${newMeaningHtml}
             </div>
             <div class="fx-card-meta-actions">
               <span class="fx-card-specs">${specsText}</span>
@@ -1071,7 +1230,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
         card.querySelector('.fx-btn-check').onclick = (e) => {
           e.stopPropagation();
-          this.toggleMastered(item.word);
+          this.toggleMastered(item.word, item);
         };
 
         card.querySelector('.fx-btn-audio').onclick = (e) => {
@@ -1839,6 +1998,377 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (neon) {
         neon.clearAllMovies().catch((err) => console.warn('[FX Neon] Cloud clear warning:', err));
       }
+    },
+
+    // =========================================================================
+    // Master Known List Management
+    // =========================================================================
+
+    getMasterList() {
+      if (typeof APP_MASTER_LIST !== 'undefined') return APP_MASTER_LIST;
+      if (typeof window !== 'undefined' && window.masterList) return window.masterList;
+      return null;
+    },
+
+    async initMasterList() {
+      const ml = this.getMasterList();
+      if (!ml) return;
+
+      try {
+        await ml.load();
+        this.updateMasterCount();
+
+        // Optional sync from Neon DB if available
+        const neon = this.getNeonClient();
+        if (neon) {
+          neon.getMasterItems().then((items) => {
+            if (Array.isArray(items) && items.length > 0) {
+              items.forEach((item) => {
+                ml.addOrAccumulate({
+                  text: item.text,
+                  type: item.type,
+                  pos: item.pos,
+                  meanings: item.knownMeanings || item.known_meanings || []
+                });
+              });
+              this.updateMasterCount();
+              if (this.activeView === 'master') this.renderMasterList();
+            }
+          }).catch(() => {});
+        }
+      } catch (e) {
+        console.warn('[FX MasterList] Init notice:', e);
+      }
+    },
+
+    switchView(viewName) {
+      this.activeView = viewName;
+      const isStudio = (viewName === 'studio');
+
+      if (this.navTabStudio) this.navTabStudio.classList.toggle('active', isStudio);
+      if (this.navTabMaster) this.navTabMaster.classList.toggle('active', !isStudio);
+
+      if (this.studioView) this.studioView.style.display = isStudio ? 'block' : 'none';
+      if (this.masterView) this.masterView.style.display = isStudio ? 'none' : 'block';
+
+      if (!isStudio) {
+        this.renderMasterList();
+      }
+    },
+
+    updateMasterCount() {
+      const ml = this.getMasterList();
+      const allItems = ml ? ml.getAll() : [];
+      const totalCount = allItems.length;
+
+      if (this.navMasterCount) {
+        this.navMasterCount.textContent = totalCount.toLocaleString();
+      }
+
+      if (this.masterCountAll) {
+        this.masterCountAll.textContent = totalCount.toLocaleString();
+      }
+
+      if (this.masterCountWord) {
+        const words = allItems.filter(i => i.type === 'word').length;
+        this.masterCountWord.textContent = words.toLocaleString();
+      }
+
+      if (this.masterCountSentence) {
+        const sentences = allItems.filter(i => i.type === 'sentence').length;
+        this.masterCountSentence.textContent = sentences.toLocaleString();
+      }
+
+      if (this.masterCountPolysemy) {
+        const polysemy = allItems.filter(i => Array.isArray(i.knownMeanings) && i.knownMeanings.length > 1).length;
+        this.masterCountPolysemy.textContent = polysemy.toLocaleString();
+      }
+    },
+
+    renderMasterList() {
+      if (!this.masterGridEl) return;
+      const ml = this.getMasterList();
+      if (!ml) return;
+
+      const items = ml.search(this.masterSearchQuery, this.activeMasterFilter);
+      this.masterGridEl.innerHTML = '';
+
+      if (items.length === 0) {
+        if (this.masterEmptyEl) {
+          this.masterEmptyEl.style.display = 'block';
+          if (this.masterSearchQuery) {
+            this.masterEmptyEl.innerHTML = `<p>Không tìm thấy từ hoặc câu nào khớp với từ khóa "${this.escape(this.masterSearchQuery)}".</p>`;
+          } else {
+            this.masterEmptyEl.innerHTML = `<p>Chưa có mục nào trong danh mục này. Khi bạn bấm đánh dấu dấu tích (Đã biết) trên bất kỳ thẻ từ vựng nào, từ đó cùng ngữ nghĩa phim sẽ tự động lưu vào đây.</p>`;
+          }
+        }
+        return;
+      }
+
+      if (this.masterEmptyEl) this.masterEmptyEl.style.display = 'none';
+
+      items.forEach((item) => {
+        const card = document.createElement('div');
+        card.className = 'fx-master-item-card';
+
+        const meanings = Array.isArray(item.knownMeanings) ? item.knownMeanings : [];
+        const isPolysemy = meanings.length > 1;
+
+        const dateStr = item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : '';
+        const posCode = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
+
+        const meaningsHtml = meanings.map((m) => `
+          <div class="fx-meaning-pill">
+            <span>${this.escape(m)}</span>
+            <button type="button" class="fx-btn-remove-meaning" title="Xóa nghĩa này" data-text="${this.escape(item.text)}" data-meaning="${this.escape(m)}">&times;</button>
+          </div>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="fx-master-card-top">
+            <div class="fx-master-card-title-group">
+              <span class="fx-master-card-text">${this.escape(item.text)}</span>
+              <span class="fx-badge-pos">${this.escape(posCode)}</span>
+            </div>
+            <button type="button" class="fx-btn-icon-raw fx-btn-delete-master" title="Xóa khỏi Master List" data-id="${this.escape(item.id)}" data-text="${this.escape(item.text)}">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="fx-master-card-meanings">
+            ${meaningsHtml}
+            <button type="button" class="fx-btn-add-meaning-inline" data-text="${this.escape(item.text)}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Thêm nghĩa</span>
+            </button>
+          </div>
+
+          <div class="fx-master-card-meta">
+            <span>Đã thêm: ${this.escape(dateStr || 'Gần đây')}</span>
+            ${isPolysemy ? `<span style="color: #A1A1AA; font-weight: 500;">Đa nghĩa (${meanings.length} nghĩa)</span>` : ''}
+          </div>
+        `;
+
+        // Bind delete item
+        const btnDelete = card.querySelector('.fx-btn-delete-master');
+        if (btnDelete) {
+          btnDelete.onclick = (e) => {
+            e.stopPropagation();
+            this.removeMasterItem(item.text);
+          };
+        }
+
+        // Bind remove meaning buttons
+        card.querySelectorAll('.fx-btn-remove-meaning').forEach((btn) => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const text = btn.dataset.text;
+            const meaning = btn.dataset.meaning;
+            this.removeMeaningFromItem(text, meaning);
+          };
+        });
+
+        // Bind inline add meaning button
+        const btnAddMeaning = card.querySelector('.fx-btn-add-meaning-inline');
+        if (btnAddMeaning) {
+          btnAddMeaning.onclick = (e) => {
+            e.stopPropagation();
+            this.addMeaningInline(item.text);
+          };
+        }
+
+        this.masterGridEl.appendChild(card);
+      });
+    },
+
+    openAddMasterModal(initialText = '') {
+      if (!this.addMasterModal) return;
+      if (this.inputMasterText) this.inputMasterText.value = initialText;
+      if (this.inputMasterMeanings) this.inputMasterMeanings.value = '';
+      if (this.addMasterStatus) this.addMasterStatus.style.display = 'none';
+      this.addMasterModal.style.display = 'flex';
+      setTimeout(() => {
+        if (initialText && this.inputMasterMeanings) {
+          this.inputMasterMeanings.focus();
+        } else if (this.inputMasterText) {
+          this.inputMasterText.focus();
+        }
+      }, 50);
+    },
+
+    closeAddMasterModal() {
+      if (this.addMasterModal) this.addMasterModal.style.display = 'none';
+    },
+
+    showAddMasterStatus(type, msg) {
+      if (!this.addMasterStatus) return;
+      this.addMasterStatus.className = `fx-settings-status ${type}`;
+      this.addMasterStatus.textContent = msg;
+      this.addMasterStatus.style.display = 'block';
+    },
+
+    async submitAddMaster() {
+      const text = (this.inputMasterText?.value || '').trim();
+      const pos = (this.selectMasterPos?.value || 'N').trim();
+      const rawMeanings = (this.inputMasterMeanings?.value || '').trim();
+
+      if (!text) {
+        this.showAddMasterStatus('error', 'Vui lòng nhập từ vựng hoặc câu tiếng Anh.');
+        return;
+      }
+
+      const meanings = rawMeanings
+        ? rawMeanings.split(',').map((s) => s.trim()).filter(Boolean)
+        : ['Đã thuộc'];
+
+      const ml = this.getMasterList();
+      if (!ml) return;
+
+      this.showAddMasterStatus('loading', 'Đang lưu vào Master List...');
+
+      try {
+        const type = text.includes(' ') ? 'sentence' : 'word';
+        const res = await ml.addOrAccumulate({ text, type, pos, meanings });
+
+        // Update wordStates locally
+        const cleanKey = text.toLowerCase();
+        if (!this.wordStates[cleanKey]) {
+          this.wordStates[cleanKey] = { starred: false, mastered: true, updatedAt: Date.now() };
+        } else {
+          this.wordStates[cleanKey].mastered = true;
+          this.wordStates[cleanKey].updatedAt = Date.now();
+        }
+        this.saveWordStates();
+
+        // Neon DB background sync
+        const neon = this.getNeonClient();
+        if (neon && res?.item) {
+          neon.saveMasterItem(res.item).catch((err) => console.warn('[FX Neon] saveMasterItem notice:', err));
+        }
+
+        this.showAddMasterStatus('success', `Đã lưu "${text}" vào Master List.`);
+        this.updateMasterCount();
+        this.updateStats();
+
+        setTimeout(() => {
+          this.closeAddMasterModal();
+          this.renderMasterList();
+          if (this.analysis) this.renderVocabularyGrid();
+        }, 600);
+      } catch (err) {
+        this.showAddMasterStatus('error', err.message || 'Lỗi lưu vào Master List.');
+      }
+    },
+
+    async removeMasterItem(text) {
+      if (!text) return;
+      const clean = text.trim().toLowerCase();
+      if (!confirm(`Bạn có chắc muốn xóa "${clean}" khỏi Master List?`)) return;
+
+      const ml = this.getMasterList();
+      if (ml) {
+        await ml.remove(clean);
+      }
+
+      if (this.wordStates[clean]) {
+        this.wordStates[clean].mastered = false;
+        this.saveWordStates();
+      }
+
+      const neon = this.getNeonClient();
+      if (neon) {
+        neon.deleteMasterItem(clean).catch(() => {});
+      }
+
+      this.updateMasterCount();
+      this.updateStats();
+      this.renderMasterList();
+      if (this.analysis) this.renderVocabularyGrid();
+    },
+
+    async removeMeaningFromItem(text, meaning) {
+      if (!text || !meaning) return;
+      const ml = this.getMasterList();
+      if (!ml) return;
+
+      await ml.removeMeaning(text, meaning);
+
+      const neon = this.getNeonClient();
+      if (neon) {
+        const updatedItem = ml.get(text);
+        if (updatedItem) neon.saveMasterItem(updatedItem).catch(() => {});
+      }
+
+      this.updateMasterCount();
+      this.renderMasterList();
+    },
+
+    async addMeaningInline(text) {
+      if (!text) return;
+      const newMeaning = prompt(`Nhập nghĩa tiếng Việt mới cho từ "${text}":`);
+      if (!newMeaning || !newMeaning.trim()) return;
+
+      const ml = this.getMasterList();
+      if (!ml) return;
+
+      const res = await ml.addOrAccumulate({
+        text,
+        meanings: [newMeaning.trim()]
+      });
+
+      const neon = this.getNeonClient();
+      if (neon && res?.item) {
+        neon.saveMasterItem(res.item).catch(() => {});
+      }
+
+      this.updateMasterCount();
+      this.renderMasterList();
+    },
+
+    async clearMasterList() {
+      if (!confirm('Bạn có chắc muốn xóa TOÀN BỘ Master Known List?')) return;
+
+      const ml = this.getMasterList();
+      if (ml) {
+        await ml.clear();
+      }
+
+      // Clear mastered in wordStates
+      Object.keys(this.wordStates).forEach((k) => {
+        this.wordStates[k].mastered = false;
+      });
+      this.saveWordStates();
+
+      this.updateMasterCount();
+      this.updateStats();
+      this.renderMasterList();
+      if (this.analysis) this.renderVocabularyGrid();
+    },
+
+    exportMasterAnki() {
+      const ml = this.getMasterList();
+      if (!ml) return;
+      const content = ml.exportToAnki();
+      if (!content) {
+        alert('Master List hiện đang trống, chưa có từ vựng nào để xuất.');
+        return;
+      }
+      this.downloadBlob(content, 'fx_master_known_list_anki.txt', 'text/plain;charset=utf-8;');
+    },
+
+    exportMasterCsv() {
+      const ml = this.getMasterList();
+      if (!ml) return;
+      const content = ml.exportToCsv();
+      if (!content) {
+        alert('Master List hiện đang trống, chưa có từ vựng nào để xuất.');
+        return;
+      }
+      this.downloadBlob(content, 'fx_master_known_list.csv', 'text/csv;charset=utf-8;');
     }
   };
 

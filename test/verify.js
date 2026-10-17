@@ -673,6 +673,138 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     assert.strictEqual(consolidated.categories.sentences.count, 1, 'sentences category count matches highlights');
     console.log('   ✓ 9Router AI Linguistic Engine Client verified: lemmatization, deduplication, contextual translations, and highlights working perfectly.\n');
 
+    // =========================================================================
+    // 16. Testing Master Known List, Polysemy Accumulation & Semantic Deduplication Engine
+    // =========================================================================
+    console.log('📑 16. Testing Master Known List & Semantic Deduplication Engine...');
+    const masterListModule = require('../lib/masterList.js');
+    assert.ok(masterListModule, 'masterListModule loaded');
+
+    // Clear test instance
+    await masterListModule.clear();
+    assert.strictEqual(masterListModule.getAll().length, 0, 'Master list starts empty after clear');
+
+    // 16.1 Test adding word and meaning accumulation (polysemy)
+    const addRes1 = await masterListModule.addOrAccumulate({
+      text: 'take off',
+      type: 'sentence',
+      pos: 'Idiom',
+      meanings: ['cất cánh']
+    });
+    assert.strictEqual(addRes1.isNewItem, true, 'First addition is marked as new item');
+    assert.strictEqual(addRes1.item.knownMeanings.length, 1, 'Contains 1 meaning');
+    assert.strictEqual(addRes1.item.knownMeanings[0], 'cất cánh');
+
+    // Add second meaning (polysemy) for 'take off'
+    const addRes2 = await masterListModule.addOrAccumulate({
+      text: 'take off',
+      meanings: ['cởi đồ (quần áo)']
+    });
+    assert.strictEqual(addRes2.isNewItem, false, 'Second addition updates existing item');
+    assert.strictEqual(addRes2.isNewMeaning, true, 'New meaning recognized');
+    assert.strictEqual(addRes2.item.knownMeanings.length, 2, 'Meanings accumulated to 2');
+    assert.ok(addRes2.item.knownMeanings.includes('cất cánh') && addRes2.item.knownMeanings.includes('cởi đồ (quần áo)'), 'Both meanings preserved');
+
+    // Add word with duplicate meaning -> should not duplicate
+    const addRes3 = await masterListModule.addOrAccumulate({
+      text: 'take off',
+      meanings: ['cất cánh']
+    });
+    assert.strictEqual(addRes3.isNewMeaning, false, 'Duplicate meaning is not added again');
+    assert.strictEqual(addRes3.item.knownMeanings.length, 2, 'Meanings count stays 2');
+
+    // Add regular word 'break' with noun and verb meanings
+    await masterListModule.addOrAccumulate({
+      text: 'break',
+      type: 'word',
+      pos: 'V',
+      meanings: ['làm vỡ, bẻ gãy']
+    });
+    await masterListModule.addOrAccumulate({
+      text: 'break',
+      pos: 'N',
+      meanings: ['giờ giải lao']
+    });
+    const breakItem = masterListModule.get('break');
+    assert.ok(breakItem, 'Item "break" retrieved');
+    assert.strictEqual(breakItem.knownMeanings.length, 2, 'Accumulated 2 meanings for "break"');
+
+    // 16.2 Test Client-Side Token Pre-filtering for 9router API (~95% token savings)
+    const candidates = [
+      { word: 'breaks', lemma: 'break' },
+      { word: 'unfamiliar', lemma: 'unfamiliar' },
+      { word: 'taking', lemma: 'take off' }
+    ];
+    const userKnownWords = masterListModule.extractKnownWordsForBatch(candidates);
+    assert.strictEqual(userKnownWords.length, 2, 'Extracted only matched known words from batch candidates');
+    const breakMatch = userKnownWords.find(u => u.word === 'break');
+    assert.ok(breakMatch, 'Extracted known word "break"');
+    assert.strictEqual(breakMatch.knownMeanings.length, 2, 'Extracted knownMeanings for 9router cross-referencing');
+
+    // 16.3 Test Search & Filter Tabs
+    const searchRes = masterListModule.search('cởi đồ', 'all');
+    assert.strictEqual(searchRes.length, 1, 'Search finds item by meaning query');
+    assert.strictEqual(searchRes[0].text, 'take off');
+
+    const polysemyItems = masterListModule.search('', 'polysemy');
+    assert.strictEqual(polysemyItems.length, 2, 'Both "take off" and "break" have multiple meanings (polysemy)');
+
+    const wordsOnly = masterListModule.search('', 'word');
+    assert.strictEqual(wordsOnly.length, 1, '1 word item ("break")');
+
+    const sentencesOnly = masterListModule.search('', 'sentence');
+    assert.strictEqual(sentencesOnly.length, 1, '1 sentence item ("take off")');
+
+    // 16.4 Test Meaning Removal
+    await masterListModule.removeMeaning('take off', 'cởi đồ (quần áo)');
+    const takeOffUpdated = masterListModule.get('take off');
+    assert.strictEqual(takeOffUpdated.knownMeanings.length, 1, 'Meaning removed cleanly');
+    assert.strictEqual(takeOffUpdated.knownMeanings[0], 'cất cánh');
+
+    // 16.5 Test Export to Anki & CSV
+    const ankiText = masterListModule.exportToAnki();
+    assert.ok(ankiText.includes('take off') && ankiText.includes('cất cánh'), 'Anki export contains text and meaning');
+    assert.ok(ankiText.includes('break') && ankiText.includes('làm vỡ, bẻ gãy'), 'Anki export includes break meanings');
+    assert.ok(ankiText.includes('#separator:tab'), 'Anki header specifies tab separator');
+
+    const csvText = masterListModule.exportToCsv();
+    assert.ok(csvText.startsWith('Text,Type,POS,KnownMeanings,CreatedAt'), 'CSV header present');
+    assert.ok(csvText.includes('"take off","sentence","Idiom"'), 'CSV quotes fields properly');
+
+    // 16.6 Test AI Client Pre-processing with Master List integration
+    const chunksWithMaster = aiClientModule.prepareSubtitleChunks(mockCues, 70, masterListModule);
+    assert.ok(chunksWithMaster.length > 0, 'Prepared chunks with master list');
+    assert.ok(Array.isArray(chunksWithMaster[0].userKnownWords), 'Chunks contain userKnownWords array');
+
+    // 16.7 Test Polysemy / isNewMeaning preservation in consolidateAIResults
+    const mockPolysemySettledResults = [
+      {
+        chunk: chunks[0],
+        parsed: {
+          vocabulary: [
+            {
+              word: 'break',
+              originalForm: 'break',
+              pos: 'V',
+              cefr: 'B1',
+              ipa: '/breɪk/',
+              meaningVi: 'cơ hội đột phá',
+              contextSentence: 'This movie is your big break.',
+              frequency: 1,
+              isNewMeaning: true
+            }
+          ],
+          highlights: []
+        }
+      }
+    ];
+    const polysemyConsolidated = aiClientModule.consolidateAIResults(mockPolysemySettledResults, mockCues);
+    const breakWord = polysemyConsolidated.allWords.find(w => w.word === 'break');
+    assert.ok(breakWord, 'Polysemy word "break" preserved');
+    assert.strictEqual(breakWord.isNewMeaning, true, 'isNewMeaning flag strictly preserved for Tesla UI "NGHĨA MỚI" badge');
+
+    console.log('   ✓ Master Known List verified: meaning accumulation, polysemy filtering, token pre-filtering, and Anki/CSV exports working.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');

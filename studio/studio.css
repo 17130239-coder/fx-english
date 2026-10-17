@@ -101,9 +101,10 @@ body {
   z-index: 100;
 }
 
-.fx-nav-brand {
+.fx-nav-brand-group {
   display: flex;
   align-items: center;
+  gap: 20px;
 }
 
 .fx-nav-title {
@@ -111,6 +112,58 @@ body {
   font-weight: 600;
   color: var(--fx-text-primary);
   letter-spacing: -0.02em;
+}
+
+.fx-nav-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.fx-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: var(--fx-text-secondary);
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--fx-transition-fast);
+}
+
+.fx-nav-tab:hover {
+  color: var(--fx-text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.fx-nav-tab.active {
+  color: #000000;
+  background: #FFFFFF;
+  font-weight: 600;
+}
+
+.fx-nav-tab.active .fx-nav-pill-count {
+  background: rgba(0, 0, 0, 0.15);
+  color: #000000;
+}
+
+.fx-nav-pill-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fx-text-secondary);
+  transition: var(--fx-transition-fast);
 }
 
 .fx-nav-actions {
@@ -809,6 +862,21 @@ body {
   font-weight: 400;
 }
 
+.fx-badge-new-meaning {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .fx-card-meta-actions {
   display: flex;
   align-items: center;
@@ -1301,6 +1369,174 @@ body {
   gap: 10px;
   border-top: 1px solid var(--fx-border-subtle);
   padding-top: 14px;
+}
+/* --------------------------------------------------------------------------
+   12. Master Known List Management View (Tesla Utilitarian Style)
+   -------------------------------------------------------------------------- */
+.fx-master-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fx-master-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+}
+
+.fx-master-title-wrap {
+  flex: 1;
+  min-width: 280px;
+}
+
+.fx-master-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--fx-text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.fx-master-desc {
+  font-size: 13px;
+  color: var(--fx-text-secondary);
+  line-height: 1.5;
+  max-width: 680px;
+}
+
+.fx-master-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fx-master-filters-bar {
+  margin-bottom: 4px;
+}
+
+.fx-master-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 12px;
+}
+
+.fx-master-item-card {
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: var(--fx-transition-fast);
+}
+
+.fx-master-item-card:hover {
+  background: var(--fx-bg-surface-hover);
+  border-color: var(--fx-border-medium);
+}
+
+.fx-master-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fx-master-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.fx-master-card-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fx-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.fx-badge-pos {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fx-text-secondary);
+  text-transform: uppercase;
+}
+
+.fx-master-card-meanings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fx-meaning-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--fx-text-primary);
+  font-weight: 500;
+}
+
+.fx-btn-remove-meaning {
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--fx-text-muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fx-btn-remove-meaning:hover {
+  color: #EF4444;
+}
+
+.fx-btn-add-meaning-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px dashed var(--fx-border-medium);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--fx-text-secondary);
+  cursor: pointer;
+  transition: var(--fx-transition-fast);
+}
+
+.fx-btn-add-meaning-inline:hover {
+  border-color: var(--fx-border-strong);
+  color: var(--fx-text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.fx-master-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--fx-text-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 8px;
+  margin-top: 2px;
 }
 
 /* --------------------------------------------------------------------------

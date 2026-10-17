@@ -14,8 +14,17 @@
   <div class="fx-studio-layout">
     <!-- Minimal Tesla Navigation / Header -->
     <header class="fx-navbar">
-      <div class="fx-nav-brand">
+      <div class="fx-nav-brand-group">
         <h1 class="fx-nav-title">FX English</h1>
+        <nav class="fx-nav-switcher">
+          <button type="button" id="fx-nav-tab-studio" class="fx-nav-tab active" title="Màn hình phân tích từ vựng phim">
+            <span>Phim & Phụ đề</span>
+          </button>
+          <button type="button" id="fx-nav-tab-master" class="fx-nav-tab" title="Danh sách từ & câu đã biết (Master List)">
+            <span>Master List</span>
+            <span id="fx-nav-master-count" class="fx-nav-pill-count">0</span>
+          </button>
+        </nav>
       </div>
 
       <div class="fx-nav-actions">
@@ -52,7 +61,9 @@
 
     <!-- Main Container -->
     <div class="fx-container">
-      <!-- Media Detection Banner (Minimal Flat Status Bar) -->
+      <!-- Studio View (Movie Subtitles & Vocab Explorer) -->
+      <div id="fx-studio-view">
+        <!-- Media Detection Banner (Minimal Flat Status Bar) -->
       <section id="fx-detected-banner" class="fx-banner" style="display:none;">
         <div class="fx-banner-content">
           <span class="fx-banner-pulse-dot"></span>
@@ -199,7 +210,70 @@
         <!-- Word Cards Grid -->
         <div id="fx-cards-grid" class="fx-cards-grid"></div>
       </section>
-    </div>
+      </div><!-- End #fx-studio-view -->
+
+      <!-- Master Known List Management View (Tesla Utilitarian Style) -->
+      <div id="fx-master-view" class="fx-master-view" style="display:none;">
+        <div class="fx-master-header-row">
+          <div class="fx-master-title-wrap">
+            <h2 class="fx-master-title">Master Known List</h2>
+            <p class="fx-master-desc">
+              Quản lý toàn bộ từ vựng và câu giao tiếp bạn đã biết. Khi phân tích phim mới, hệ thống tự động lọc bỏ các từ trùng nghĩa, chỉ giữ lại nếu từ mang ý nghĩa mới (đa nghĩa).
+            </p>
+          </div>
+          <div class="fx-master-actions">
+            <button type="button" id="fx-btn-open-add-master" class="fx-btn-tesla-primary-sm" title="Thêm từ hoặc câu vào Master List">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Thêm từ</span>
+            </button>
+            <button type="button" id="fx-btn-export-master-anki" class="fx-btn-tesla-ghost-sm" title="Xuất toàn bộ Master List sang Anki">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Anki</span>
+            </button>
+            <button type="button" id="fx-btn-export-master-csv" class="fx-btn-tesla-ghost-sm" title="Xuất toàn bộ Master List sang CSV">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <span>CSV</span>
+            </button>
+            <button type="button" id="fx-btn-clear-master" class="fx-btn-ghost-text" title="Xóa toàn bộ Master List">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+              </svg>
+              <span>Xóa tất cả</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Master Filter Bar -->
+        <div class="fx-filters-bar fx-master-filters-bar">
+          <div class="fx-tabs-group" id="fx-master-tabs">
+            <button class="fx-tab-btn active" data-type="all">Tất cả (<span id="fx-master-count-all">0</span>)</button>
+            <button class="fx-tab-btn" data-type="word">Từ đơn (<span id="fx-master-count-word">0</span>)</button>
+            <button class="fx-tab-btn" data-type="sentence">Câu hay (<span id="fx-master-count-sentence">0</span>)</button>
+            <button class="fx-tab-btn" data-type="polysemy">Đa nghĩa (<span id="fx-master-count-polysemy">0</span>)</button>
+          </div>
+
+          <div class="fx-filter-controls">
+            <div class="fx-search-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="fx-search-icon">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="fx-master-search" placeholder="Tìm kiếm từ hoặc nghĩa đã biết...">
+            </div>
+          </div>
+        </div>
+
+        <!-- Master Items Grid / Empty State -->
+        <div id="fx-master-empty" class="fx-history-empty" style="display:none;">
+          <p>Chưa có từ vựng trong Master List. Khi bạn bấm đánh dấu dấu tích (Đã biết) trên bất kỳ thẻ từ vựng nào, từ đó cùng ngữ nghĩa phim sẽ tự động lưu vào đây.</p>
+        </div>
+        <div id="fx-master-grid" class="fx-master-grid"></div>
+      </div><!-- End #fx-master-view -->
 
     <!-- 3D Flashcards Modal (Tesla Carbon Style) -->
     <div id="fx-flashcard-modal" class="fx-flashcard-modal" style="display:none;">
@@ -316,6 +390,51 @@
         </div>
       </div>
     </div>
+
+    <!-- Add to Master List Modal (Tesla Utilitarian Style) -->
+    <div id="fx-add-master-modal" class="fx-modal" style="display:none;">
+      <div class="fx-modal-backdrop" id="fx-add-master-backdrop"></div>
+      <div class="fx-modal-container">
+        <div class="fx-modal-header">
+          <div class="fx-modal-title-group">
+            <h3 class="fx-modal-title">Thêm Vào Master List</h3>
+            <span class="fx-modal-subtitle">Ghi nhận từ vựng hoặc câu đã biết để AI tự động lọc bỏ khi quét phim</span>
+          </div>
+          <button type="button" class="fx-btn-icon-raw fx-modal-close" id="fx-add-master-close" title="Đóng">&times;</button>
+        </div>
+
+        <div class="fx-modal-body">
+          <div class="fx-form-group">
+            <label for="fx-input-master-text" class="fx-label">Từ vựng hoặc câu (tiếng Anh)</label>
+            <input type="text" id="fx-input-master-text" class="fx-input" placeholder="Ví dụ: industry, take off, break a leg" spellcheck="false" autocomplete="off">
+          </div>
+
+          <div class="fx-form-group">
+            <label for="fx-select-master-pos" class="fx-label">Từ loại</label>
+            <select id="fx-select-master-pos" class="fx-input">
+              <option value="N">Danh từ (Noun)</option>
+              <option value="V">Động từ (Verb)</option>
+              <option value="Adj">Tính từ (Adjective)</option>
+              <option value="Adv">Trạng từ (Adverb)</option>
+              <option value="Idiom">Cụm từ / Câu hay (Idiom)</option>
+            </select>
+          </div>
+
+          <div class="fx-form-group">
+            <label for="fx-input-master-meanings" class="fx-label">Các nghĩa tiếng Việt đã biết</label>
+            <input type="text" id="fx-input-master-meanings" class="fx-input" placeholder="Ví dụ: ngành công nghiệp, sự cần cù (ngăn cách bằng dấu phẩy)" spellcheck="false">
+            <span class="fx-help-text">Nếu từ có nhiều nghĩa đã biết, hãy ngăn cách bằng dấu phẩy (,)</span>
+          </div>
+
+          <div id="fx-add-master-status" class="fx-settings-status" style="display:none;"></div>
+        </div>
+
+        <div class="fx-modal-footer">
+          <button type="button" id="fx-btn-cancel-add-master" class="fx-btn-tesla-ghost">Hủy</button>
+          <button type="button" id="fx-btn-submit-add-master" class="fx-btn-tesla-primary">Lưu vào Master List</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -324,6 +443,7 @@
   <script src="../lib/cefrDict.js"></script>
   <script src="../lib/vocabAnalyzer.js"></script>
   <script src="../lib/neonClient.js"></script>
+  <script src="../lib/masterList.js"></script>
   <script src="../lib/aiClient.js"></script>
   <script src="studio.js"></script>
 </body>
