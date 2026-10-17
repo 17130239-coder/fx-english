@@ -94,7 +94,28 @@ assert.strictEqual(ytCues.length, 2, 'Parsed 2 YouTube format 3 cues');
 assert.strictEqual(ytCues[0].startSec, 18.64, 'YouTube cue start parsed correctly in seconds');
 assert.strictEqual(ytCues[0].cleanText, "♪ We're no strangers to love ♪", 'YouTube cue text and entities cleaned');
 
-console.log('   ✓ Subtitle parser passed: SRT, VTT, YouTube TimedText XML, clean TXT verified.\n');
+// Test Netflix TTML / DFXP XML with ttp:tickRate and ticks "t"
+const sampleNetflixTtml = `<?xml version="1.0" encoding="utf-8"?>
+<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttp="http://www.w3.org/ns/ttml#parameter" ttp:tickRate="10000000" ttp:frameRate="24">
+<body>
+  <div>
+    <p begin="186400000t" end="218800000t">
+      <span>Learning English with Netflix is extraordinary.</span>
+    </p>
+    <p begin="00:01:23:12" end="00:01:26:00">
+      <span>The scholar discovered an ancient secret map.<br/>He smiled warmly.</span>
+    </p>
+  </div>
+</body>
+</tt>`;
+const nfCues = parser.parse(sampleNetflixTtml);
+assert.strictEqual(nfCues.length, 2, 'Parsed 2 Netflix TTML cues');
+assert.strictEqual(nfCues[0].startSec, 18.64, 'Netflix tickRate 10M converted 186400000t to 18.64s');
+assert.strictEqual(nfCues[0].endSec, 21.88, 'Netflix tickRate 10M converted 218800000t to 21.88s');
+assert.strictEqual(nfCues[1].startSec, 83.5, 'Netflix frame format 00:01:23:12 converted to 83.5s');
+assert.ok(nfCues[1].cleanText.includes('ancient secret map. He smiled warmly'), 'BR tag cleaned properly into space');
+
+console.log('   ✓ Subtitle parser passed: SRT, VTT, YouTube TimedText XML, Netflix TTML/DFXP, clean TXT verified.\n');
 
 // 4. Test Offline CEFR Dictionary
 console.log('📖 4. Testing Offline CEFR Dictionary & Morphology...');

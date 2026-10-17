@@ -11,7 +11,8 @@
 
   const MANIFEST_PATTERN = /manifest|licensedManifest/i;
   const METADATA_PATTERN = /\/metadata\?/i;
-  const ALL_FORMATS = ['webvtt-lssdh-ios8', 'dfxp-ls-sdh', 'imsc1.1', 'simplesdh'];
+  // Prioritize unsegmented full-movie formats: dfxp-ls-sdh & imsc1.1 over segmented WebVTT
+  const ALL_FORMATS = ['dfxp-ls-sdh', 'imsc1.1', 'simplesdh', 'webvtt-lssdh-ios8'];
 
   let activeVideoData = {
     movieId: null,
@@ -189,6 +190,22 @@
         const movieId = player?.getMovieId?.();
         if (movieId && !activeVideoData.movieId) {
           activeVideoData.movieId = movieId;
+        }
+
+        // Extract tracks directly from player if not already captured
+        if (!activeVideoData.tracks || activeVideoData.tracks.length === 0) {
+          if (typeof player?.getManifest === 'function') {
+            const m = player.getManifest();
+            if (m && (m.timedtexttracks || m.textTracks)) {
+              processManifestTracks(m);
+            }
+          }
+          if ((!activeVideoData.tracks || activeVideoData.tracks.length === 0) && typeof player?.getTimedTextTrackList === 'function') {
+            const list = player.getTimedTextTrackList();
+            if (Array.isArray(list) && list.length > 0) {
+              processManifestTracks({ movieId: activeVideoData.movieId, timedtexttracks: list });
+            }
+          }
         }
       }
     } catch (e) {}

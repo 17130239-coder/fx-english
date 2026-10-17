@@ -113,9 +113,21 @@
       throw new Error('Chưa tìm thấy đường dẫn phụ đề. Hãy đảm bảo phim đã bật phụ đề tiếng Anh.');
     }
 
-    const resp = await fetch(currentMovieData.selectedTrack.downloadUrl);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}: Không tải được phụ đề`);
-    const raw = await resp.text();
+    let raw = '';
+    try {
+      const resp = await fetch(currentMovieData.selectedTrack.downloadUrl);
+      if (resp.ok) raw = await resp.text();
+    } catch (e) {}
+
+    if (!raw) {
+      const fb = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'fetch_external_url', url: currentMovieData.selectedTrack.downloadUrl }, resolve);
+      });
+      if (fb && fb.success && fb.text) raw = fb.text;
+    }
+
+    if (!raw) throw new Error('Không tải được nội dung phụ đề từ Netflix. Hãy thử phát video vài giây rồi tải lại.');
+
     const cues = PARSER ? PARSER.parse(raw) : [];
     if (!cues || cues.length === 0) throw new Error('Không phân tích được nội dung phụ đề.');
     currentMovieData.cues = cues;
@@ -329,7 +341,7 @@
       return;
     }
 
-    grid.innerHTML = words.slice(0, 150).map((item) => {
+    grid.innerHTML = words.map((item) => {
       const firstCtx = (item.contexts && item.contexts[0]) ? item.contexts[0] : null;
       let sentenceHtml = '';
       if (firstCtx) {
