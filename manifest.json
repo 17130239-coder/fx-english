@@ -41,6 +41,17 @@
         "*://*.youtube.com/*"
       ],
       "js": [
+        "content/youtubeInjected.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
         "lib/subtitleParser.js",
         "content/youtubeContent.js"
       ],
@@ -48,6 +59,17 @@
         "content/youtubeContent.css"
       ],
       "run_at": "document_end",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.netflix.com/*"
+      ],
+      "js": [
+        "content/netflixInjected.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start",
       "all_frames": false
     },
     {

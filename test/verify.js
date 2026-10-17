@@ -81,7 +81,20 @@ assert.ok(vttOutput.includes('00:00:01.500 --> 00:00:04.200'), 'VTT timestamp us
 
 const txtOutput = parser.toReadableTranscript(cues);
 assert.ok(txtOutput.includes('Learning English through movies is fascinating and effective.'), 'Clean transcript TXT formatted');
-console.log('   ✓ Subtitle parser passed: SRT, VTT, clean TXT conversions verified.\n');
+
+// Test YouTube TimedText format="3" XML parsing
+const sampleYtXml = `<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
+<body>
+<p t="18640" d="3240">♪ We&#39;re no strangers to love ♪</p>
+<p t="22640" d="4320">♪ You know the rules and so do I ♪</p>
+</body>
+</timedtext>`;
+const ytCues = parser.parse(sampleYtXml);
+assert.strictEqual(ytCues.length, 2, 'Parsed 2 YouTube format 3 cues');
+assert.strictEqual(ytCues[0].startSec, 18.64, 'YouTube cue start parsed correctly in seconds');
+assert.strictEqual(ytCues[0].cleanText, "♪ We're no strangers to love ♪", 'YouTube cue text and entities cleaned');
+
+console.log('   ✓ Subtitle parser passed: SRT, VTT, YouTube TimedText XML, clean TXT verified.\n');
 
 // 4. Test Offline CEFR Dictionary
 console.log('📖 4. Testing Offline CEFR Dictionary & Morphology...');

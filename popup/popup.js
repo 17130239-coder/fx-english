@@ -17,7 +17,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnDlTxt = document.getElementById('fx-btn-dl-txt');
   const btnOpenStudio = document.getElementById('fx-btn-open-studio');
 
+  const PARSER = (typeof APP_SUBTITLE_PARSER !== 'undefined') ? APP_SUBTITLE_PARSER : null;
+
   let activeTabId = null;
+  let cachedCues = null;
+  let cachedTitle = '';
 
   // Open Studio
   btnOpenStudio.addEventListener('click', () => {
@@ -26,17 +30,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  function extractYouTubeId(url) {
+    try {
+      const u = new URL(url);
+      if (u.searchParams.has('v')) return u.searchParams.get('v');
+      const match = u.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+      const embedMatch = u.pathname.match(/\/embed\/([a-zA-Z0-9_-]+)/);
+      if (embedMatch) return embedMatch[1];
+    } catch (e) {}
+    return null;
+  }
+
   // Check Active Tab Media
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab && tab.id) {
       activeTabId = tab.id;
       chrome.tabs.sendMessage(tab.id, { action: 'get_media_info' }, (resp) => {
-        if (chrome.runtime.lastError || !resp || !resp.success) {
-          showIdle();
+        if (!chrome.runtime.lastError && resp && resp.success) {
+          showMedia(resp);
           return;
         }
-        showMedia(resp);
+
+        // Direct YouTube API fallback if content script is not yet active on the tab
+        if (tab.url && (tab.url.includes('youtube.com/watch') || tab.url.includes('youtube.com/shorts/'))) {
+          const videoId = extractYouTubeId(tab.url);
+          if (videoId) {
+            chrome.runtime.sendMessage({ action: 'fetch_youtube_captions', videoId }, (ytRes) => {
+              if (ytRes && ytRes.success) {
+                cachedCues = ytRes.cues || [];
+                cachedTitle = ytRes.title || tab.title || 'YouTube Video';
+                showMedia({
+                  platform: 'youtube',
+                  title: cachedTitle,
+                  hasTracks: ytRes.tracks && ytRes.tracks.length > 0,
+                  selectedTrack: ytRes.selectedTrack,
+                  cues: cachedCues,
+                  isDirectFetch: true
+                });
+                return;
+              }
+              showIdle();
+            });
+            return;
+          }
+        }
+
+        showIdle();
       });
     } else {
       showIdle();
@@ -50,6 +91,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     idleCard.style.display = 'flex';
   }
 
+  function downloadContent(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   function showMedia(info) {
     idleCard.style.display = 'none';
     mediaCard.style.display = 'flex';
@@ -59,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     platformBadge.className = `fx-badge ${isYT ? 'fx-badge-yt' : 'fx-badge-nf'}`;
 
     mediaTitle.textContent = info.title || (isYT ? 'YouTube Video' : 'Netflix Movie');
+    cachedTitle = mediaTitle.textContent;
 
     if (info.selectedTrack && info.selectedTrack.label) {
       trackStatus.textContent = `✓ ${info.selectedTrack.label}`;
@@ -71,9 +125,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       trackStatus.style.color = '#f59e0b';
     }
 
-    // Quick Vocab Modal
+    // Quick Vocab Modal or Open Studio with cached cues
     btnQuickVocab.onclick = () => {
-      if (activeTabId) {
+      if (info.isDirectFetch && cachedCues && cachedCues.length > 0) {
+        chrome.storage.local.set({
+          fxPendingStudio: {
+            title: cachedTitle,
+            cues: cachedCues
+          }
+        }, () => {
+          chrome.runtime.sendMessage({ action: 'open_studio' }, () => window.close());
+        });
+      } else if (activeTabId) {
         chrome.tabs.sendMessage(activeTabId, { action: 'open_vocab_modal' }, () => {
           window.close();
         });
@@ -87,11 +150,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.textContent = '...';
         btn.disabled = true;
 
+        if (info.isDirectFetch && cachedCues && cachedCues.length > 0 && PARSER) {
+          const safeTitle = (cachedTitle || 'youtube_subtitles').replace(/[/\\?%*:|"<>]/g, '_');
+          let content = '';
+          let filename = `${safeTitle}.${format}`;
+          let mimeType = 'text/plain;charset=utf-8;';
+
+          if (format === 'srt') {
+            content = PARSER.toSRT(cachedCues);
+            mimeType = 'application/x-subrip;charset=utf-8;';
+          } else if (format === 'vtt') {
+            content = PARSER.toWebVTT(cachedCues);
+            mimeType = 'text/vtt;charset=utf-8;';
+          } else if (format === 'txt') {
+            content = PARSER.toReadableTranscript(cachedCues);
+          }
+
+          downloadContent(content, filename, mimeType);
+          btn.textContent = originalText;
+          btn.disabled = false;
+          return;
+        }
+
         chrome.tabs.sendMessage(activeTabId, { action: 'download_subtitles', format }, (res) => {
           btn.textContent = originalText;
           btn.disabled = false;
           if (chrome.runtime.lastError || !res || !res.success) {
-            alert('Lỗi tải phụ đề: ' + (res?.error || chrome.runtime.lastError?.message || 'Không tìm thấy phụ đề. Hãy mở video và bật CC trước.'));
+            alert('Lỗi tải phụ đề: ' + (res?.error || chrome.runtime.lastError?.message || 'Không tìm thấy phụ đề. Hãy đảm bảo video có phụ đề tiếng Anh.'));
           }
         });
       };
