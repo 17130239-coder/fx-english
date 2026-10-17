@@ -116,13 +116,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       trackStatus.style.color = '#f59e0b';
     }
 
-    // Quick Vocab Modal
+    // Quick Vocab: open Studio directly with extracted subtitles & 4 POS analysis
     btnQuickVocab.onclick = () => {
-      if (activeTabId) {
-        chrome.tabs.sendMessage(activeTabId, { action: 'open_vocab_modal' }, () => {
-          window.close();
-        });
-      }
+      if (!activeTabId) return;
+
+      const originalHtml = btnQuickVocab.innerHTML;
+      btnQuickVocab.innerHTML = '<span>⏳ Đang lấy phụ đề & mở Studio...</span>';
+      btnQuickVocab.disabled = true;
+
+      chrome.tabs.sendMessage(activeTabId, { action: 'get_subtitles' }, (res) => {
+        if (!chrome.runtime.lastError && res && res.success && res.cues && res.cues.length > 0) {
+          chrome.storage.local.set({
+            fxPendingStudio: {
+              title: res.title || info.title || 'Movie / Video',
+              cues: res.cues
+            }
+          }, () => {
+            chrome.runtime.sendMessage({ action: 'open_studio' }, () => {
+              window.close();
+            });
+          });
+        } else {
+          btnQuickVocab.innerHTML = originalHtml;
+          btnQuickVocab.disabled = false;
+          const errMsg = res?.error || chrome.runtime.lastError?.message || 'Chưa tìm thấy phụ đề tiếng Anh cho video này. Hãy bật biểu tượng [CC] trên video rồi thử lại.';
+          alert(errMsg);
+        }
+      });
     };
 
     // Subtitle Downloads

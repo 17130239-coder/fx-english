@@ -35,15 +35,13 @@ fx-english/
 │   └── background.js          # Service Worker điều phối tin nhắn, tải file, lưu trữ
 ├── content/
 │   ├── netflixInjected.js     # Script MAIN world hook vào Player API của Netflix
-│   ├── netflixContent.js      # Content script hiển thị widget trên trình phát Netflix
-│   ├── netflixContent.css     # Giao diện Glassmorphism trên Netflix
+│   ├── netflixContent.js      # Headless content worker trích xuất phụ đề Netflix
 │   ├── youtubeInjected.js     # Script MAIN world lấy danh sách caption tracks trên YouTube
-│   ├── youtubeContent.js      # Content script hiển thị widget trên trình phát YouTube
-│   └── youtubeContent.css     # Giao diện Glassmorphism trên YouTube
+│   └── youtubeContent.js      # Headless content worker trích xuất phụ đề YouTube
 ├── popup/
-│   ├── popup.html             # Giao diện popup khi nhấp vào icon tiện ích
+│   ├── popup.html             # Giao diện popup khi nhấp vào icon tiện ích trên Chrome toolbar
 │   ├── popup.css              # Styling hiện đại cho popup
-│   └── popup.js               # Logic kiểm tra trạng thái video và tải nhanh
+│   └── popup.js               # Logic kiểm tra trạng thái video, tải nhanh và mở Studio
 ├── studio/
 │   ├── studio.html            # Không gian học tập toàn màn hình (FX Vocabulary Studio)
 │   ├── studio.css             # Styling dashboard & hiệu ứng 3D Flashcard Flip
@@ -75,27 +73,25 @@ fx-english/
 
 ## 🎬 Hướng Dẫn Sử Dụng (User Guide)
 
-### 1. Trên Netflix hoặc YouTube
+### 1. Trên Netflix hoặc YouTube (Giao diện sạch 100%, không popup che video)
 1. Mở bất kỳ bộ phim nào trên Netflix (ví dụ: `netflix.com/watch/...`) hoặc video trên YouTube.
-2. Đảm bảo bạn đã bật phụ đề tiếng Anh (**CC**).
-3. Nút tròn **⚡ FX - Phụ đề & Từ vựng** sẽ xuất hiện nổi trên màn hình phát phim.
-4. Bấm vào nút để mở bảng điều khiển:
-   - **Tải phụ đề**: Bấm chọn `⬇ .SRT`, `⬇ .VTT`, hoặc `⬇ .TXT`.
-   - **Tách từ vựng**: Bấm `⚡ Tách từ vựng (POS: Danh, Động, Tính, Trạng)`.
-   - Xem ngay danh sách từ vựng chia theo 4 tab màu sắc:
-     - 📘 **Danh từ**: `scholar`, `astronomer`, `journey`, `secret`...
-     - 📙 **Động từ**: `discover`, `whisper`, `realize`...
-     - 📗 **Tính từ**: `fascinating`, `mysterious`, `courageous`...
-     - 📕 **Trạng từ**: `softly`, `warmly`, `suddenly`...
-   - Nhấp vào biểu tượng 🔊 để nghe phát âm, hoặc nhấp vào mốc thời gian để tua thẳng đến câu thoại trong phim.
+2. Đảm bảo video đang bật phụ đề tiếng Anh (**CC**).
+3. Nhấp vào biểu tượng tiện ích **FX English ⚡** trên thanh công cụ Chrome:
+   - Tiện ích tự động nhận diện video và kênh phụ đề tiếng Anh.
+   - **Tải phụ đề ngay**: Bấm chọn `.SRT`, `.VTT`, hoặc `.TXT` để tải file về máy.
+   - **Tách từ vựng**: Bấm **⚡ Tách từ vựng (4 loại từ)** — hệ thống sẽ tự động chuyển sang trang **FX Vocabulary Studio** toàn màn hình với đầy đủ từ vựng đã được phân loại!
 
 ---
 
-### 2. Sử dụng Popup Tiện Ích
-- Nhấp vào biểu tượng **FX English** trên thanh công cụ Chrome:
-  - Tự động nhận diện video đang phát trên tab hiện tại.
-  - Tải nhanh file `.SRT`, `.VTT`, `.TXT`.
-  - Bấm **Mở FX Vocabulary Studio ↗** để chuyển toàn bộ từ vựng sang không gian học tập chuyên sâu.
+### 2. Không Gian Học Chuyên Sâu (FX Vocabulary Studio)
+- Xem toàn bộ từ vựng được phân tách thành 4 nhóm ngữ pháp:
+  - 📘 **Danh từ**: `scholar`, `astronomer`, `journey`, `secret`...
+  - 📙 **Động từ**: `discover`, `whisper`, `realize`...
+  - 📗 **Tính từ**: `fascinating`, `mysterious`, `courageous`...
+  - 📕 **Trạng từ**: `softly`, `warmly`, `suddenly`...
+- Tra cứu cấp độ CEFR A1–C2, phiên âm IPA, nghĩa tiếng Việt chuẩn xác.
+- Luyện tập với **3D Flashcards** (phím `Space` để lật, `←` / `→` để chuyển thẻ).
+- Xuất toàn bộ từ vựng sang **Anki** hoặc **CSV (Excel/Google Sheets)** chỉ với 1 click!
 
 ---
 

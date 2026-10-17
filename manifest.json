@@ -55,9 +55,6 @@
         "lib/subtitleParser.js",
         "content/youtubeContent.js"
       ],
-      "css": [
-        "content/youtubeContent.css"
-      ],
       "run_at": "document_end",
       "all_frames": false
     },
@@ -79,9 +76,6 @@
       "js": [
         "lib/subtitleParser.js",
         "content/netflixContent.js"
-      ],
-      "css": [
-        "content/netflixContent.css"
       ],
       "run_at": "document_end",
       "all_frames": false
