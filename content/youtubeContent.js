@@ -11,10 +11,60 @@
   if (window.__fxYoutubeContentInjected) return;
   window.__fxYoutubeContentInjected = true;
 
-  // Clean up any legacy in-page popup or widget if previously injected
+  // Thoroughly purge and suppress any in-page floating popups or widgets (both FX and AF legacy)
+  const purgeInPageOverlays = () => {
+    const selectors = [
+      '#fx-youtube-widget',
+      '#af-youtube-widget',
+      '#fx-netflix-widget',
+      '#af-netflix-widget',
+      '.af-widget-pill',
+      '.fx-widget-pill',
+      '#fx-youtube-modal-backdrop',
+      '#af-modal-backdrop',
+      '#fx-netflix-modal-backdrop'
+    ];
+    selectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => {
+        try { el.remove(); } catch (e) {}
+      });
+    });
+  };
+
   try {
-    document.getElementById('fx-youtube-widget')?.remove();
-    document.getElementById('fx-youtube-modal-backdrop')?.remove();
+    purgeInPageOverlays();
+
+    // Inject CSS rule to guarantee elements are completely hidden and unclickable
+    if (!document.getElementById('fx-hide-all-overlays')) {
+      const hideStyle = document.createElement('style');
+      hideStyle.id = 'fx-hide-all-overlays';
+      hideStyle.textContent = `
+        #fx-youtube-widget, #af-youtube-widget,
+        #fx-netflix-widget, #af-netflix-widget,
+        .af-widget-pill, .fx-widget-pill,
+        #fx-youtube-modal-backdrop, #af-modal-backdrop,
+        #fx-netflix-modal-backdrop {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          width: 0 !important;
+          height: 0 !important;
+          position: absolute !important;
+          top: -9999px !important;
+          left: -9999px !important;
+        }
+      `;
+      (document.head || document.documentElement).appendChild(hideStyle);
+    }
+
+    // Watch for dynamic element insertions and remove immediately
+    const observer = new MutationObserver(() => {
+      purgeInPageOverlays();
+    });
+    if (document.documentElement || document.body) {
+      observer.observe(document.documentElement || document.body, { childList: true, subtree: true });
+    }
   } catch (e) {}
 
   const PARSER = (typeof APP_SUBTITLE_PARSER !== 'undefined') ? APP_SUBTITLE_PARSER : null;
