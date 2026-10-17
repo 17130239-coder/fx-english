@@ -486,6 +486,20 @@
       });
       return true;
     }
+
+    if (msg.action === 'get_subtitles') {
+      fetchSubtitles().then((cues) => {
+        sendResponse({
+          success: true,
+          platform: 'netflix',
+          title: getFullDisplayTitle(),
+          cues: cues
+        });
+      }).catch((err) => {
+        sendResponse({ success: false, error: err.message });
+      });
+      return true;
+    }
   });
 
   function init() {

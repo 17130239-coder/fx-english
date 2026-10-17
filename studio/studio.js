@@ -216,24 +216,23 @@
       this.btnLoadDetected.disabled = true;
       this.btnLoadDetected.textContent = 'Đang tải phụ đề...';
 
-      chrome.tabs.sendMessage(tabId, { action: 'get_media_info' }, (info) => {
-        if (!info || !info.success) {
-          alert('Không thể kết nối với tab xem phim. Hãy mở lại tab phim và bật CC.');
-          this.btnLoadDetected.disabled = false;
-          this.btnLoadDetected.textContent = '⚡ Phân tích ngay';
+      chrome.tabs.sendMessage(tabId, { action: 'get_subtitles' }, (res) => {
+        this.btnLoadDetected.disabled = false;
+        this.btnLoadDetected.textContent = '⚡ Phân tích ngay';
+
+        if (chrome.runtime.lastError || !res || !res.success) {
+          const err = res?.error || chrome.runtime.lastError?.message || 'Không thể tải phụ đề từ tab phim. Hãy đảm bảo video đã bật CC.';
+          alert(err);
           return;
         }
 
-        this.movieTitle = info.title || 'Movie';
-        // Download raw SRT or text from tab
-        chrome.tabs.sendMessage(tabId, { action: 'download_subtitles', format: 'vtt' }, () => {
-          // After download trigger, check storage
-          setTimeout(() => {
-            this.btnLoadDetected.disabled = false;
-            this.btnLoadDetected.textContent = '⚡ Phân tích ngay';
-            this.checkPendingStorage();
-          }, 600);
-        });
+        if (Array.isArray(res.cues) && res.cues.length > 0) {
+          this.movieTitle = res.title || 'Movie';
+          this.cues = res.cues;
+          this.runAnalysis();
+        } else {
+          alert('Không tìm thấy câu phụ đề nào trong video này.');
+        }
       });
     },
 

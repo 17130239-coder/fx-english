@@ -23,7 +23,15 @@
     let tracks = null;
     let videoTitle = '';
 
-    // 1. Check movie_player
+    // 0. Ensure captions module is loaded in player
+    try {
+      const player = document.getElementById('movie_player');
+      if (player && typeof player.loadModule === 'function') {
+        player.loadModule('captions');
+      }
+    } catch (e) {}
+
+    // 1. Check movie_player.getPlayerResponse()
     try {
       const player = document.getElementById('movie_player');
       if (player && typeof player.getPlayerResponse === 'function') {
@@ -33,13 +41,44 @@
       }
     } catch (e) {}
 
-    // 2. Fallback to ytInitialPlayerResponse
-    if (!tracks || !Array.isArray(tracks)) {
+    // 2. Check player.getOption('captions', 'tracklist')
+    if (!tracks || !Array.isArray(tracks) || tracks.length === 0) {
+      try {
+        const player = document.getElementById('movie_player');
+        if (player && typeof player.getOption === 'function') {
+          const optTracks = player.getOption('captions', 'tracklist');
+          if (Array.isArray(optTracks) && optTracks.length > 0) {
+            tracks = optTracks.map(t => ({
+              baseUrl: t.url || t.baseUrl,
+              languageCode: t.languageCode,
+              name: { simpleText: t.name || t.displayName || t.languageName || t.languageCode },
+              kind: t.kind || (t.is_default ? '' : 'asr')
+            }));
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Fallback to ytInitialPlayerResponse
+    if (!tracks || !Array.isArray(tracks) || tracks.length === 0) {
       try {
         if (window.ytInitialPlayerResponse) {
           tracks = window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
           if (!videoTitle) {
             videoTitle = window.ytInitialPlayerResponse?.videoDetails?.title || '';
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 4. Fallback to ytInitialData
+    if (!tracks || !Array.isArray(tracks) || tracks.length === 0) {
+      try {
+        if (window.ytInitialData) {
+          const pr = window.ytInitialData.playerResponse;
+          if (pr) {
+            tracks = pr.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+            if (!videoTitle) videoTitle = pr.videoDetails?.title || '';
           }
         }
       } catch (e) {}
@@ -52,14 +91,16 @@
 
     const cleanTracks = [];
     if (Array.isArray(tracks)) {
-      for (const t of tracks) {
+      for (let i = 0; i < tracks.length; i++) {
+        const t = tracks[i];
         if (!t.baseUrl) continue;
         const lang = t.languageCode || 'en';
-        const name = t.name?.simpleText || lang;
+        const name = t.name?.simpleText || t.name?.runs?.[0]?.text || lang;
         const isAsr = t.kind === 'asr';
         const isEnglish = lang.toLowerCase().startsWith('en');
 
         cleanTracks.push({
+          index: cleanTracks.length,
           baseUrl: t.baseUrl,
           language: lang,
           label: `${name}${isAsr ? ' (Tự động)' : ''}`,
@@ -77,13 +118,32 @@
 
   function notifyTracks() {
     const info = getCaptionTracks();
-    dispatchToContent('youtube_tracks_ready', info);
+    if (info && info.tracks && info.tracks.length > 0) {
+      dispatchToContent('youtube_tracks_ready', info);
+    }
   }
 
+  // Request info listener from content script
   window.addEventListener('fx_youtube_request_info', () => {
     notifyTracks();
   });
 
+  // Fetch timedtext directly from MAIN page context (same origin + cookies, zero 403)
+  window.addEventListener('fx_youtube_fetch_timedtext', async (e) => {
+    const { url, requestId } = e.detail || {};
+    if (!url) return;
+
+    try {
+      const resp = await fetch(url, { credentials: 'include' });
+      if (!resp.ok) throw new Error(`HTTP Error ${resp.status}`);
+      const text = await resp.text();
+      dispatchToContent('youtube_subtitles_text_ready', { success: true, text, requestId });
+    } catch (err) {
+      dispatchToContent('youtube_subtitles_text_ready', { success: false, error: err.message, requestId });
+    }
+  });
+
+  // Seek video listener
   window.addEventListener('fx_youtube_seek', (e) => {
     try {
       const seconds = Number(e.detail && e.detail.seconds);
@@ -102,11 +162,33 @@
     } catch (err) {}
   });
 
+  // Player API Change hook
+  try {
+    const player = document.getElementById('movie_player');
+    if (player && typeof player.addEventListener === 'function') {
+      player.addEventListener('onApiChange', () => {
+        setTimeout(notifyTracks, 300);
+      });
+    }
+  } catch (e) {}
+
   window.addEventListener('yt-navigate-finish', () => {
-    setTimeout(notifyTracks, 1200);
+    setTimeout(notifyTracks, 800);
+    setTimeout(notifyTracks, 1800);
   });
 
-  setTimeout(notifyTracks, 1500);
+  // Poll for tracks on page load
+  let attempts = 0;
+  const poll = setInterval(() => {
+    attempts++;
+    const info = getCaptionTracks();
+    if (info && info.tracks && info.tracks.length > 0) {
+      dispatchToContent('youtube_tracks_ready', info);
+      clearInterval(poll);
+    } else if (attempts >= 10) {
+      clearInterval(poll);
+    }
+  }, 1000);
 
-  console.log('[FX English] YouTube Injected Script initialized');
+  setTimeout(notifyTracks, 1500);
 })();
