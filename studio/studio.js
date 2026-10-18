@@ -2449,11 +2449,18 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           map.set(key, m);
         });
 
-        // Merge local movies
+        // Merge local movies, preserving full analysis and cues from local scan if cloud summary lacks them
         localHistory.forEach((loc) => {
           const key = (loc.url && loc.url.trim()) ? loc.url.trim() : loc.id;
           const existing = map.get(key);
-          if (!existing || (loc.timestamp && loc.timestamp > (existing.timestamp || 0))) {
+          if (existing) {
+            map.set(key, {
+              ...existing,
+              ...loc,
+              analysis: (loc.analysis && Object.keys(loc.analysis).length > 0) ? loc.analysis : existing.analysis,
+              cues: (loc.cues && loc.cues.length > 0) ? loc.cues : existing.cues
+            });
+          } else {
             map.set(key, loc);
           }
         });
