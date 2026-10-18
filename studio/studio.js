@@ -746,13 +746,13 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
 
         try {
-          const mlItems = this.getMasterList()?.getAll?.() || [];
+          const ml = this.getMasterList();
           analysisResult = await ai.analyzeSubtitles(this.cues, (done, total) => {
             if (this.btnAnalyze) {
               const pct = total > 0 ? Math.round((done / total) * 100) : 0;
               this.btnAnalyze.textContent = `Đang phân tích AI (${pct}%)...`;
             }
-          }, mlItems);
+          }, ml);
         } catch (err) {
           console.warn('[FX AI] AI analysis warning, falling back to offline NLP:', err);
           if (err.code === 'NO_API_KEY') {
@@ -782,8 +782,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           this.showToast('Không tìm thấy VocabAnalyzer.', 'error');
           return;
         }
-        analysisResult = ANALYZER.analyzeSubtitles(this.cues);
+        const ml = this.getMasterList();
+        analysisResult = ANALYZER.analyzeSubtitles(this.cues, { masterList: ml });
       }
+
+      // 3. Post-Filter: Deduplicate against Master List (omit words already mastered unless new meaning)
+      analysisResult = this.filterAnalysisAgainstMasterList(analysisResult);
 
       this.analysis = analysisResult;
       this.updateStats();
@@ -907,6 +911,43 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       }
     },
 
+    filterAnalysisAgainstMasterList(analysis) {
+      const ml = this.getMasterList();
+      if (!ml || !analysis) return analysis;
+      const knownItems = ml.getAll() || [];
+      if (knownItems.length === 0) return analysis;
+      const knownSet = new Set(knownItems.map((it) => (it.text || '').trim().toLowerCase()));
+
+      if (Array.isArray(analysis.allWords)) {
+        analysis.allWords = analysis.allWords.filter((w) => !knownSet.has((w.word || '').toLowerCase()) || w.isNewMeaning);
+      }
+      ['noun', 'verb', 'adjective', 'adverb'].forEach((cat) => {
+        if (analysis.categories?.[cat]?.words) {
+          analysis.categories[cat].words = analysis.categories[cat].words.filter(
+            (w) => !knownSet.has((w.word || '').toLowerCase()) || w.isNewMeaning
+          );
+          analysis.categories[cat].count = analysis.categories[cat].words.length;
+        }
+        const pluralKey = cat === 'adjective' ? 'adjectives' : cat === 'adverb' ? 'adverbs' : cat + 's';
+        if (Array.isArray(analysis[pluralKey])) {
+          analysis[pluralKey] = analysis[pluralKey].filter(
+            (w) => !knownSet.has((w.word || '').toLowerCase()) || w.isNewMeaning
+          );
+        }
+      });
+      if (analysis.totals) {
+        const nounCount = analysis.categories?.noun?.count || 0;
+        const verbCount = analysis.categories?.verb?.count || 0;
+        const adjCount = analysis.categories?.adjective?.count || 0;
+        const advCount = analysis.categories?.adverb?.count || 0;
+        analysis.totals.uniqueWords = nounCount + verbCount + adjCount + advCount;
+      }
+      if (analysis.summary) {
+        analysis.summary.uniqueWords = analysis.totals?.uniqueWords || 0;
+      }
+      return analysis;
+    },
+
     isStarred(key) {
       if (!key) return false;
       const cleanKey = String(key).trim().toLowerCase();
@@ -916,7 +957,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     isMastered(key) {
       if (!key) return false;
       const cleanKey = String(key).trim().toLowerCase();
-      return Boolean(this.wordStates[cleanKey]?.mastered);
+      if (this.wordStates[cleanKey]?.mastered) return true;
+      const ml = this.getMasterList();
+      if (ml && ml.has(cleanKey)) return true;
+      return false;
     },
 
     toggleStar(key) {
@@ -2379,9 +2423,24 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             changed = true;
           }
         }
-      }
+      // Two-way sync: Also ensure all items from MasterList are marked as mastered in wordStates
+      const allKnown = ml.getAll() || [];
+      allKnown.forEach((it) => {
+        if (it && it.text) {
+          const k = it.text.trim().toLowerCase();
+          if (!this.wordStates[k] || !this.wordStates[k].mastered) {
+            this.wordStates[k] = {
+              starred: this.wordStates[k]?.starred || false,
+              mastered: true,
+              updatedAt: Date.now()
+            };
+            changed = true;
+          }
+        }
+      });
 
       if (changed) {
+        this.saveWordStates();
         this.updateMasterCount();
         if (this.activeView === 'master') {
           this.renderMasterList();

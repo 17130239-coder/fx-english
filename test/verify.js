@@ -916,6 +916,40 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
     console.log('   ✓ Zero native alert/confirm dialogs & zero emojis verified across all application modules.\n');
 
+    // 19. Testing Master Known List Analysis Deduplication (Zero Duplicate Words)
+    console.log('🔄 19. Testing Master Known List Analysis Deduplication (Zero Duplicate Words)...');
+    const testMasterList = [{ text: 'wolf', knownMeanings: ['chó sói'] }, { text: 'dog', knownMeanings: ['con chó'] }];
+    
+    // 19.1 Offline analyzer deduplication
+    const testCues = [
+      { startSec: 1, text: 'The wild wolf and the domestic dog were barking.' },
+      { startSec: 4, text: 'A courageous hunter entered the ancient forest.' }
+    ];
+    const deduplicatedOffline = analyzer.analyzeSubtitles(testCues, { masterList: testMasterList });
+    const offlineWords = deduplicatedOffline.allWords.map(w => w.word);
+    assert.strictEqual(offlineWords.includes('wolf'), false, 'Known word "wolf" is omitted from offline analysis output');
+    assert.strictEqual(offlineWords.includes('dog'), false, 'Known word "dog" is omitted from offline analysis output');
+    assert.ok(offlineWords.includes('hunter'), 'New word "hunter" is retained');
+    assert.ok(offlineWords.includes('forest'), 'New word "forest" is retained');
+
+    // 19.2 AI result consolidation deduplication
+    const mockAiChunks = [
+      {
+        chunk: { words: [] },
+        parsed: {
+          vocabulary: [
+            { word: 'wolf', pos: 'N', meaningVi: 'chó sói', isNewMeaning: false },
+            { word: 'hunter', pos: 'N', meaningVi: 'thợ săn', isNewMeaning: false }
+          ]
+        }
+      }
+    ];
+    const deduplicatedAi = aiClientModule.consolidateAIResults(mockAiChunks, testCues, testMasterList);
+    const aiWords = deduplicatedAi.allWords.map(w => w.word);
+    assert.strictEqual(aiWords.includes('wolf'), false, 'Known word "wolf" is omitted from AI analysis output');
+    assert.ok(aiWords.includes('hunter'), 'New word "hunter" is preserved in AI analysis output');
+    console.log('   ✓ Master Known List analysis deduplication verified: known words are strictly omitted.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');
