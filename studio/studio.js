@@ -2013,14 +2013,6 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.renderHistoryList(merged);
         this.repairGenericTitles(merged);
         this.setNeonSyncStatus('synced', 'Neon DB (Đã đồng bộ)');
-
-        // Background sync: push any local-only movie up to Neon
-        localHistory.forEach((loc) => {
-          const existsInCloud = cloudMovies.some((c) => (c.url && loc.url && c.url === loc.url) || c.id === loc.id);
-          if (!existsInCloud) {
-            neon.saveMovie(loc).catch(() => {});
-          }
-        });
       } catch (err) {
         console.warn('[FX Neon] Load sync notice:', err);
         this.setNeonSyncStatus('offline', 'Neon DB (Offline)');
@@ -2191,6 +2183,8 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     },
 
     async deleteHistoryItem(id) {
+      if (!id) return;
+
       // 1. Delete from local storage
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(['fxScanHistory'], (res) => {
@@ -2202,10 +2196,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         });
       }
 
-      // 2. Delete from Neon PostgreSQL
+      // 2. Delete from Neon Cloud Database
       const neon = this.getNeonClient();
       if (neon) {
-        neon.deleteMovie(id).catch((err) => console.warn('[FX Neon] Cloud delete warning:', err));
+        try {
+          await neon.deleteMovie(id);
+          this.showToast('Đã xóa phim khỏi lịch sử', 'info');
+        } catch (err) {
+          console.warn('[FX Neon] Cloud delete warning:', err);
+        }
       }
     },
 
@@ -2230,7 +2229,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       // 2. Clear Neon
       const neon = this.getNeonClient();
       if (neon) {
-        neon.clearAllMovies().catch((err) => console.warn('[FX Neon] Cloud clear warning:', err));
+        try {
+          await neon.clearAllMovies();
+          this.showToast('Đã xóa sạch lịch sử quét', 'info');
+        } catch (err) {
+          console.warn('[FX Neon] Cloud clear warning:', err);
+        }
       }
     },
 

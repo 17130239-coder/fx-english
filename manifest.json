@@ -33,6 +33,8 @@
     "*://*.youtube.com/*",
     "*://*.googlevideo.com/*",
     "https://*.neon.tech/*",
+    "https://fx-english-webapp.vercel.app/*",
+    "https://*.vercel.app/*",
     "https://translate.googleapis.com/*",
     "https://api.9router.com/*",
     "https://*.9router.com/*",
