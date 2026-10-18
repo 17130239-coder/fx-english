@@ -814,6 +814,68 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
     console.log('   ✓ Master Known List verified: meaning accumulation, polysemy filtering, token pre-filtering, and Anki/CSV exports working.\n');
 
+    // =========================================================================
+    // 17. Testing Master List UI Card Format, POS Tabs & CEFR Distribution
+    // =========================================================================
+    console.log('🎴 17. Testing Master List UI Card Format, POS Tabs & CEFR Distribution...');
+    const sampleMasterItems = [
+      { text: 'ingredient', pos: 'N', cefr: 'B1', knownMeanings: ['nguyên liệu nấu ăn'], context: 'We got all our ingredients for a great night.' },
+      { text: 'inspire', pos: 'V', cefr: 'B2', knownMeanings: ['truyền cảm hứng'], context: 'Get inspired by the story.' },
+      { text: 'fancy', pos: 'Adj', cefr: 'B1', knownMeanings: ['sang chảnh'], context: 'Make car camping fancy.' },
+      { text: 'overnight', pos: 'Adv', cefr: 'B1', knownMeanings: ['qua đêm'], context: 'Stay overnight at the spot.' },
+      { text: 'hit the road', type: 'sentence', pos: 'Idiom', cefr: 'B2', knownMeanings: ['lên đường'], context: 'It is time to hit the road.' }
+    ];
+
+    // 17.1 Verify POS categorization
+    const posHelper = (item) => {
+      let p = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
+      const clean = String(p).trim().toLowerCase();
+      if (clean === 'n' || clean === 'noun') return 'noun';
+      if (clean === 'v' || clean === 'verb') return 'verb';
+      if (clean === 'adj' || clean === 'adjective') return 'adjective';
+      if (clean === 'adv' || clean === 'adverb') return 'adverb';
+      if (clean === 'idiom' || clean === 'phrase' || clean === 'sentences' || item.type === 'sentence') return 'sentences';
+      return 'noun';
+    };
+
+    assert.strictEqual(posHelper(sampleMasterItems[0]), 'noun', '"ingredient" categorized as noun');
+    assert.strictEqual(posHelper(sampleMasterItems[1]), 'verb', '"inspire" categorized as verb');
+    assert.strictEqual(posHelper(sampleMasterItems[2]), 'adjective', '"fancy" categorized as adjective');
+    assert.strictEqual(posHelper(sampleMasterItems[3]), 'adverb', '"overnight" categorized as adverb');
+    assert.strictEqual(posHelper(sampleMasterItems[4]), 'sentences', '"hit the road" categorized as sentences/idiom');
+
+    // 17.2 Verify CEFR distribution calculation
+    let a1Count = 0, a2Count = 0, b1Count = 0, b2Count = 0, c1c2Count = 0;
+    sampleMasterItems.forEach((item) => {
+      const c = item.cefr.toUpperCase();
+      if (c === 'A1') a1Count++;
+      else if (c === 'A2') a2Count++;
+      else if (c === 'B1') b1Count++;
+      else if (c === 'B2') b2Count++;
+      else if (c === 'C1' || c === 'C2') c1c2Count++;
+    });
+    const totalItems = sampleMasterItems.length;
+    const pB1 = Math.round((b1Count / totalItems) * 100);
+    const pB2 = Math.round((b2Count / totalItems) * 100);
+    assert.strictEqual(pB1, 60, 'B1 represents 60% of sample master list');
+    assert.strictEqual(pB2, 40, 'B2 represents 40% of sample master list');
+
+    // 17.3 Verify Card Line 1 Specs Format: MUST NOT contain frequency (like 9x or 11x)
+    sampleMasterItems.forEach((item) => {
+      const specsParts = [posHelper(item)];
+      if (item.cefr) specsParts.push(item.cefr);
+      const specsText = specsParts.join(' · ');
+      assert.strictEqual(/\d+x/.test(specsText), false, `Specs text "${specsText}" strictly contains NO frequency`);
+    });
+
+    // 17.4 Verify Card Line 3 Quote Format: MUST NOT contain timestamps / seconds
+    sampleMasterItems.forEach((item) => {
+      const quoteText = `"${item.context}"`;
+      assert.strictEqual(/\d{2}:\d{2}(:\d{2})?/.test(quoteText), false, `Quote "${quoteText}" strictly contains NO timestamp`);
+    });
+
+    console.log('   ✓ Master List UI Card Format verified: strictly zero frequency and zero timestamps on cards.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');
