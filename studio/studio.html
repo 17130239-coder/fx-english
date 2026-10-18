@@ -17,17 +17,35 @@
       <div class="fx-nav-brand-group">
         <h1 class="fx-nav-title">FX English</h1>
         <nav class="fx-nav-switcher">
-          <button type="button" id="fx-nav-tab-studio" class="fx-nav-tab active" title="Màn hình phân tích từ vựng phim">
-            <span>Phim & Phụ đề</span>
+          <button type="button" id="fx-nav-tab-studio" class="fx-nav-tab active" title="Danh sách phim và video đã quét">
+            <span>Phim</span>
           </button>
-          <button type="button" id="fx-nav-tab-master" class="fx-nav-tab" title="Danh sách từ & câu đã biết (Master List)">
-            <span>Master List</span>
+          <button type="button" id="fx-nav-tab-master" class="fx-nav-tab" title="Danh sách từ vựng đã thuộc">
+            <span>Đã thuộc</span>
             <span id="fx-nav-master-count" class="fx-nav-pill-count">0</span>
           </button>
         </nav>
       </div>
 
       <div class="fx-nav-actions">
+        <!-- Light / Dark Mode Toggle (Icon only, 1:1 with Webapp) -->
+        <button type="button" id="fx-btn-toggle-theme" class="fx-btn-tesla-ghost-sm" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px;" title="Chuyển sang giao diện Sáng/Tối" aria-label="Chuyển sang giao diện Sáng/Tối">
+          <svg id="fx-theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg id="fx-theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <path d="M12 3a6 6 0 0 0 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+
         <button id="fx-btn-toggle-flashcards" class="fx-btn-tesla-primary-sm" style="display:none;" title="Ôn tập từ vựng bằng Flashcards">
           <span>Flashcards</span>
         </button>
@@ -133,46 +151,91 @@
         </div>
       </section>
 
+      <!-- Active Movie Detail Toolbar & Header Card (1:1 with Webapp) -->
+      <section id="fx-active-movie-section" class="fx-active-movie-section" style="display:none;">
+        <div class="fx-active-movie-toolbar">
+          <button type="button" id="fx-btn-back-to-movies" class="fx-btn-tesla-ghost-sm" title="Quay lại danh sách phim">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Tất cả phim</span>
+          </button>
+
+          <div class="fx-active-movie-actions">
+            <button type="button" id="fx-btn-detail-flashcards" class="fx-btn-tesla-primary-sm" title="Ôn tập từ vựng phim bằng Flashcards 3D">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+              <span>Flashcards</span>
+            </button>
+
+            <a id="fx-link-watch-original" href="#" target="_blank" rel="noopener noreferrer" class="fx-btn-tesla-ghost-sm" style="display:none; text-decoration:none;" title="Mở video gốc trên trình duyệt">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Xem video gốc</span>
+            </a>
+
+            <button type="button" id="fx-btn-delete-active-movie" class="fx-btn-tesla-ghost-sm" style="color: var(--fx-accent-netflix);" title="Xóa phim này">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+              <span>Xóa phim</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="fx-active-movie-header-card">
+          <h1 id="fx-active-movie-title" class="fx-active-movie-title">Movie Title</h1>
+          <div class="fx-active-movie-meta">
+            <span id="fx-active-movie-platform" class="fx-active-movie-platform">Netflix</span>
+            <span class="fx-meta-dot">·</span>
+            <span id="fx-active-movie-date">Đã quét</span>
+            <span class="fx-meta-dot">·</span>
+            <span id="fx-active-movie-count">0 từ vựng & mẫu câu</span>
+          </div>
+        </div>
+      </section>
+
       <!-- Stats Summary Strip (Tesla Dashboard KPIs) -->
       <section id="fx-stats-section" class="fx-stats-strip" style="display:none;">
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-total">0</span>
-          <span class="fx-stat-name">Tổng từ vựng</span>
+          <span class="fx-stat-name">Tổng Từ Vựng</span>
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-noun">0</span>
-          <span class="fx-stat-name">Danh từ (Nouns)</span>
+          <span class="fx-stat-name">Danh Từ</span>
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-verb">0</span>
-          <span class="fx-stat-name">Động từ (Verbs)</span>
+          <span class="fx-stat-name">Động Từ</span>
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-adj">0</span>
-          <span class="fx-stat-name">Tính từ (Adjectives)</span>
+          <span class="fx-stat-name">Tính Từ</span>
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-adv">0</span>
-          <span class="fx-stat-name">Trạng từ (Adverbs)</span>
+          <span class="fx-stat-name">Trạng Từ</span>
         </div>
         <div class="fx-stat-card">
           <span class="fx-stat-num" id="fx-stat-sentences">0</span>
-          <span class="fx-stat-name">Câu hay & Cụm từ</span>
-        </div>
-        <div class="fx-stat-card">
-          <span class="fx-stat-num" id="fx-stat-starred">0</span>
-          <span class="fx-stat-name">Từ đã lưu (Starred)</span>
-        </div>
-        <div class="fx-stat-card">
-          <span class="fx-stat-num" id="fx-stat-mastered">0</span>
-          <span class="fx-stat-name">Đã thuộc (Mastered)</span>
+          <span class="fx-stat-name">Câu Giao Tiếp</span>
         </div>
       </section>
 
       <!-- CEFR Vocabulary Distribution Bar -->
       <section id="fx-cefr-dist-section" class="fx-cefr-dist-bar-wrap" style="display:none;">
         <div class="fx-cefr-dist-header">
-          <span class="fx-cefr-dist-title">Phân bố độ khó CEFR</span>
+          <span class="fx-cefr-dist-title">Phân bố cấp độ CEFR</span>
           <span class="fx-cefr-dist-stats" id="fx-cefr-dist-stats">A1: 0% · A2: 0% · B1: 0% · B2: 0% · C1/C2: 0%</span>
         </div>
         <div class="fx-cefr-stacked-bar">
@@ -189,37 +252,69 @@
         <!-- Filters Bar -->
         <div class="fx-filters-bar">
           <div class="fx-tabs-group">
-            <button class="fx-tab-btn active" data-pos="all">Tất cả (<span id="fx-tab-count-all">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="noun">Danh từ (<span id="fx-tab-count-noun">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="verb">Động từ (<span id="fx-tab-count-verb">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="adjective">Tính từ (<span id="fx-tab-count-adj">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="adverb">Trạng từ (<span id="fx-tab-count-adv">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="sentences">Câu hay (<span id="fx-tab-count-sentences">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="starred">Đã lưu (<span id="fx-tab-count-starred">0</span>)</button>
+            <button class="fx-tab-btn active" data-pos="all">
+              <span>Tất cả</span>
+              <span id="fx-tab-count-all" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="noun">
+              <span>Danh từ</span>
+              <span id="fx-tab-count-noun" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="verb">
+              <span>Động từ</span>
+              <span id="fx-tab-count-verb" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="adjective">
+              <span>Tính từ</span>
+              <span id="fx-tab-count-adj" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="adverb">
+              <span>Trạng từ</span>
+              <span id="fx-tab-count-adv" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="sentences">
+              <span>Giao tiếp</span>
+              <span id="fx-tab-count-sentences" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="starred">
+              <span>Đã lưu</span>
+              <span id="fx-tab-count-starred" class="fx-nav-pill-count">0</span>
+            </button>
           </div>
 
           <div class="fx-filter-controls">
+            <!-- Toggle Hide Mastered Button (1:1 with Webapp) -->
+            <button
+              type="button"
+              id="fx-btn-toggle-hide-mastered"
+              class="fx-btn-tesla-ghost-sm"
+              title="Bấm để ẩn các từ đã thuộc trong Master List"
+              style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; font-size: 12px; border-radius: 6px;"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Ẩn từ đã thuộc</span>
+              <span id="fx-hide-mastered-count" style="display:none;"></span>
+            </button>
+            <input type="checkbox" id="fx-toggle-hide-mastered" style="display:none;">
+
+            <select id="fx-filter-cefr" class="fx-select-sm">
+              <option value="all">Mọi cấp độ CEFR</option>
+              <option value="A1">A1 (Cơ bản)</option>
+              <option value="A2">A2 (Sơ cấp)</option>
+              <option value="B1">B1 (Trung cấp)</option>
+              <option value="B2">B2 (Trung cao)</option>
+              <option value="C1">C1 (Cao cấp)</option>
+              <option value="C2">C2 (Thành thạo)</option>
+            </select>
+
             <div class="fx-search-wrap">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="fx-search-icon">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input type="text" id="fx-filter-search" placeholder="Tìm kiếm từ hoặc nghĩa...">
             </div>
-
-            <label class="fx-toggle-wrap" title="Ẩn các từ bạn đã đánh dấu thuộc để tập trung vào từ mới">
-              <input type="checkbox" id="fx-toggle-hide-mastered" class="fx-toggle-checkbox">
-              <span class="fx-toggle-label">Ẩn từ đã thuộc</span>
-            </label>
-
-            <select id="fx-filter-cefr" class="fx-select-sm">
-              <option value="all">Mọi cấp độ CEFR</option>
-              <option value="A1">A1 - Cơ bản</option>
-              <option value="A2">A2 - Sơ cấp</option>
-              <option value="B1">B1 - Trung cấp</option>
-              <option value="B2">B2 - Trung cao</option>
-              <option value="C1">C1 - Cao cấp</option>
-              <option value="C2">C2 - Thành thạo</option>
-            </select>
 
             <select id="fx-filter-sort" class="fx-select-sm">
               <option value="freq-desc">Tần suất giảm dần</option>
@@ -240,7 +335,7 @@
         <!-- CEFR Vocabulary Distribution Bar for Master List -->
         <section id="fx-master-cefr-dist-section" class="fx-cefr-dist-bar-wrap">
           <div class="fx-cefr-dist-header">
-            <span class="fx-cefr-dist-title">PHÂN BỐ ĐỘ KHÓ CEFR</span>
+            <span class="fx-cefr-dist-title">Phân bố cấp độ CEFR</span>
             <span class="fx-cefr-dist-stats" id="fx-master-cefr-dist-stats">A1: 0% · A2: 0% · B1: 0% · B2: 0% · C1/C2: 0%</span>
           </div>
           <div class="fx-cefr-stacked-bar">
@@ -255,14 +350,38 @@
         <!-- Master Filter Bar -->
         <div class="fx-filters-bar fx-master-filters-bar">
           <div class="fx-tabs-group" id="fx-master-tabs">
-            <button class="fx-tab-btn active" data-pos="all">Tất cả (<span id="fx-master-count-all">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="noun">Danh từ (<span id="fx-master-count-noun">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="verb">Động từ (<span id="fx-master-count-verb">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="adjective">Tính từ (<span id="fx-master-count-adj">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="adverb">Trạng từ (<span id="fx-master-count-adv">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="sentences">Câu hay (<span id="fx-master-count-sentences">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="polysemy">Đa nghĩa (<span id="fx-master-count-polysemy">0</span>)</button>
-            <button class="fx-tab-btn" data-pos="starred">Đã lưu (<span id="fx-master-count-starred">0</span>)</button>
+            <button class="fx-tab-btn active" data-pos="all">
+              <span>Tất cả</span>
+              <span id="fx-master-count-all" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="noun">
+              <span>Danh từ</span>
+              <span id="fx-master-count-noun" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="verb">
+              <span>Động từ</span>
+              <span id="fx-master-count-verb" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="adjective">
+              <span>Tính từ</span>
+              <span id="fx-master-count-adj" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="adverb">
+              <span>Trạng từ</span>
+              <span id="fx-master-count-adv" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="sentences">
+              <span>Giao tiếp</span>
+              <span id="fx-master-count-sentences" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="polysemy">
+              <span>Đa nghĩa</span>
+              <span id="fx-master-count-polysemy" class="fx-nav-pill-count">0</span>
+            </button>
+            <button class="fx-tab-btn" data-pos="starred">
+              <span>Đã lưu</span>
+              <span id="fx-master-count-starred" class="fx-nav-pill-count">0</span>
+            </button>
           </div>
 
           <div class="fx-filter-controls">
@@ -276,12 +395,12 @@
             <div class="fx-master-controls-right">
               <select id="fx-master-filter-cefr" class="fx-select-sm">
                 <option value="all">Mọi cấp độ CEFR</option>
-                <option value="A1">A1 - Cơ bản</option>
-                <option value="A2">A2 - Sơ cấp</option>
-                <option value="B1">B1 - Trung cấp</option>
-                <option value="B2">B2 - Trung cao</option>
-                <option value="C1">C1 - Cao cấp</option>
-                <option value="C2">C2 - Thành thạo</option>
+                <option value="A1">A1 (Cơ bản)</option>
+                <option value="A2">A2 (Sơ cấp)</option>
+                <option value="B1">B1 (Trung cấp)</option>
+                <option value="B2">B2 (Trung cao)</option>
+                <option value="C1">C1 (Cao cấp)</option>
+                <option value="C2">C2 (Thành thạo)</option>
               </select>
 
               <button type="button" id="fx-btn-open-add-master" class="fx-btn-tesla-primary-sm" title="Thêm từ hoặc câu vào Master List">

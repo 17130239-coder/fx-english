@@ -20,6 +20,8 @@
     sortMode: 'freq-desc',
     wordStates: {},
     hideMastered: false,
+    theme: 'dark',
+    activeMovieId: null,
 
     // Master List View State
     activeMasterFilter: 'all',
@@ -33,6 +35,7 @@
     isCardFlipped: false,
 
     init() {
+      this.initTheme();
       this.bindElements();
       this.bindEvents();
       this.initServices();
@@ -41,6 +44,51 @@
       this.loadHistory();
       this.checkPendingStorage();
       this.detectActiveMedia();
+    },
+
+    initTheme() {
+      try {
+        const saved = localStorage.getItem('fx-theme');
+        if (saved === 'light' || saved === 'dark') {
+          this.theme = saved;
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          this.theme = 'light';
+        }
+      } catch (e) {}
+      this.applyTheme(this.theme);
+    },
+
+    applyTheme(theme) {
+      this.theme = theme;
+      if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.documentElement.setAttribute('data-theme', 'light');
+        if (this.themeIconSun) this.themeIconSun.style.display = 'none';
+        if (this.themeIconMoon) this.themeIconMoon.style.display = 'inline-block';
+        if (this.btnToggleTheme) {
+          this.btnToggleTheme.title = 'Chuyển sang giao diện Tối';
+          this.btnToggleTheme.setAttribute('aria-label', 'Chuyển sang giao diện Tối');
+        }
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        if (this.themeIconSun) this.themeIconSun.style.display = 'inline-block';
+        if (this.themeIconMoon) this.themeIconMoon.style.display = 'none';
+        if (this.btnToggleTheme) {
+          this.btnToggleTheme.title = 'Chuyển sang giao diện Sáng';
+          this.btnToggleTheme.setAttribute('aria-label', 'Chuyển sang giao diện Sáng');
+        }
+      }
+    },
+
+    handleToggleTheme() {
+      const next = this.theme === 'dark' ? 'light' : 'dark';
+      this.applyTheme(next);
+      try {
+        localStorage.setItem('fx-theme', next);
+      } catch (e) {}
     },
 
     initServices() {
@@ -55,6 +103,26 @@
     },
 
     bindElements() {
+      // Theme Toggle
+      this.btnToggleTheme = document.getElementById('fx-btn-toggle-theme');
+      this.themeIconSun = document.getElementById('fx-theme-icon-sun');
+      this.themeIconMoon = document.getElementById('fx-theme-icon-moon');
+
+      // Active Movie Section (1:1 with Webapp)
+      this.activeMovieSection = document.getElementById('fx-active-movie-section');
+      this.btnBackToMovies = document.getElementById('fx-btn-back-to-movies');
+      this.btnDetailFlashcards = document.getElementById('fx-btn-detail-flashcards');
+      this.linkWatchOriginal = document.getElementById('fx-link-watch-original');
+      this.btnDeleteActiveMovie = document.getElementById('fx-btn-delete-active-movie');
+      this.activeMovieTitleEl = document.getElementById('fx-active-movie-title');
+      this.activeMoviePlatformEl = document.getElementById('fx-active-movie-platform');
+      this.activeMovieDateEl = document.getElementById('fx-active-movie-date');
+      this.activeMovieCountEl = document.getElementById('fx-active-movie-count');
+
+      // Toggle Hide Mastered Button (Webapp Tesla Ghost style)
+      this.btnToggleHideMastered = document.getElementById('fx-btn-toggle-hide-mastered');
+      this.hideMasteredCountEl = document.getElementById('fx-hide-mastered-count');
+
       // History elements
       this.historySection = document.getElementById('fx-history-section');
       this.historyCountEl = document.getElementById('fx-history-count');
@@ -263,7 +331,32 @@
       if (this.toggleHideMastered) {
         this.toggleHideMastered.addEventListener('change', (e) => {
           this.hideMastered = e.target.checked;
+          this.updateHideMasteredButton();
           this.renderVocabularyGrid();
+        });
+      }
+
+      if (this.btnToggleHideMastered) {
+        this.btnToggleHideMastered.addEventListener('click', () => this.handleToggleHideMastered());
+      }
+
+      // Theme Toggle Event
+      if (this.btnToggleTheme) {
+        this.btnToggleTheme.addEventListener('click', () => this.handleToggleTheme());
+      }
+
+      // Active Movie Actions
+      if (this.btnBackToMovies) {
+        this.btnBackToMovies.addEventListener('click', () => {
+          if (this.historySection) this.historySection.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+      if (this.btnDetailFlashcards) {
+        this.btnDetailFlashcards.addEventListener('click', () => this.openFlashcards());
+      }
+      if (this.btnDeleteActiveMovie) {
+        this.btnDeleteActiveMovie.addEventListener('click', () => {
+          if (this.activeMovieId) this.deleteHistoryItem(this.activeMovieId);
         });
       }
 
@@ -800,15 +893,27 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.saveCurrentToHistory();
       }
 
-      // Show sections & nav buttons
+      // Render active movie header block (1:1 with Webapp)
+      this.renderActiveMovieHeader({
+        title: this.movieTitle,
+        url: this.movieUrl,
+        dateFormatted: 'Vừa xong',
+        wordCount: this.analysis?.totals?.uniqueWords || 0,
+        sentencesCount: this.analysis?.totals?.communicativeCount || 0
+      });
+      this.updateHideMasteredButton();
+
+      // Show sections
+      if (this.activeMovieSection) this.activeMovieSection.style.display = 'flex';
       this.statsSection.style.display = 'grid';
       this.vocabSection.style.display = 'flex';
-      this.btnToggleFlashcards.style.display = 'inline-flex';
-      this.btnExportAnkiTop.style.display = 'inline-flex';
-      this.btnExportCsvTop.style.display = 'inline-flex';
 
-      // Scroll to vocab section smoothly
-      this.vocabSection.scrollIntoView({ behavior: 'smooth' });
+      // Scroll to active movie section smoothly
+      if (this.activeMovieSection) {
+        this.activeMovieSection.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        this.vocabSection.scrollIntoView({ behavior: 'smooth' });
+      }
     },
 
     // 9Router AI Settings Modal Handlers
@@ -1153,6 +1258,81 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
         this.cefrDistSection.style.display = 'flex';
       }
+
+      this.updateHideMasteredButton();
+    },
+
+    handleToggleHideMastered() {
+      this.hideMastered = !this.hideMastered;
+      if (this.toggleHideMastered) {
+        this.toggleHideMastered.checked = this.hideMastered;
+      }
+      this.updateHideMasteredButton();
+      this.renderVocabularyGrid();
+    },
+
+    updateHideMasteredButton() {
+      if (!this.btnToggleHideMastered) return;
+      const count = this.countMasteredInCurrentMovie();
+      this.btnToggleHideMastered.classList.toggle('active', this.hideMastered);
+      if (this.hideMastered) {
+        this.btnToggleHideMastered.title = 'Đang ẩn từ đã thuộc trong Master List (bấm để hiển thị tất cả)';
+      } else {
+        this.btnToggleHideMastered.title = 'Bấm để ẩn các từ đã thuộc trong Master List';
+      }
+      const countStr = count > 0 ? ` (${count})` : '';
+      const spanText = this.btnToggleHideMastered.querySelector('span');
+      if (spanText) {
+        spanText.textContent = `Ẩn từ đã thuộc${countStr}`;
+      }
+    },
+
+    countMasteredInCurrentMovie() {
+      if (!this.analysis) return 0;
+      let count = 0;
+      if (Array.isArray(this.analysis.allWords)) {
+        this.analysis.allWords.forEach((w) => {
+          if (w && w.word && this.isMastered(w.word)) count++;
+        });
+      }
+      if (Array.isArray(this.analysis.communicativeSentences)) {
+        this.analysis.communicativeSentences.forEach((s) => {
+          if (s && s.sentence && this.isMastered(s.sentence)) count++;
+        });
+      }
+      return count;
+    },
+
+    renderActiveMovieHeader(item) {
+      if (!this.activeMovieSection) return;
+      this.activeMovieId = item?.id || null;
+      const title = item?.title || this.movieTitle || 'Video';
+      const url = item?.url || this.movieUrl || '';
+      const isNf = (item?.platform === 'netflix') || Boolean(url && url.includes('netflix.com'));
+      const isYt = !isNf && ((item?.platform === 'youtube') || Boolean(url && (url.includes('youtube.com') || url.includes('youtu.be'))));
+      const platformLabel = isNf ? 'Netflix' : isYt ? 'YouTube' : (item?.platform ? item.platform.charAt(0).toUpperCase() + item.platform.slice(1) : 'File');
+
+      if (this.activeMovieTitleEl) this.activeMovieTitleEl.textContent = title;
+      if (this.activeMoviePlatformEl) this.activeMoviePlatformEl.textContent = platformLabel;
+      if (this.activeMovieDateEl) this.activeMovieDateEl.textContent = item?.dateFormatted || 'Vừa xong';
+
+      const wordCount = item?.wordCount || this.analysis?.totals?.uniqueWords || this.analysis?.allWords?.length || 0;
+      const sCount = item?.sentencesCount || this.analysis?.communicativeSentences?.length || 0;
+      const totalItems = wordCount + sCount;
+      if (this.activeMovieCountEl) {
+        this.activeMovieCountEl.textContent = `${totalItems.toLocaleString()} từ vựng & mẫu câu`;
+      }
+
+      if (this.linkWatchOriginal) {
+        if (url) {
+          this.linkWatchOriginal.href = url;
+          this.linkWatchOriginal.style.display = 'inline-flex';
+        } else {
+          this.linkWatchOriginal.style.display = 'none';
+        }
+      }
+
+      this.activeMovieSection.style.display = 'flex';
     },
 
     getFilteredWords() {
@@ -2149,24 +2329,47 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         return `
           <div class="fx-history-card ${isCurrentActive ? 'active' : ''}" data-id="${item.id}">
             <div class="fx-history-card-header">
-              ${platformBadgeHtml}
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="fx-platform-dot ${platformClass}"></span>
+                <span class="fx-platform-tag">${platformLabel.toLowerCase()}</span>
+              </div>
               <div class="fx-history-header-right">
-                <span class="fx-history-date">${item.dateFormatted || ''}</span>
-                <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa bản ghi này">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--fx-text-secondary);">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span>${item.dateFormatted || 'Vừa xong'}</span>
+                </div>
+                <button type="button" class="fx-btn-del-hist" data-id="${item.id}" title="Xóa phim khỏi lịch sử">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
                   </svg>
                 </button>
               </div>
             </div>
 
             <div class="fx-history-title-row-card">
-              <h4 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h4>
+              <h3 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h3>
+              ${resourceUrl ? `
+              <a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--fx-text-muted); margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="event.stopPropagation();">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                <span style="overflow: hidden; text-overflow: ellipsis;">${this.escape(resourceUrl)}</span>
+              </a>` : ''}
             </div>
 
             <div class="fx-history-stats-block">
-              <div class="fx-hist-total-num">${(item.wordCount || 0).toLocaleString()} từ</div>
-              <div class="fx-hist-specs">${item.nounCount || 0} N  ·  ${item.verbCount || 0} V  ·  ${item.adjCount || 0} Adj  ·  ${item.advCount || 0} Adv${sCount ? `  ·  ${sCount} câu` : ''}</div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                <span class="fx-hist-total-num">
+                  ${(item.wordCount || 0).toLocaleString()}
+                  <span style="font-size: 11px; color: var(--fx-text-secondary); font-weight: 400; margin-left: 4px;">từ</span>
+                </span>
+                <div class="fx-hist-specs">
+                  ${item.nounCount > 0 ? `<span>N:${item.nounCount} </span>` : ''}
+                  ${item.verbCount > 0 ? `<span>· V:${item.verbCount} </span>` : ''}
+                  ${item.adjCount > 0 ? `<span>· Adj:${item.adjCount}</span>` : ''}
+                  ${sCount > 0 ? `<span>· S:${sCount}</span>` : ''}
+                </div>
+              </div>
             </div>
           </div>
         `;
@@ -2180,7 +2383,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
         // Card click -> open item (ignore clicks on delete or external link)
         card.addEventListener('click', (e) => {
-          if (e.target.closest('.fx-btn-del-hist') || e.target.closest('.fx-hist-platform-link')) return;
+          if (e.target.closest('.fx-btn-del-hist') || e.target.closest('.fx-hist-platform-link') || e.target.closest('.fx-banner-link')) return;
           this.openHistoryItem(item);
         });
 
@@ -2235,19 +2438,42 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         });
       }
 
-      // Show sections & nav buttons
+      // Render active movie header block (1:1 with Webapp)
+      this.renderActiveMovieHeader(item);
+      this.updateHideMasteredButton();
+
+      // Show sections
+      if (this.activeMovieSection) this.activeMovieSection.style.display = 'flex';
       this.statsSection.style.display = 'grid';
       this.vocabSection.style.display = 'flex';
-      this.btnToggleFlashcards.style.display = 'inline-flex';
-      this.btnExportAnkiTop.style.display = 'inline-flex';
-      this.btnExportCsvTop.style.display = 'inline-flex';
 
-      // Scroll to vocab section smoothly
-      this.vocabSection.scrollIntoView({ behavior: 'smooth' });
+      // Scroll to active movie section smoothly
+      if (this.activeMovieSection) {
+        this.activeMovieSection.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        this.vocabSection.scrollIntoView({ behavior: 'smooth' });
+      }
     },
 
     async deleteHistoryItem(id) {
       if (!id) return;
+
+      const ok = await this.showConfirm({
+        title: 'Xóa phim khỏi lịch sử?',
+        message: 'Bạn có chắc chắn muốn xóa phim này khỏi cơ sở dữ liệu? Dữ liệu từ vựng đã phân tích của phim này sẽ bị xóa.',
+        confirmText: 'Xóa phim',
+        cancelText: 'Hủy',
+        isDanger: true
+      });
+      if (!ok) return;
+
+      if (this.activeMovieId === id) {
+        this.activeMovieId = null;
+        if (this.activeMovieSection) this.activeMovieSection.style.display = 'none';
+        if (this.statsSection) this.statsSection.style.display = 'none';
+        if (this.cefrDistSection) this.cefrDistSection.style.display = 'none';
+        if (this.vocabSection) this.vocabSection.style.display = 'none';
+      }
 
       // 1. Delete from local storage
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -2461,15 +2687,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const ml = this.getMasterList();
       const hasMasterItems = Boolean(ml && ml.getAll().length > 0);
 
-      // Top navbar buttons: Flashcards, Anki, CSV
+      // Top navbar buttons (hidden to match minimalist webapp navbar)
       if (this.btnToggleFlashcards) {
-        this.btnToggleFlashcards.style.display = (isStudio ? Boolean(this.analysis) : hasMasterItems) ? 'inline-flex' : 'none';
+        this.btnToggleFlashcards.style.display = 'none';
       }
       if (this.btnExportAnkiTop) {
-        this.btnExportAnkiTop.style.display = (isStudio ? Boolean(this.analysis) : hasMasterItems) ? 'inline-flex' : 'none';
+        this.btnExportAnkiTop.style.display = 'none';
       }
       if (this.btnExportCsvTop) {
-        this.btnExportCsvTop.style.display = (isStudio ? Boolean(this.analysis) : hasMasterItems) ? 'inline-flex' : 'none';
+        this.btnExportCsvTop.style.display = 'none';
       }
 
       if (!isStudio) {

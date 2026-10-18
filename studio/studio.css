@@ -38,6 +38,37 @@
 }
 
 /* --------------------------------------------------------------------------
+   Light Theme Custom Properties (Tesla Titanium Light)
+   -------------------------------------------------------------------------- */
+html.light,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Tesla Titanium Light Palette */
+  --fx-bg-canvas: #F5F5F7;
+  --fx-bg-surface: #FFFFFF;
+  --fx-bg-surface-hover: #F0F0F2;
+  --fx-bg-surface-active: #E4E4E7;
+
+  /* Typography Colors */
+  --fx-text-primary: #111113;
+  --fx-text-secondary: #52525B;
+  --fx-text-muted: #8E8E93;
+  --fx-text-quote: #3F3F46;
+
+  /* Borders & Dividers */
+  --fx-border-subtle: rgba(0, 0, 0, 0.08);
+  --fx-border-medium: rgba(0, 0, 0, 0.16);
+  --fx-border-strong: rgba(0, 0, 0, 0.35);
+
+  /* Status Accents */
+  --fx-accent-netflix: #E50914;
+  --fx-accent-youtube: #CC0000;
+  --fx-accent-connected: #059669;
+  --fx-accent-syncing: #D97706;
+}
+
+/* --------------------------------------------------------------------------
    2. Reset & Base Typography
    -------------------------------------------------------------------------- */
 * {
@@ -1797,7 +1828,183 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   13. Responsive Adjustments
+   13. Active Movie Detail Toolbar & Header Card (1:1 with Webapp)
+   -------------------------------------------------------------------------- */
+.fx-active-movie-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.fx-active-movie-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fx-active-movie-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fx-active-movie-header-card {
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fx-active-movie-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--fx-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.fx-active-movie-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--fx-text-secondary);
+  flex-wrap: wrap;
+}
+
+.fx-active-movie-platform {
+  color: var(--fx-text-primary);
+  font-weight: 500;
+}
+
+.fx-meta-dot {
+  font-size: 11px;
+  color: var(--fx-text-muted);
+}
+
+.fx-btn-tesla-ghost-sm.active {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  color: #10B981 !important;
+}
+
+/* --------------------------------------------------------------------------
+   14. Light Mode Explicit Overrides & Polish (Tesla Titanium Light)
+   -------------------------------------------------------------------------- */
+html.light ::-webkit-scrollbar-track,
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #F5F5F7;
+}
+
+html.light ::-webkit-scrollbar-thumb,
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #D4D4D8;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover,
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #A1A1AA;
+}
+
+/* Primary Buttons (Inverted: Matte Black with White Text) */
+html.light .fx-btn-tesla-primary,
+[data-theme="light"] .fx-btn-tesla-primary,
+html.light .fx-btn-tesla-primary-sm,
+[data-theme="light"] .fx-btn-tesla-primary-sm {
+  background: #111113;
+  color: #FFFFFF;
+}
+
+html.light .fx-btn-tesla-primary:hover,
+[data-theme="light"] .fx-btn-tesla-primary:hover,
+html.light .fx-btn-tesla-primary-sm:hover,
+[data-theme="light"] .fx-btn-tesla-primary-sm:hover {
+  background: #27272A;
+}
+
+/* Nav Tabs */
+html.light .fx-nav-switcher,
+[data-theme="light"] .fx-nav-switcher {
+  background: #EBEBEF;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .fx-nav-tab,
+[data-theme="light"] .fx-nav-tab {
+  color: #52525B;
+}
+
+html.light .fx-nav-tab:hover,
+[data-theme="light"] .fx-nav-tab:hover {
+  color: #111113;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+html.light .fx-nav-tab.active,
+[data-theme="light"] .fx-nav-tab.active {
+  color: #111113;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+html.light .fx-nav-tab.active .fx-nav-pill-count,
+[data-theme="light"] .fx-nav-tab.active .fx-nav-pill-count {
+  background: rgba(0, 0, 0, 0.08);
+  color: #111113;
+}
+
+html.light .fx-nav-pill-count,
+[data-theme="light"] .fx-nav-pill-count {
+  background: rgba(0, 0, 0, 0.06);
+  color: #52525B;
+}
+
+/* Filter Tabs */
+html.light .fx-tab-btn:hover,
+[data-theme="light"] .fx-tab-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+html.light .fx-tab-btn.active,
+[data-theme="light"] .fx-tab-btn.active {
+  background: #E4E4E7;
+  color: #111113;
+}
+
+/* Inputs & Search Boxes */
+html.light .fx-unified-input-box:focus-within,
+[data-theme="light"] .fx-unified-input-box:focus-within,
+html.light .fx-search-wrap input:focus,
+[data-theme="light"] .fx-search-wrap input:focus,
+html.light #fx-filter-search:focus,
+[data-theme="light"] #fx-filter-search:focus,
+html.light #fx-master-search:focus,
+[data-theme="light"] #fx-master-search:focus,
+html.light .fx-input:focus,
+[data-theme="light"] .fx-input:focus {
+  background: #FFFFFF;
+  border-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Card and Hover Adjustments */
+html.light .fx-btn-icon-raw:hover,
+[data-theme="light"] .fx-btn-icon-raw:hover,
+html.light .fx-btn-ghost-text:hover,
+[data-theme="light"] .fx-btn-ghost-text:hover,
+html.light .fx-btn-del-hist:hover,
+[data-theme="light"] .fx-btn-del-hist:hover {
+  color: #111113;
+}
+
+/* --------------------------------------------------------------------------
+   15. Responsive Adjustments
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
   .fx-container {
@@ -1825,3 +2032,4 @@ body {
     justify-content: flex-end;
   }
 }
+
