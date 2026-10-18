@@ -1447,24 +1447,43 @@ body {
 
 .fx-master-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 12px;
 }
 
-.fx-master-item-card {
-  background: var(--fx-bg-surface);
-  border: 1px solid var(--fx-border-subtle);
-  border-radius: 8px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: var(--fx-transition-fast);
+.fx-master-meanings-inline {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.fx-master-item-card:hover {
-  background: var(--fx-bg-surface-hover);
-  border-color: var(--fx-border-medium);
+.fx-master-meaning-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fx-btn-add-meaning-mini {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fx-text-secondary);
+  cursor: pointer;
+  transition: var(--fx-transition-fast);
+  padding: 0;
+  margin-left: 2px;
+}
+
+.fx-btn-add-meaning-mini:hover {
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .fx-master-card-top {
