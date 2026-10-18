@@ -2013,6 +2013,14 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.renderHistoryList(merged);
         this.repairGenericTitles(merged);
         this.setNeonSyncStatus('synced', 'Neon DB (Đã đồng bộ)');
+
+        // Background sync: push any local-only movie up to Neon Cloud so Webapp and Cloud have full data
+        localHistory.forEach((loc) => {
+          const existsInCloud = cloudMovies.some((c) => (c.url && loc.url && c.url.trim() === loc.url.trim()) || c.id === loc.id);
+          if (!existsInCloud) {
+            neon.saveMovie(loc).catch((err) => console.warn('[FX Neon] Auto-sync to Neon notice:', err));
+          }
+        });
       } catch (err) {
         console.warn('[FX Neon] Load sync notice:', err);
         this.setNeonSyncStatus('offline', 'Neon DB (Offline)');
