@@ -293,7 +293,7 @@ All database operations in `lib/neonClient.js` run asynchronously in the backgro
 ## 6. Directory Structure & Codebase Map
 
 ```
-fx-english/
+fx-english-extension/
 ├── manifest.json              # Chrome Extension Manifest V3 configuration
 ├── package.json               # NPM scripts, test commands, and metadata
 ├── LICENSE                    # MIT Open Source License
@@ -384,14 +384,14 @@ Core logic modules residing in `lib/` (`types.js`, `subtitleParser.js`, `cefrDic
 
 1. Clone or download the repository to your local workstation:
    ```bash
-   git clone https://github.com/17130239-coder/fx-english.git
+   git clone https://github.com/17130239-coder/fx-english-extension.git
    ```
 2. Open Google Chrome and navigate to:
    ```text
    chrome://extensions/
    ```
 3. Enable **Developer mode** using the toggle in the upper right corner.
-4. Click **Load unpacked** in the top left and select the `fx-english` folder.
+4. Click **Load unpacked** in the top left and select the `fx-english-extension` folder.
 5. The **FX English** icon will appear on your Chrome extension toolbar.
 
 ### 8.2 Configuring 9Router AI
