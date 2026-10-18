@@ -71,14 +71,20 @@ const MessageDispatcher = {
     ['ai_http_request']: async (message) => {
       const { url, apiKey, payload } = message;
       try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 60000) : null;
+
         const resp = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey || ''}`
           },
-          body: JSON.stringify(payload || {})
+          body: JSON.stringify(payload || {}),
+          signal: controller?.signal
         });
+
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (!resp.ok) {
           const errText = await resp.text().catch(() => '');
@@ -97,6 +103,9 @@ const MessageDispatcher = {
         const data = await resp.json();
         return { ok: true, status: resp.status, data };
       } catch (err) {
+        if (err?.name === 'AbortError') {
+          return { ok: false, status: 0, error: 'Yêu cầu AI đã quá thời gian chờ (60s).' };
+        }
         let msg = err.message || 'Lỗi kết nối mạng từ background worker';
         if (msg === 'Failed to fetch') {
           msg = `Failed to fetch: Không thể kết nối tới ${url}. Vui lòng kiểm tra server AI đã bật chưa.`;

@@ -191,6 +191,7 @@
       this.btnToggleFlashcards = document.getElementById('fx-btn-toggle-flashcards');
       this.btnExportAnkiTop = document.getElementById('fx-btn-export-anki-top');
       this.btnExportCsvTop = document.getElementById('fx-btn-export-csv-top');
+      this.btnExportJsonTop = document.getElementById('fx-btn-export-json-top');
 
       // Flashcards Modal
       this.fcModal = document.getElementById('fx-flashcard-modal');
@@ -391,6 +392,11 @@
           this.exportCsv();
         }
       });
+      if (this.btnExportJsonTop) {
+        this.btnExportJsonTop.addEventListener('click', () => {
+          this.exportJson();
+        });
+      }
 
       // 3D Flashcards
       this.btnToggleFlashcards.addEventListener('click', () => this.openFlashcards());
@@ -1485,6 +1491,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       }
 
       let hasMissingDefinitions = false;
+      const fragment = document.createDocumentFragment();
       words.forEach((item) => {
         // Dedicated Sentence / Phrase / Pattern cards
         if (item.sentence || item.isPattern || item.isPhrase) {
@@ -1569,7 +1576,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             ` : ''}
           `;
 
-          this.cardsGrid.appendChild(card);
+          fragment.appendChild(card);
           return;
         }
 
@@ -1673,8 +1680,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           ` : ''}
         `;
 
-        this.cardsGrid.appendChild(card);
+        fragment.appendChild(card);
       });
+
+      this.cardsGrid.appendChild(fragment);
 
       if (hasMissingDefinitions) {
         this.translateMissingWords();
@@ -2089,6 +2098,99 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       }
 
       this.downloadBlob(content, `${this.movieTitle}_vocab.csv`, 'text/csv;charset=utf-8;');
+    },
+
+    exportJson() {
+      // Case 1: If currently viewing an active movie episode
+      if (this.analysis && this.activeMovieSection && this.activeMovieSection.style.display !== 'none') {
+        const words = this.getFilteredWords();
+        const safeTitle = (this.movieTitle || 'movie').replace(/[^\w\s\-_]/g, '_').trim();
+        const exportPayload = {
+          exportType: 'single_movie_vocabulary',
+          exportedAt: new Date().toISOString(),
+          movie: {
+            title: this.movieTitle,
+            url: this.movieUrl,
+            timestamp: Date.now(),
+            wordCount: this.analysis?.totals?.uniqueWords || words.length,
+            nounCount: this.analysis?.totals?.nounCount || 0,
+            verbCount: this.analysis?.totals?.verbCount || 0,
+            adjCount: this.analysis?.totals?.adjCount || 0,
+            advCount: this.analysis?.totals?.advCount || 0,
+            phraseCount: this.analysis?.totals?.phraseCount || 0,
+            patternCount: this.analysis?.totals?.patternCount || 0
+          },
+          vocabularyCount: words.length,
+          vocabulary: words,
+          cues: this.cues || []
+        };
+        this.downloadBlob(JSON.stringify(exportPayload, null, 2), `${safeTitle}_vocab.json`, 'application/json;charset=utf-8;');
+        this.showToast(`Đã xuất dữ liệu phim "${this.movieTitle}" thành file JSON`, 'success');
+        return;
+      }
+
+      // Case 2: If on the history/all movies list view
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['fxScanHistory'], (res) => {
+          const list = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+          if (list.length === 0) {
+            this.showToast('Chưa có phim nào trong lịch sử để xuất JSON.', 'warning');
+            return;
+          }
+
+          const allVocabMap = new Map();
+          const processedMovies = list.map((m) => {
+            const vocab = m.analysis?.allWords || [];
+            vocab.forEach((v) => {
+              const k = (v.word || v.sentence || '').toLowerCase().trim();
+              if (!k) return;
+              if (allVocabMap.has(k)) {
+                const ex = allVocabMap.get(k);
+                ex.totalFrequency = (ex.totalFrequency || ex.frequency || 1) + (v.frequency || 1);
+                if (m.title && !ex.foundInMovies.includes(m.title)) {
+                  ex.foundInMovies.push(m.title);
+                }
+              } else {
+                allVocabMap.set(k, {
+                  ...v,
+                  totalFrequency: v.frequency || 1,
+                  foundInMovies: m.title ? [m.title] : []
+                });
+              }
+            });
+
+            return {
+              id: m.id,
+              title: m.title,
+              platform: m.platform,
+              url: m.url,
+              timestamp: m.timestamp,
+              dateFormatted: m.dateFormatted,
+              wordCount: m.wordCount,
+              nounCount: m.nounCount,
+              verbCount: m.verbCount,
+              adjCount: m.adjCount,
+              advCount: m.advCount,
+              phraseCount: m.phraseCount,
+              patternCount: m.patternCount,
+              vocabulary: vocab,
+              cues: m.cues || []
+            };
+          });
+
+          const exportPayload = {
+            exportType: 'all_movies_vocabulary',
+            exportedAt: new Date().toISOString(),
+            totalMovies: processedMovies.length,
+            totalUniqueVocabulary: allVocabMap.size,
+            movies: processedMovies,
+            allUniqueVocabulary: Array.from(allVocabMap.values())
+          };
+
+          this.downloadBlob(JSON.stringify(exportPayload, null, 2), `fx_english_all_movies_vocab_${Date.now()}.json`, 'application/json;charset=utf-8;');
+          this.showToast(`Đã xuất thành công toàn bộ từ vựng của ${processedMovies.length} phim thành file JSON`, 'success');
+        });
+      }
     },
 
     downloadBlob(content, filename, mimeType) {
@@ -3002,6 +3104,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       if (this.masterEmptyEl) this.masterEmptyEl.style.display = 'none';
 
+      const fragment = document.createDocumentFragment();
       filtered.forEach((item) => {
         const card = document.createElement('div');
         const isStarred = this.isStarred(item.text);
@@ -3130,8 +3233,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           };
         });
 
-        this.masterGridEl.appendChild(card);
+        fragment.appendChild(card);
       });
+
+      this.masterGridEl.appendChild(fragment);
     },
 
     openAddMasterModal(initialText = '') {
