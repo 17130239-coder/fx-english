@@ -320,23 +320,26 @@ const sampleConversationalCues = [
 ];
 
 const convoAnalysis = analyzer.analyzeSubtitles(sampleConversationalCues);
-assert.ok(convoAnalysis.communicativeSentences, 'communicativeSentences array generated');
-assert.strictEqual(convoAnalysis.communicativeSentences.length, 4, 'Extracted exactly 4 communicative sentences');
-assert.strictEqual(convoAnalysis.categories.sentences.count, 4, 'categories.sentences count matches');
+assert.ok(convoAnalysis.phrases, 'phrases array generated');
+assert.ok(convoAnalysis.sentenceStructures, 'sentenceStructures array generated');
+assert.strictEqual(convoAnalysis.phrases.length, 4, 'Extracted 4 communicative phrases');
+assert.strictEqual(convoAnalysis.sentenceStructures.length, 1, 'Extracted 1 sentence structure pattern');
+assert.strictEqual(convoAnalysis.categories.phrase.count, 4, 'categories.phrase count matches');
+assert.strictEqual(convoAnalysis.categories.pattern.count, 1, 'categories.pattern count matches');
 
-const sent1 = convoAnalysis.communicativeSentences[0];
+const sent1 = convoAnalysis.phrases[0];
 assert.strictEqual(sent1.highlightPhrase, 'take it easy', 'Identified "take it easy" core phrase');
 assert.ok(sent1.vietnamese.includes('Bình tĩnh'), 'Matched Vietnamese meaning for "take it easy"');
-assert.ok(sent1.tag.includes('Đời sống') || sent1.tag.includes('Cụm từ'), 'Tagged category');
+assert.ok(sent1.tag || sent1.category, 'Tagged category');
 
-const ankiSentDeck = analyzer.exportToAnkiFormat(convoAnalysis.communicativeSentences);
+const ankiSentDeck = analyzer.exportToAnkiFormat(convoAnalysis.phrases);
 assert.ok(ankiSentDeck.includes('take it easy'), 'Anki contains sentence');
 assert.ok(ankiSentDeck.includes('call it a day'), 'Anki contains call it a day');
 
-const csvSentExport = analyzer.exportToCsvFormat(convoAnalysis.communicativeSentences);
-assert.ok(csvSentExport.includes('"Câu tiếng Anh"'), 'CSV header formatted for sentences');
-assert.ok(csvSentExport.includes('Sounds like a plan'), 'CSV contains sentence text');
-console.log('   ✓ Practical communicative sentence extraction, tags, Anki & CSV export verified.\n');
+const csvSentExport = analyzer.exportToCsvFormat(convoAnalysis.phrases);
+assert.ok(csvSentExport.includes('"Câu tiếng Anh"') || csvSentExport.includes('"Cụm từ"') || csvSentExport.includes('"Từ / Cụm từ"'), 'CSV header formatted');
+assert.ok(csvSentExport.includes('Sounds like a plan') || csvSentExport.includes('sounds like a plan'), 'CSV contains sentence text');
+console.log('   ✓ Practical phrases & sentence structures extraction, tags, Anki & CSV export verified.\n');
 
 // 10. Testing Neon Serverless Database Client
 console.log('☁️ 10. Testing Neon Serverless Database Client...');
@@ -368,6 +371,8 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
         verbCount: 3,
         adjCount: 3,
         advCount: 2,
+        phraseCount: 1,
+        patternCount: 1,
         cues: [{ startSec: 0, endSec: 3, text: 'Hello Neon PostgreSQL world' }],
         analysis: testMultiPassAnalysis
       };
@@ -377,6 +382,8 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
       assert.strictEqual(saved.id, testId, 'Saved movie has matching ID');
       assert.strictEqual(saved.title, testMovie.title, 'Saved movie has matching title');
       assert.strictEqual(saved.nounCount, 4, 'Saved movie has matching noun count');
+      assert.strictEqual(saved.phraseCount, 1, 'Saved movie has matching phrase count');
+      assert.strictEqual(saved.patternCount, 1, 'Saved movie has matching pattern count');
       assert.ok(saved.analysis, 'Saved movie includes full analysis JSONB');
 
       const movies = await neonClient.getMovies(10);

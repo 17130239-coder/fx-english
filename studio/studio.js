@@ -164,6 +164,8 @@
       this.statVerb = document.getElementById('fx-stat-verb');
       this.statAdj = document.getElementById('fx-stat-adj');
       this.statAdv = document.getElementById('fx-stat-adv');
+      this.statPhrase = document.getElementById('fx-stat-phrase');
+      this.statPattern = document.getElementById('fx-stat-pattern');
       this.statSentences = document.getElementById('fx-stat-sentences');
       this.statStarred = document.getElementById('fx-stat-starred');
       this.statMastered = document.getElementById('fx-stat-mastered');
@@ -174,6 +176,8 @@
       this.tabCountVerb = document.getElementById('fx-tab-count-verb');
       this.tabCountAdj = document.getElementById('fx-tab-count-adj');
       this.tabCountAdv = document.getElementById('fx-tab-count-adv');
+      this.tabCountPhrase = document.getElementById('fx-tab-count-phrase');
+      this.tabCountPattern = document.getElementById('fx-tab-count-pattern');
       this.tabCountSentences = document.getElementById('fx-tab-count-sentences');
       this.tabCountStarred = document.getElementById('fx-tab-count-starred');
 
@@ -250,6 +254,8 @@
       this.masterCountVerb = document.getElementById('fx-master-count-verb');
       this.masterCountAdj = document.getElementById('fx-master-count-adj');
       this.masterCountAdv = document.getElementById('fx-master-count-adv');
+      this.masterCountPhrase = document.getElementById('fx-master-count-phrase');
+      this.masterCountPattern = document.getElementById('fx-master-count-pattern');
       this.masterCountSentences = document.getElementById('fx-master-count-sentences');
       this.masterCountPolysemy = document.getElementById('fx-master-count-polysemy');
       this.masterCountStarred = document.getElementById('fx-master-count-starred');
@@ -1195,10 +1201,14 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.statVerb.textContent = categories.verb.count.toLocaleString();
       this.statAdj.textContent = categories.adjective.count.toLocaleString();
       this.statAdv.textContent = categories.adverb.count.toLocaleString();
-      if (this.statSentences) {
-        const sentCount = categories.sentences?.count || totals.communicativeCount || 0;
-        this.statSentences.textContent = sentCount.toLocaleString();
-      }
+
+      const phraseCount = categories.phrase?.count || totals.phraseCount || 0;
+      const patternCount = categories.pattern?.count || totals.patternCount || 0;
+      const sentCount = phraseCount + patternCount || categories.sentences?.count || totals.communicativeCount || 0;
+
+      if (this.statPhrase) this.statPhrase.textContent = phraseCount.toLocaleString();
+      if (this.statPattern) this.statPattern.textContent = patternCount.toLocaleString();
+      if (this.statSentences) this.statSentences.textContent = sentCount.toLocaleString();
 
       // Compute Starred & Mastered counts for currently analyzed words & sentences
       let starredCount = 0;
@@ -1206,6 +1216,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       (allWords || []).forEach((w) => {
         if (this.isStarred(w.word)) starredCount++;
         if (this.isMastered(w.word)) masteredCount++;
+      });
+      (this.analysis.phrases || []).forEach((p) => {
+        if (this.isStarred(p.phrase || p.word || p.sentence)) starredCount++;
+      });
+      (this.analysis.sentenceStructures || this.analysis.patterns || []).forEach((pt) => {
+        if (this.isStarred(pt.pattern || pt.word || pt.sentence)) starredCount++;
       });
       (this.analysis.communicativeSentences || []).forEach((s) => {
         if (this.isStarred(s.sentence)) starredCount++;
@@ -1219,10 +1235,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.tabCountVerb.textContent = categories.verb.count.toLocaleString();
       this.tabCountAdj.textContent = categories.adjective.count.toLocaleString();
       this.tabCountAdv.textContent = categories.adverb.count.toLocaleString();
-      if (this.tabCountSentences) {
-        const sentCount = categories.sentences?.count || totals.communicativeCount || 0;
-        this.tabCountSentences.textContent = sentCount.toLocaleString();
-      }
+      if (this.tabCountPhrase) this.tabCountPhrase.textContent = phraseCount.toLocaleString();
+      if (this.tabCountPattern) this.tabCountPattern.textContent = patternCount.toLocaleString();
+      if (this.tabCountSentences) this.tabCountSentences.textContent = sentCount.toLocaleString();
       if (this.tabCountStarred) {
         this.tabCountStarred.textContent = starredCount.toLocaleString();
       }
@@ -1339,7 +1354,13 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (!this.analysis) return [];
       let list = [];
 
-      if (this.activePosFilter === 'sentences') {
+      if (this.activePosFilter === 'phrase') {
+        const phraseCat = this.analysis.categories?.phrase || { words: this.analysis.phrases || [] };
+        list = [...(phraseCat.words || [])];
+      } else if (this.activePosFilter === 'pattern') {
+        const patCat = this.analysis.categories?.pattern || { words: this.analysis.sentenceStructures || this.analysis.patterns || [] };
+        list = [...(patCat.words || [])];
+      } else if (this.activePosFilter === 'sentences') {
         const sentCat = this.analysis.categories?.sentences || { words: this.analysis.communicativeSentences || [] };
         list = [...(sentCat.words || [])];
       } else if (this.activePosFilter === 'starred') {
@@ -1350,8 +1371,24 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             list.push(w);
           }
         });
+        (this.analysis.phrases || []).forEach((p) => {
+          const key = p.phrase || p.word || p.sentence;
+          if (this.isStarred(key) && !seen.has(key)) {
+            seen.add(key);
+            list.push(p);
+          }
+        });
+        (this.analysis.sentenceStructures || this.analysis.patterns || []).forEach((pt) => {
+          const key = pt.pattern || pt.word || pt.sentence;
+          if (this.isStarred(key) && !seen.has(key)) {
+            seen.add(key);
+            list.push(pt);
+          }
+        });
         (this.analysis.communicativeSentences || []).forEach((s) => {
-          if (this.isStarred(s.sentence)) {
+          const key = s.sentence || s.word;
+          if (this.isStarred(key) && !seen.has(key)) {
+            seen.add(key);
             list.push(s);
           }
         });
@@ -1382,23 +1419,30 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         });
       }
 
+      const isPhraseOrPattern = ['phrase', 'pattern', 'sentences'].includes(this.activePosFilter);
+
       // Hide Mastered Words filter (applies to vocab words)
-      if (this.hideMastered && this.activePosFilter !== 'sentences') {
+      if (this.hideMastered && !isPhraseOrPattern) {
         list = list.filter((w) => !this.isMastered(w.word));
       }
 
-      // Filter by CEFR (applies to vocabulary words; sentences pass through unless specific)
-      if (this.cefrFilter !== 'all' && this.activePosFilter !== 'sentences') {
+      // Filter by CEFR (applies to vocabulary words; sentences/phrases pass through unless specific)
+      if (this.cefrFilter !== 'all' && !isPhraseOrPattern) {
         list = list.filter((w) => (w.cefr || '').toUpperCase() === this.cefrFilter.toUpperCase());
       }
 
       // Filter by search query
       if (this.searchQuery) {
-        const q = this.searchQuery;
+        const q = this.searchQuery.toLowerCase();
         list = list.filter((w) => {
           return (w.word && w.word.toLowerCase().includes(q)) ||
                  (w.sentence && w.sentence.toLowerCase().includes(q)) ||
                  (w.vietnamese && w.vietnamese.toLowerCase().includes(q)) ||
+                 (w.translation && w.translation.toLowerCase().includes(q)) ||
+                 (w.highlightPhrase && w.highlightPhrase.toLowerCase().includes(q)) ||
+                 (w.patternTemplate && w.patternTemplate.toLowerCase().includes(q)) ||
+                 (w.usageNote && w.usageNote.toLowerCase().includes(q)) ||
+                 (w.tag && w.tag.toLowerCase().includes(q)) ||
                  (w.lemma && w.lemma.toLowerCase().includes(q));
         });
       }
@@ -1423,7 +1467,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       if (words.length === 0) {
         let emptyMsg = 'Không tìm thấy từ vựng nào khớp với bộ lọc.';
-        if (this.activePosFilter === 'sentences') {
+        if (this.activePosFilter === 'phrase') {
+          emptyMsg = 'Không tìm thấy cụm từ nào khớp với bộ lọc.';
+        } else if (this.activePosFilter === 'pattern') {
+          emptyMsg = 'Không tìm thấy cấu trúc câu nào khớp với bộ lọc.';
+        } else if (this.activePosFilter === 'sentences') {
           emptyMsg = 'Không tìm thấy câu giao tiếp nào khớp với bộ lọc.';
         } else if (this.activePosFilter === 'starred') {
           emptyMsg = 'Bạn chưa lưu từ hoặc câu nào vào danh sách đã lưu. Nhấn biểu tượng ngôi sao trên thẻ để lưu lại.';
@@ -1438,13 +1486,16 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       let hasMissingDefinitions = false;
       words.forEach((item) => {
-        // Dedicated communicative sentence cards
-        if (item.sentence) {
+        // Dedicated Sentence / Phrase / Pattern cards
+        if (item.sentence || item.isPattern || item.isPhrase) {
           const card = document.createElement('div');
-          const isSentStarred = this.isStarred(item.sentence);
+          const isSentStarred = this.isStarred(item.sentence || item.word || item.phrase);
           card.className = 'fx-sentence-card' + (isSentStarred ? ' fx-card-starred' : '');
 
-          let phraseHtml = this.escape(item.sentence);
+          const isPat = item.pos === 'pattern' || item.isPattern || Boolean(item.patternTemplate);
+          const isPhr = item.pos === 'phrase' || item.isPhrase || Boolean(item.phraseCategory);
+
+          let phraseHtml = this.escape(item.sentence || item.contextSentence || item.word || '');
           if (item.highlightPhrase) {
             const escapedHl = this.escapeRegExp(item.highlightPhrase);
             phraseHtml = phraseHtml.replace(new RegExp(`(${escapedHl})`, 'gi'), '<span class="fx-quote-highlight">$1</span>');
@@ -1455,26 +1506,33 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             ? `<span class="fx-card-time fx-jump-link" data-sec="${item.startSec || 0}" data-url="${this.escape(videoUrl)}" title="Nhảy đến phân cảnh phim">${this.escape(item.startTime)}</span>`
             : '';
 
-          const cleanTag = (item.tag || 'Giao tiếp').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+          let tagText = isPat ? 'Cấu trúc câu' : isPhr ? (item.tag || 'Cụm từ') : (item.tag || 'Giao tiếp');
+          tagText = tagText.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+
+          const tagBadgeStyle = isPat
+            ? 'background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3);'
+            : isPhr
+              ? 'background: rgba(234, 179, 8, 0.15); color: #FACC15; border: 1px solid rgba(234, 179, 8, 0.3);'
+              : '';
 
           card.innerHTML = `
             <div class="fx-sent-top">
               <div class="fx-sent-meta-left">
-                <span class="fx-sent-tag">${this.escape(cleanTag)}</span>
+                <span class="fx-sent-tag" ${tagBadgeStyle ? `style="${tagBadgeStyle}"` : ''}>${this.escape(tagText)}</span>
                 ${item.startTime ? `<span class="fx-card-time fx-jump-link" data-action="jump" data-sec="${item.startSec || 0}" data-url="${this.escape(videoUrl)}" title="Nhảy đến phân cảnh phim">${this.escape(item.startTime)}</span>` : ''}
               </div>
               <div class="fx-sent-actions">
-                <button type="button" class="fx-btn-icon-raw fx-btn-star ${isSentStarred ? 'active' : ''}" data-action="star" data-sentence="${this.escape(item.sentence)}" title="${isSentStarred ? 'Bỏ lưu' : 'Lưu câu'}">
+                <button type="button" class="fx-btn-icon-raw fx-btn-star ${isSentStarred ? 'active' : ''}" data-action="star" data-sentence="${this.escape(item.sentence || item.word)}" title="${isSentStarred ? 'Bỏ lưu' : 'Lưu'}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="${isSentStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                   </svg>
                 </button>
-                <button type="button" class="fx-btn-icon-raw fx-btn-speak" data-action="speak" data-text="${this.escape(item.sentence)}" title="Phát âm">
+                <button type="button" class="fx-btn-icon-raw fx-btn-speak" data-action="speak" data-text="${this.escape(item.sentence || item.highlightPhrase || item.word)}" title="Phát âm">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
                   </svg>
                 </button>
-                <button type="button" class="fx-btn-icon-raw fx-btn-copy" data-action="copy" data-text="${this.escape(item.sentence)}" title="Sao chép">
+                <button type="button" class="fx-btn-icon-raw fx-btn-copy" data-action="copy" data-text="${this.escape(item.sentence || item.patternTemplate || item.highlightPhrase || item.word)}" title="Sao chép">
                   <svg class="fx-icon-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
@@ -1486,13 +1544,23 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             </div>
 
             <div class="fx-sent-body">
-              <p class="fx-sent-quote">"${phraseHtml}"</p>
-              <p class="fx-sent-trans">${this.escape(item.vietnamese || '')}</p>
+              ${isPat ? `
+                <div style="font-size: 15px; font-weight: 700; color: #93C5FD; margin-bottom: 4px; font-family: monospace;">${this.escape(item.patternTemplate || item.pattern || item.word)}</div>
+                <p class="fx-sent-trans" style="font-size: 13px; color: var(--fx-text-primary); margin-bottom: 8px;">${this.escape(item.vietnamese || item.translation || '')}</p>
+                <p class="fx-sent-quote" style="font-size: 12.5px; color: var(--fx-text-secondary); font-style: italic;">"${phraseHtml}"</p>
+              ` : isPhr ? `
+                <div style="font-size: 16px; font-weight: 700; color: var(--fx-text-primary); margin-bottom: 4px;">${this.escape(item.highlightPhrase || item.phrase || item.word)}</div>
+                <p class="fx-sent-trans" style="font-size: 13.5px; font-weight: 500; color: #FACC15; margin-bottom: 6px;">${this.escape(item.vietnamese || item.translation || '')}</p>
+                <p class="fx-sent-quote">"${phraseHtml}"</p>
+              ` : `
+                <p class="fx-sent-quote">"${phraseHtml}"</p>
+                <p class="fx-sent-trans">${this.escape(item.vietnamese || item.translation || '')}</p>
+              `}
             </div>
 
-            ${(item.highlightPhrase || item.usageNote) ? `
+            ${(item.usageNote || (!isPat && !isPhr && item.highlightPhrase)) ? `
               <div class="fx-sent-footer">
-                ${item.highlightPhrase ? `<span class="fx-sent-core">Cốt lõi: <b>${this.escape(item.highlightPhrase)}</b></span>` : ''}
+                ${(!isPat && !isPhr && item.highlightPhrase) ? `<span class="fx-sent-core">Cốt lõi: <b>${this.escape(item.highlightPhrase)}</b></span>` : ''}
                 ${item.usageNote ? `<span class="fx-sent-note">${this.escape(item.usageNote.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim())}</span>` : ''}
               </div>
             ` : ''}
@@ -2145,7 +2213,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         verbCount: this.analysis.categories.verb.count,
         adjCount: this.analysis.categories.adjective.count,
         advCount: this.analysis.categories.adverb.count,
-        sentencesCount: this.analysis.categories?.sentences?.count || this.analysis.totals.communicativeCount || 0,
+        phraseCount: this.analysis.categories?.phrase?.count || this.analysis.totals?.phraseCount || 0,
+        patternCount: this.analysis.categories?.pattern?.count || this.analysis.totals?.patternCount || 0,
+        sentencesCount: this.analysis.categories?.sentences?.count || this.analysis.totals?.communicativeCount || 0,
         cues: this.cues || [],
         analysis: this.analysis
       };
@@ -2311,7 +2381,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
 
         const isCurrentActive = this.movieTitle === item.title;
-        const sCount = item.sentencesCount || item.analysis?.categories?.sentences?.count || 0;
+        const phrCount = item.phraseCount || item.analysis?.totals?.phraseCount || item.analysis?.categories?.phrase?.count || 0;
+        const patCount = item.patternCount || item.analysis?.totals?.patternCount || item.analysis?.categories?.pattern?.count || 0;
+        const sCount = phrCount + patCount || item.sentencesCount || item.analysis?.categories?.sentences?.count || 0;
 
         const platformBadgeHtml = resourceUrl
           ? `<a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-hist-platform-link" title="Mở ${platformLabel} (tab mới)" onclick="event.stopPropagation();">
@@ -2366,8 +2438,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
                 <div class="fx-hist-specs">
                   ${item.nounCount > 0 ? `<span>N:${item.nounCount} </span>` : ''}
                   ${item.verbCount > 0 ? `<span>· V:${item.verbCount} </span>` : ''}
-                  ${item.adjCount > 0 ? `<span>· Adj:${item.adjCount}</span>` : ''}
-                  ${sCount > 0 ? `<span>· S:${sCount}</span>` : ''}
+                  ${item.adjCount > 0 ? `<span>· Adj:${item.adjCount} </span>` : ''}
+                  ${phrCount > 0 ? `<span>· Cụm:${phrCount} </span>` : ''}
+                  ${patCount > 0 ? `<span>· Cấu trúc:${patCount}</span>` : ''}
+                  ${phrCount === 0 && patCount === 0 && sCount > 0 ? `<span>· S:${sCount}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -2649,6 +2723,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             changed = true;
           }
         }
+      }
       // Two-way sync: Also ensure all items from MasterList are marked as mastered in wordStates
       const allKnown = ml.getAll() || [];
       allKnown.forEach((it) => {
@@ -2714,6 +2789,8 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       }
 
       const getPos = (item) => {
+        if (item.type === 'pattern' || Boolean(item.patternTemplate)) return 'pattern';
+        if (item.type === 'phrase' || Boolean(item.phraseCategory)) return 'phrase';
         let p = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
         if ((!p || p === 'N') && typeof APP_CEFR_DICT !== 'undefined') {
           const d = APP_CEFR_DICT.lookup(item.text);
@@ -2724,7 +2801,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         if (clean === 'v' || clean === 'verb') return 'verb';
         if (clean === 'adj' || clean === 'adjective') return 'adjective';
         if (clean === 'adv' || clean === 'adverb') return 'adverb';
-        if (clean === 'idiom' || clean === 'phrase' || clean === 'sentences' || item.type === 'sentence') return 'sentences';
+        if (clean === 'pattern' || clean === 'sentence_structure' || clean === 'structure') return 'pattern';
+        if (clean === 'idiom' || clean === 'phrase' || clean === 'phrasal_verb' || clean === 'collocation' || clean === 'slang') return 'phrase';
+        if (clean === 'sentences' || item.type === 'sentence') return 'phrase';
         return 'noun';
       };
 
@@ -2733,7 +2812,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (this.masterCountVerb) this.masterCountVerb.textContent = allItems.filter(i => getPos(i) === 'verb').length.toLocaleString();
       if (this.masterCountAdj) this.masterCountAdj.textContent = allItems.filter(i => getPos(i) === 'adjective').length.toLocaleString();
       if (this.masterCountAdv) this.masterCountAdv.textContent = allItems.filter(i => getPos(i) === 'adverb').length.toLocaleString();
-      if (this.masterCountSentences) this.masterCountSentences.textContent = allItems.filter(i => getPos(i) === 'sentences').length.toLocaleString();
+      if (this.masterCountPhrase) this.masterCountPhrase.textContent = allItems.filter(i => getPos(i) === 'phrase').length.toLocaleString();
+      if (this.masterCountPattern) this.masterCountPattern.textContent = allItems.filter(i => getPos(i) === 'pattern').length.toLocaleString();
+      if (this.masterCountSentences) this.masterCountSentences.textContent = allItems.filter(i => getPos(i) === 'phrase' || getPos(i) === 'pattern').length.toLocaleString();
       if (this.masterCountPolysemy) this.masterCountPolysemy.textContent = allItems.filter(i => Array.isArray(i.knownMeanings) && i.knownMeanings.length > 1).length.toLocaleString();
       if (this.masterCountStarred) this.masterCountStarred.textContent = allItems.filter(i => this.isStarred(i.text)).length.toLocaleString();
 
@@ -2794,6 +2875,8 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const allItems = ml.getAll();
 
       const getPos = (item) => {
+        if (item.type === 'pattern' || Boolean(item.patternTemplate)) return 'pattern';
+        if (item.type === 'phrase' || Boolean(item.phraseCategory)) return 'phrase';
         let p = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
         if ((!p || p === 'N') && typeof APP_CEFR_DICT !== 'undefined') {
           const d = APP_CEFR_DICT.lookup(item.text);
@@ -2804,7 +2887,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         if (clean === 'v' || clean === 'verb') return 'verb';
         if (clean === 'adj' || clean === 'adjective') return 'adjective';
         if (clean === 'adv' || clean === 'adverb') return 'adverb';
-        if (clean === 'idiom' || clean === 'phrase' || clean === 'sentences' || item.type === 'sentence') return 'sentences';
+        if (clean === 'pattern' || clean === 'sentence_structure' || clean === 'structure') return 'pattern';
+        if (clean === 'idiom' || clean === 'phrase' || clean === 'phrasal_verb' || clean === 'collocation' || clean === 'slang') return 'phrase';
+        if (clean === 'sentences' || item.type === 'sentence') return 'phrase';
         return 'noun';
       };
 
@@ -2824,6 +2909,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             if (!this.isStarred(item.text)) return false;
           } else if (this.activeMasterFilter === 'polysemy') {
             if (!item.knownMeanings || item.knownMeanings.length < 2) return false;
+          } else if (this.activeMasterFilter === 'sentences') {
+            const pos = getPos(item);
+            if (pos !== 'phrase' && pos !== 'pattern') return false;
           } else {
             const pos = getPos(item);
             if (pos !== this.activeMasterFilter) return false;
@@ -2838,7 +2926,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
         // 3. Search query
         if (this.masterSearchQuery) {
-          const q = this.masterSearchQuery;
+          const q = this.masterSearchQuery.toLowerCase();
           const matchText = item.text.toLowerCase().includes(q);
           const matchMeanings = item.knownMeanings && item.knownMeanings.some(m => m.toLowerCase().includes(q));
           const matchContext = item.context && item.context.toLowerCase().includes(q);
@@ -2891,9 +2979,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
         const contextHtml = contextText ? this.highlightWordInContext(contextText, item.text) : '';
 
-        // DÒNG 1: "Danh từ · B1" - STRICTLY NO FREQUENCY (Red circle 2: inspire 9x)
-        const specsParts = [posLabel];
-        if (cefr) specsParts.push(cefr);
+        const isPat = pos === 'pattern';
+        const isPhr = pos === 'phrase';
+        const specsParts = isPat ? ['Cấu trúc'] : isPhr ? ['Cụm từ'] : [posLabel];
+        if (cefr && !isPat && !isPhr) specsParts.push(cefr);
         const specsText = specsParts.join(' · ');
 
         // DÒNG 2: Phiên âm IPA + loa + nghĩa tiếng Việt
@@ -2909,6 +2998,8 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           <div class="fx-card-line-1">
             <div class="fx-card-word-wrap">
               <span class="fx-card-word">${this.escape(item.text)}</span>
+              ${isPat ? `<span class="fx-badge-new-meaning" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3);">CẤU TRÚC CÂU</span>` : ''}
+              ${isPhr ? `<span class="fx-badge-new-meaning" style="background: rgba(234, 179, 8, 0.15); color: #FACC15; border: 1px solid rgba(234, 179, 8, 0.3);">CỤM TỪ</span>` : ''}
               ${isPolysemy ? `<span class="fx-badge-new-meaning" title="Từ có nhiều nghĩa đã biết">ĐA NGHĨA</span>` : ''}
             </div>
             <div class="fx-card-meta-actions">
