@@ -1893,10 +1893,14 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       const title = this.movieTitle || 'Không tên';
       let platform = 'file';
-      if ((this.movieUrl && this.movieUrl.includes('youtube.com')) || (this.detectedMediaTab && this.detectedMediaTab.platform === 'youtube')) {
-        platform = 'youtube';
-      } else if ((this.movieUrl && this.movieUrl.includes('netflix.com')) || (this.detectedMediaTab && this.detectedMediaTab.platform === 'netflix')) {
+      if (this.movieUrl && this.movieUrl.includes('netflix.com')) {
         platform = 'netflix';
+      } else if (this.movieUrl && (this.movieUrl.includes('youtube.com') || this.movieUrl.includes('youtu.be'))) {
+        platform = 'youtube';
+      } else if (this.detectedMediaTab && this.detectedMediaTab.platform === 'netflix') {
+        platform = 'netflix';
+      } else if (this.detectedMediaTab && this.detectedMediaTab.platform === 'youtube') {
+        platform = 'youtube';
       }
 
       const newItem = {
@@ -2060,13 +2064,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (this.btnClearHistory) this.btnClearHistory.style.display = 'inline-flex';
 
       this.historyGridEl.innerHTML = history.map((item) => {
+        const isNf = item.platform === 'netflix' || Boolean(item.url && item.url.includes('netflix.com'));
+        const isYt = !isNf && (item.platform === 'youtube' || Boolean(item.url && (item.url.includes('youtube.com') || item.url.includes('youtu.be'))));
         let platformClass = 'platform-file';
         let platformLabel = 'FILE';
 
-        if (item.platform === 'youtube') {
+        if (isYt) {
           platformClass = 'platform-yt';
           platformLabel = 'YOUTUBE';
-        } else if (item.platform === 'netflix') {
+        } else if (isNf) {
           platformClass = 'platform-nf';
           platformLabel = 'NETFLIX';
         }
