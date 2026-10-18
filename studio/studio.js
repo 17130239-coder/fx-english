@@ -61,6 +61,7 @@
       this.historyEmptyEl = document.getElementById('fx-history-empty');
       this.historyGridEl = document.getElementById('fx-history-grid');
       this.btnClearHistory = document.getElementById('fx-btn-clear-history');
+      this.btnCloudSync = document.getElementById('fx-btn-cloud-sync');
       this.neonSyncPill = document.getElementById('fx-neon-sync-pill');
       this.neonSyncText = document.getElementById('fx-neon-sync-text');
 
@@ -330,6 +331,11 @@
       // Clear History Button
       if (this.btnClearHistory) {
         this.btnClearHistory.addEventListener('click', () => this.clearAllHistory());
+      }
+
+      // Sync All to Cloud Button
+      if (this.btnCloudSync) {
+        this.btnCloudSync.addEventListener('click', () => this.syncAllToCloud());
       }
 
       // Settings Modal Events
@@ -2244,6 +2250,48 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           console.warn('[FX Neon] Cloud clear warning:', err);
         }
       }
+    },
+
+    async syncAllToCloud() {
+      const neon = this.getNeonClient();
+      if (!neon) {
+        this.showToast('Không tìm thấy Neon Client.', 'error');
+        return;
+      }
+
+      if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+        this.showToast('Không tìm thấy bộ nhớ cục bộ tiện ích.', 'warning');
+        return;
+      }
+
+      this.setNeonSyncStatus('syncing', 'Đang đồng bộ...');
+      this.showToast('Đang đồng bộ toàn bộ phim sang Neon Cloud & Webapp...', 'info');
+
+      chrome.storage.local.get(['fxScanHistory'], async (res) => {
+        const history = (res && Array.isArray(res.fxScanHistory)) ? res.fxScanHistory : [];
+        if (history.length === 0) {
+          this.showToast('Không có phim nào trong bộ nhớ để đồng bộ.', 'info');
+          this.setNeonSyncStatus('synced', 'Neon DB');
+          return;
+        }
+
+        let syncedCount = 0;
+        for (const item of history) {
+          try {
+            await neon.saveMovie(item);
+            syncedCount++;
+          } catch (e) {
+            console.warn('[FX Neon] Sync item error:', item.title, e);
+          }
+        }
+
+        this.setNeonSyncStatus('synced', 'Neon DB (Đã đồng bộ)');
+        if (syncedCount > 0) {
+          this.showToast(`Đã đồng bộ thành công ${syncedCount} bộ phim sang Neon Cloud & Webapp!`, 'success', 4500);
+        } else {
+          this.showToast('Không thể đồng bộ phim lên Cloud. Vui lòng kiểm tra mạng.', 'error');
+        }
+      });
     },
 
     // =========================================================================
