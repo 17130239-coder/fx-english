@@ -1495,9 +1495,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           const isPat = item.pos === 'pattern' || item.isPattern || Boolean(item.patternTemplate);
           const isPhr = item.pos === 'phrase' || item.isPhrase || Boolean(item.phraseCategory);
 
-          let phraseHtml = this.escape(item.sentence || item.contextSentence || item.word || '');
+          let rawPhraseQuote = item.sentence || item.contextSentence || item.word || '';
+          rawPhraseQuote = this.cleanAndNormalizeSentence(rawPhraseQuote);
+          let phraseHtml = this.escape(rawPhraseQuote);
           if (item.highlightPhrase) {
-            const escapedHl = this.escapeRegExp(item.highlightPhrase);
+            const cleanHl = this.cleanAndNormalizeSentence(item.highlightPhrase);
+            const escapedHl = this.escapeRegExp(cleanHl || item.highlightPhrase);
             phraseHtml = phraseHtml.replace(new RegExp(`(${escapedHl})`, 'gi'), '<span class="fx-quote-highlight">$1</span>');
           }
 
@@ -1579,10 +1582,19 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           (isStarred ? ' fx-card-starred' : '') +
           (isMastered ? ' fx-card-mastered' : '');
 
-        // Pick context sentence matching the active POS filter if available
-        const matchedContext = (['noun', 'verb', 'adjective', 'adverb'].includes(this.activePosFilter) && item.posContexts?.[this.activePosFilter]?.[0])
-          ? item.posContexts[this.activePosFilter][0]
-          : (item.contexts?.[0] || null);
+        // Pick best quality context sentence using scoreContextSentence quality rating
+        let matchedContext = null;
+        const candidatePool = [];
+        if (['noun', 'verb', 'adjective', 'adverb'].includes(this.activePosFilter) && Array.isArray(item.posContexts?.[this.activePosFilter])) {
+          candidatePool.push(...item.posContexts[this.activePosFilter]);
+        }
+        if (Array.isArray(item.contexts)) {
+          candidatePool.push(...item.contexts);
+        }
+        if (candidatePool.length > 0) {
+          candidatePool.sort((a, b) => this.scoreContextSentence(b.text || b.sentence) - this.scoreContextSentence(a.text || a.sentence));
+          matchedContext = candidatePool[0];
+        }
 
         const currentPos = (['noun', 'verb', 'adjective', 'adverb'].includes(this.activePosFilter) && item.posCounts?.[this.activePosFilter] > 0)
           ? this.activePosFilter
@@ -1766,9 +1778,47 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       });
     },
 
+    cleanAndNormalizeSentence(text) {
+      if (!text) return '';
+      let str = String(text).trim();
+      str = str.replace(/[♪♫#]/g, '').trim();
+      str = str.replace(/\[[^\]]+\]/g, ' ').replace(/\([^)]+\)/g, ' ').trim();
+      str = str.replace(/^["'“”]+|["'“”]+$/g, '').trim();
+      str = str.replace(/[,;]+$/, '').trim();
+      str = str.replace(/\s+/g, ' ');
+
+      const letters = str.replace(/[^a-zA-Z]/g, '');
+      const upper = str.replace(/[^A-Z]/g, '');
+      if (letters.length >= 3 && (upper.length / letters.length) > 0.65) {
+        str = str.toLowerCase();
+        str = str.replace(/(^\s*|[.!?]\s+)([a-z])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+        str = str.replace(/\b(i)\b/g, 'I');
+        str = str.replace(/\bi'([a-z]+)\b/g, (_, p1) => "I'" + p1);
+      }
+      return str;
+    },
+
+    scoreContextSentence(text) {
+      if (!text) return -100;
+      const words = text.trim().split(/\s+/);
+      const wordCount = words.length;
+      let score = 0;
+      if (wordCount >= 6 && wordCount <= 22) score += 60;
+      else if (wordCount >= 4 && wordCount <= 28) score += 40;
+      else if (wordCount < 3) score -= 60;
+      else if (wordCount < 4) score -= 30;
+      if (/[.!?]$/.test(text.trim())) score += 20;
+      else if (/[,;:\-]$/.test(text.trim())) score -= 20;
+      if (/\b(I|you|he|she|it|we|they|the|this|that|is|are|was|were|have|do|can|will|would)\b/i.test(text)) {
+        score += 15;
+      }
+      return score;
+    },
+
     highlightWordInContext(sentence, word) {
       if (!sentence) return '';
-      const safe = this.escape(sentence);
+      const normalized = this.cleanAndNormalizeSentence(sentence);
+      const safe = this.escape(normalized);
       const reg = new RegExp(`\\b(${this.escapeRegExp(word)})\\b`, 'gi');
       return safe.replace(reg, '<b class="fx-quote-highlight">$1</b>');
     },

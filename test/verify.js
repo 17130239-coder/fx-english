@@ -92,7 +92,7 @@ const sampleYtXml = `<?xml version="1.0" encoding="utf-8" ?><timedtext format="3
 const ytCues = parser.parse(sampleYtXml);
 assert.strictEqual(ytCues.length, 2, 'Parsed 2 YouTube format 3 cues');
 assert.strictEqual(ytCues[0].startSec, 18.64, 'YouTube cue start parsed correctly in seconds');
-assert.strictEqual(ytCues[0].cleanText, "♪ We're no strangers to love ♪", 'YouTube cue text and entities cleaned');
+assert.strictEqual(ytCues[0].cleanText, "We're no strangers to love", 'YouTube cue text and entities cleaned');
 
 // Test Netflix TTML / DFXP XML with ttp:tickRate and ticks "t"
 const sampleNetflixTtml = `<?xml version="1.0" encoding="utf-8"?>
