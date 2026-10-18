@@ -679,6 +679,58 @@ body {
   font-weight: 500;
 }
 
+/* CEFR Vocabulary Stacked Distribution Bar */
+.fx-cefr-dist-bar-wrap {
+  background: var(--fx-bg-surface);
+  border: 1px solid var(--fx-border-subtle);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fx-cefr-dist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.fx-cefr-dist-title {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fx-text-secondary);
+}
+
+.fx-cefr-dist-stats {
+  font-family: var(--fx-font-mono);
+  color: var(--fx-text-primary);
+  font-weight: 500;
+}
+
+.fx-cefr-stacked-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fx-cefr-seg {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.fx-cefr-a1 { background: #10B981; }
+.fx-cefr-a2 { background: #06B6D4; }
+.fx-cefr-b1 { background: #3B82F6; }
+.fx-cefr-b2 { background: #8B5CF6; }
+.fx-cefr-c1c2 { background: #F59E0B; }
+
 /* --------------------------------------------------------------------------
    9. Vocabulary Explorer Section & Filters Bar
    -------------------------------------------------------------------------- */
@@ -1219,6 +1271,66 @@ body {
   justify-content: center;
   gap: 8px;
 }
+
+/* Flashcard SRS Rating Bar */
+.fx-fc-srs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.fx-srs-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 16px;
+  min-width: 78px;
+  border-radius: 6px;
+  background: var(--fx-bg-surface-hover);
+  border: 1px solid var(--fx-border-medium);
+  cursor: pointer;
+  transition: var(--fx-transition-fast);
+}
+
+.fx-srs-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fx-text-primary);
+}
+
+.fx-srs-time {
+  font-size: 10px;
+  font-family: var(--fx-font-mono);
+  color: var(--fx-text-secondary);
+}
+
+.fx-srs-again:hover {
+  border-color: #EF4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+.fx-srs-again .fx-srs-name { color: #FCA5A5; }
+
+.fx-srs-hard:hover {
+  border-color: #F59E0B;
+  background: rgba(245, 158, 11, 0.15);
+}
+.fx-srs-hard .fx-srs-name { color: #FCD34D; }
+
+.fx-srs-good:hover {
+  border-color: #3B82F6;
+  background: rgba(59, 130, 246, 0.15);
+}
+.fx-srs-good .fx-srs-name { color: #93C5FD; }
+
+.fx-srs-easy:hover {
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.15);
+}
+.fx-srs-easy .fx-srs-name { color: #6EE7B7; }
 
 /* --------------------------------------------------------------------------
    12. 9Router AI Settings Modal (Tesla Minimalist Hardware Look)

@@ -27,7 +27,6 @@
     "clipboardWrite"
   ],
   "host_permissions": [
-    "<all_urls>",
     "*://*.netflix.com/*",
     "*://*.nflxvideo.net/*",
     "*://*.nflxext.com/*",
@@ -38,9 +37,7 @@
     "https://api.9router.com/*",
     "https://*.9router.com/*",
     "http://localhost/*",
-    "http://127.0.0.1/*",
-    "http://*/*",
-    "https://*/*"
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background/background.js"

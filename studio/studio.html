@@ -161,6 +161,21 @@
         </div>
       </section>
 
+      <!-- CEFR Vocabulary Distribution Bar -->
+      <section id="fx-cefr-dist-section" class="fx-cefr-dist-bar-wrap" style="display:none;">
+        <div class="fx-cefr-dist-header">
+          <span class="fx-cefr-dist-title">Phân bố độ khó CEFR</span>
+          <span class="fx-cefr-dist-stats" id="fx-cefr-dist-stats">A1: 0% · A2: 0% · B1: 0% · B2: 0% · C1/C2: 0%</span>
+        </div>
+        <div class="fx-cefr-stacked-bar">
+          <div class="fx-cefr-seg fx-cefr-a1" id="fx-cefr-seg-a1" style="width: 0%;" title="A1 (Cơ bản)"></div>
+          <div class="fx-cefr-seg fx-cefr-a2" id="fx-cefr-seg-a2" style="width: 0%;" title="A2 (Sơ cấp)"></div>
+          <div class="fx-cefr-seg fx-cefr-b1" id="fx-cefr-seg-b1" style="width: 0%;" title="B1 (Trung cấp)"></div>
+          <div class="fx-cefr-seg fx-cefr-b2" id="fx-cefr-seg-b2" style="width: 0%;" title="B2 (Trung cao)"></div>
+          <div class="fx-cefr-seg fx-cefr-c1c2" id="fx-cefr-seg-c1c2" style="width: 0%;" title="C1/C2 (Cao cấp)"></div>
+        </div>
+      </section>
+
       <!-- Vocabulary Explorer Section -->
       <section id="fx-vocab-section" class="fx-vocab-section" style="display:none;">
         <!-- Filters Bar -->
@@ -333,6 +348,26 @@
           <button id="fx-fc-master" class="fx-btn-tesla-ghost" title="Đánh dấu đã thuộc">Đã thuộc</button>
           <button id="fx-fc-next" class="fx-btn-tesla-ghost">Sau</button>
         </div>
+
+        <!-- SRS Rating Bar (Active when flipped for Anki/Spaced Repetition evaluation) -->
+        <div class="fx-fc-srs-bar" id="fx-fc-srs-bar" style="display:none;">
+          <button class="fx-srs-btn fx-srs-again" data-srs="1" title="Phím tắt: 1">
+            <span class="fx-srs-name">Quên</span>
+            <span class="fx-srs-time">1m (1)</span>
+          </button>
+          <button class="fx-srs-btn fx-srs-hard" data-srs="2" title="Phím tắt: 2">
+            <span class="fx-srs-name">Khó</span>
+            <span class="fx-srs-time">10m (2)</span>
+          </button>
+          <button class="fx-srs-btn fx-srs-good" data-srs="3" title="Phím tắt: 3">
+            <span class="fx-srs-name">Nhớ</span>
+            <span class="fx-srs-time">1d (3)</span>
+          </button>
+          <button class="fx-srs-btn fx-srs-easy" data-srs="4" title="Phím tắt: 4">
+            <span class="fx-srs-name">Dễ</span>
+            <span class="fx-srs-time">4d (4)</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -437,7 +472,8 @@
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Core Domain & Shared Services -->
+  <script src="../lib/types.js"></script>
   <script src="../lib/compromise.js"></script>
   <script src="../lib/subtitleParser.js"></script>
   <script src="../lib/cefrDict.js"></script>
@@ -445,6 +481,10 @@
   <script src="../lib/neonClient.js"></script>
   <script src="../lib/masterList.js"></script>
   <script src="../lib/aiClient.js"></script>
+  <script src="src/state.js"></script>
+  <script src="src/services/audioService.js"></script>
+  <script src="src/services/exportService.js"></script>
+  <script src="src/controllers/flashcardController.js"></script>
   <script src="studio.js"></script>
 </body>
 </html>

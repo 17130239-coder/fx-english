@@ -232,16 +232,86 @@ const MessageDispatcher = {
       return { success: Boolean(title), title: title || '' };
     },
 
-    // Batch English-to-Vietnamese word translator using Google Translate API
+    // Hybrid English-to-Vietnamese word & phrase translator (3-Tier Linguistic Architecture)
+    // Tier 1: Offline CEFR Dictionary (0ms, 0 tokens, 100% offline)
+    // Tier 2: 9Router AI Engine (Context-aware translation)
+    // Tier 3: Web translation fallback with error resilience
     ['translate_words']: async (message) => {
-      const words = message.words;
-      if (!Array.isArray(words) || words.length === 0) return { success: true, translations: {} };
+      const words = Array.isArray(message.words) ? message.words : [];
+      if (words.length === 0) return { success: true, translations: {} };
 
       const results = {};
-      const BATCH_SIZE = 35;
+      const remaining = [];
+      const cefr = (typeof APP_CEFR_DICT !== 'undefined') ? APP_CEFR_DICT : null;
 
-      for (let i = 0; i < words.length; i += BATCH_SIZE) {
-        const batch = words.slice(i, i + BATCH_SIZE);
+      // Tier 1: 0ms Offline CEFR dictionary resolution
+      words.forEach((w) => {
+        const clean = String(w || '').trim().toLowerCase();
+        if (!clean) return;
+        if (cefr) {
+          const entry = cefr.lookup(clean);
+          if (entry && entry.vi) {
+            results[clean] = entry.vi;
+            return;
+          }
+        }
+        remaining.push(clean);
+      });
+
+      if (remaining.length === 0) {
+        return { success: true, translations: results };
+      }
+
+      // Tier 2: 9Router AI Contextual Translation if configured
+      const ai = (typeof APP_AI_CLIENT !== 'undefined') ? APP_AI_CLIENT : null;
+      if (ai && ai.isConfigured && ai.isConfigured()) {
+        try {
+          const prompt = `Translate the following English words into natural, concise Vietnamese (1-3 words per entry). Return ONLY a JSON object mapping each word to its Vietnamese translation:\n${JSON.stringify(remaining)}`;
+          const config = await ai.getConfig();
+          const baseUrl = ai.normalizeBaseUrl(config.baseUrl);
+          const aiResp = await ai._requestChatCompletion(baseUrl, config.apiKey, {
+            model: config.model,
+            temperature: 0.1,
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: 'You are a professional English-Vietnamese translator. Return only a valid JSON object.' },
+              { role: 'user', content: prompt }
+            ]
+          });
+
+          const content = aiResp?.choices?.[0]?.message?.content || '{}';
+          let parsed = {};
+          try {
+            parsed = JSON.parse(content);
+          } catch (e) {
+            const m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (m) parsed = JSON.parse(m[1]);
+          }
+
+          if (parsed && typeof parsed === 'object') {
+            Object.entries(parsed).forEach(([k, v]) => {
+              if (v && typeof v === 'string') {
+                results[k.toLowerCase()] = v.trim();
+              }
+            });
+          }
+
+          // Check if all remaining were resolved by AI
+          const unresolved = remaining.filter((w) => !results[w]);
+          if (unresolved.length === 0) {
+            return { success: true, translations: results };
+          }
+        } catch (aiErr) {
+          console.warn('[FX Translate] Tier 2 AI translation notice, falling back to Web API:', aiErr);
+        }
+      }
+
+      // Tier 3: Web translation fallback
+      const unresolved = remaining.filter((w) => !results[w]);
+      const BATCH_SIZE = 30;
+
+      for (let i = 0; i < unresolved.length; i += BATCH_SIZE) {
+        const batch = unresolved.slice(i, i + BATCH_SIZE);
         try {
           const text = batch.join('\n');
           const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
@@ -249,7 +319,7 @@ const MessageDispatcher = {
           if (resp.ok) {
             const data = await resp.json();
             const sentences = data?.[0] || [];
-            const fullTranslated = sentences.map(s => s[0]).join('');
+            const fullTranslated = sentences.map((s) => s[0]).join('');
             const lines = fullTranslated.split('\n');
             batch.forEach((w, idx) => {
               const trans = (lines[idx] || '').trim();
@@ -259,7 +329,7 @@ const MessageDispatcher = {
             });
           }
         } catch (err) {
-          console.warn('[FX Translate] Batch error:', err);
+          console.warn('[FX Translate] Tier 3 batch notice:', err);
         }
       }
 

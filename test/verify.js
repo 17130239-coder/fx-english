@@ -380,6 +380,12 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     assert.ok(Array.isArray(movies), 'getMovies returns an array');
     const retrieved = movies.find(m => m.id === testId);
     assert.ok(retrieved, 'Retrieved saved movie from Neon');
+    assert.strictEqual(retrieved.cues.length, 0, 'Lightweight history list query omits heavy cues payload');
+
+    const fullMovie = await neonClient.getMovieById(testId);
+    assert.ok(fullMovie, 'getMovieById loads complete movie record on-demand');
+    assert.ok(fullMovie.analysis, 'Full movie query includes complete analysis');
+    assert.strictEqual(fullMovie.cues.length, 1, 'Full movie query includes complete cues');
 
     const deleted = await neonClient.deleteMovie(testId);
     assert.ok(deleted, 'Cleaned up test movie from Neon');
@@ -633,6 +639,7 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
           highlights: [
             {
               phrase: 'hit the ground running',
+              category: 'idiom',
               meaningVi: 'bắt đầu suôn sẻ',
               contextSentence: 'Incorporating fresh talent will help us hit the ground running.',
               nuance: 'Hành động nhanh chóng và đạt hiệu quả ngay từ giây phút đầu tiên.'
@@ -669,6 +676,8 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     // Verify highlights / communicative sentences
     assert.strictEqual(consolidated.highlights.length, 1, '1 highlight extracted');
     assert.strictEqual(consolidated.highlights[0].highlightPhrase, 'hit the ground running');
+    assert.strictEqual(consolidated.highlights[0].category, 'idiom');
+    assert.strictEqual(consolidated.highlights[0].tag, 'Thành ngữ');
     assert.strictEqual(consolidated.highlights[0].vietnamese, 'bắt đầu suôn sẻ');
     assert.strictEqual(consolidated.categories.sentences.count, 1, 'sentences category count matches highlights');
     console.log('   ✓ 9Router AI Linguistic Engine Client verified: lemmatization, deduplication, contextual translations, and highlights working perfectly.\n');

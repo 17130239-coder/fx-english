@@ -34,11 +34,22 @@
     init() {
       this.bindElements();
       this.bindEvents();
+      this.initServices();
       this.loadWordStates();
       this.initMasterList();
       this.loadHistory();
       this.checkPendingStorage();
       this.detectActiveMedia();
+    },
+
+    initServices() {
+      if (typeof APP_FLASHCARD_CONTROLLER !== 'undefined' && APP_FLASHCARD_CONTROLLER) {
+        APP_FLASHCARD_CONTROLLER.init({
+          store: typeof APP_STUDIO_STATE !== 'undefined' ? APP_STUDIO_STATE : null,
+          audioService: typeof APP_AUDIO_SERVICE !== 'undefined' ? APP_AUDIO_SERVICE : null,
+          onToggleMaster: (key, item, isMastered) => this.toggleMastered(key, item, isMastered)
+        });
+      }
     },
 
     bindElements() {
@@ -66,6 +77,13 @@
 
       // Sections
       this.statsSection = document.getElementById('fx-stats-section');
+      this.cefrDistSection = document.getElementById('fx-cefr-dist-section');
+      this.cefrDistStats = document.getElementById('fx-cefr-dist-stats');
+      this.cefrSegA1 = document.getElementById('fx-cefr-seg-a1');
+      this.cefrSegA2 = document.getElementById('fx-cefr-seg-a2');
+      this.cefrSegB1 = document.getElementById('fx-cefr-seg-b1');
+      this.cefrSegB2 = document.getElementById('fx-cefr-seg-b2');
+      this.cefrSegC1C2 = document.getElementById('fx-cefr-seg-c1c2');
       this.vocabSection = document.getElementById('fx-vocab-section');
       this.cardsGrid = document.getElementById('fx-cards-grid');
 
@@ -120,6 +138,7 @@
       this.fcFlip = document.getElementById('fx-fc-flip');
       this.fcStar = document.getElementById('fx-fc-star');
       this.fcMaster = document.getElementById('fx-fc-master');
+      this.fcSrsBar = document.getElementById('fx-fc-srs-bar');
 
       // 9Router AI Settings Modal
       this.btnOpenSettings = document.getElementById('fx-btn-open-settings');
@@ -360,6 +379,60 @@
         });
       }
 
+      // Unified Event Delegation on Cards Grid (Performance & Clean Code)
+      if (this.cardsGrid) {
+        this.cardsGrid.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          e.stopPropagation();
+          const action = btn.dataset.action;
+
+          if (action === 'star') {
+            const word = btn.dataset.word;
+            const sent = btn.dataset.sentence;
+            this.toggleStar(word || sent);
+          } else if (action === 'master') {
+            const word = btn.dataset.word;
+            this.toggleMastered(word);
+          } else if (action === 'speak') {
+            const text = btn.dataset.text;
+            if (text) this.speakWord(text);
+          } else if (action === 'copy') {
+            const text = btn.dataset.text;
+            if (text) {
+              navigator.clipboard.writeText(text).then(() => {
+                const iconCopy = btn.querySelector('.fx-icon-copy');
+                const iconCopied = btn.querySelector('.fx-icon-copied');
+                if (iconCopy && iconCopied) {
+                  iconCopy.style.display = 'none';
+                  iconCopied.style.display = 'inline-block';
+                  setTimeout(() => {
+                    iconCopy.style.display = 'inline-block';
+                    iconCopied.style.display = 'none';
+                  }, 1500);
+                }
+              }).catch(() => {});
+            }
+          } else if (action === 'jump') {
+            const sec = parseFloat(btn.dataset.sec) || 0;
+            const url = btn.dataset.url || '';
+            this.jumpToVideoTimestamp(sec, url);
+          }
+        });
+      }
+
+      // Flashcard SRS Rating Buttons
+      if (this.fcSrsBar) {
+        this.fcSrsBar.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-srs]');
+          if (btn) {
+            e.stopPropagation();
+            const rating = parseInt(btn.dataset.srs, 10);
+            this.rateCardSrs(rating);
+          }
+        });
+      }
+
       // Keyboard navigation for Flashcards & Modals
       window.addEventListener('keydown', (e) => {
         if (this.settingsModal && this.settingsModal.style.display === 'flex' && e.code === 'Escape') {
@@ -371,6 +444,14 @@
           return;
         }
         if (this.fcModal.style.display !== 'flex') return;
+
+        // SRS Rating shortcuts when card is flipped (1: Again, 2: Hard, 3: Good, 4: Easy)
+        if (this.isCardFlipped && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4')) {
+          e.preventDefault();
+          this.rateCardSrs(parseInt(e.key, 10));
+          return;
+        }
+
         if (e.code === 'Space') {
           e.preventDefault();
           this.flipFlashcard();
@@ -941,6 +1022,38 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (this.tabCountStarred) {
         this.tabCountStarred.textContent = starredCount.toLocaleString();
       }
+
+      // Compute CEFR Distribution for Visual Stacked Bar
+      if (this.cefrDistSection && allWords && allWords.length > 0) {
+        let a1 = 0, a2 = 0, b1 = 0, b2 = 0, c1c2 = 0;
+        allWords.forEach((w) => {
+          const c = String(w.cefr || '').toUpperCase().trim();
+          if (c === 'A1') a1++;
+          else if (c === 'A2') a2++;
+          else if (c === 'B1') b1++;
+          else if (c === 'B2') b2++;
+          else if (c === 'C1' || c === 'C2') c1c2++;
+          else a1++;
+        });
+
+        const total = allWords.length || 1;
+        const pA1 = Math.round((a1 / total) * 100);
+        const pA2 = Math.round((a2 / total) * 100);
+        const pB1 = Math.round((b1 / total) * 100);
+        const pB2 = Math.round((b2 / total) * 100);
+        const pC1C2 = Math.max(0, 100 - (pA1 + pA2 + pB1 + pB2));
+
+        if (this.cefrSegA1) this.cefrSegA1.style.width = `${pA1}%`;
+        if (this.cefrSegA2) this.cefrSegA2.style.width = `${pA2}%`;
+        if (this.cefrSegB1) this.cefrSegB1.style.width = `${pB1}%`;
+        if (this.cefrSegB2) this.cefrSegB2.style.width = `${pB2}%`;
+        if (this.cefrSegC1C2) this.cefrSegC1C2.style.width = `${pC1C2}%`;
+
+        if (this.cefrDistStats) {
+          this.cefrDistStats.textContent = `A1: ${pA1}% · A2: ${pA2}% · B1: ${pB1}% · B2: ${pB2}% · C1/C2: ${pC1C2}%`;
+        }
+        this.cefrDistSection.style.display = 'flex';
+      }
     },
 
     getFilteredWords() {
@@ -1069,20 +1182,20 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             <div class="fx-sent-top">
               <div class="fx-sent-meta-left">
                 <span class="fx-sent-tag">${this.escape(cleanTag)}</span>
-                ${timeHtml}
+                ${item.startTime ? `<span class="fx-card-time fx-jump-link" data-action="jump" data-sec="${item.startSec || 0}" data-url="${this.escape(videoUrl)}" title="Nhảy đến phân cảnh phim">${this.escape(item.startTime)}</span>` : ''}
               </div>
               <div class="fx-sent-actions">
-                <button type="button" class="fx-btn-icon-raw fx-btn-star ${isSentStarred ? 'active' : ''}" title="${isSentStarred ? 'Bỏ lưu' : 'Lưu câu'}">
+                <button type="button" class="fx-btn-icon-raw fx-btn-star ${isSentStarred ? 'active' : ''}" data-action="star" data-sentence="${this.escape(item.sentence)}" title="${isSentStarred ? 'Bỏ lưu' : 'Lưu câu'}">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="${isSentStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                   </svg>
                 </button>
-                <button type="button" class="fx-btn-icon-raw fx-btn-speak" title="Phát âm">
+                <button type="button" class="fx-btn-icon-raw fx-btn-speak" data-action="speak" data-text="${this.escape(item.sentence)}" title="Phát âm">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
                   </svg>
                 </button>
-                <button type="button" class="fx-btn-icon-raw fx-btn-copy" title="Sao chép">
+                <button type="button" class="fx-btn-icon-raw fx-btn-copy" data-action="copy" data-text="${this.escape(item.sentence)}" title="Sao chép">
                   <svg class="fx-icon-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
@@ -1105,41 +1218,6 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
               </div>
             ` : ''}
           `;
-
-          card.querySelector('.fx-btn-star').onclick = (e) => {
-            e.stopPropagation();
-            this.toggleStar(item.sentence);
-          };
-
-          card.querySelector('.fx-btn-speak').onclick = (e) => {
-            e.stopPropagation();
-            this.speakWord(item.sentence);
-          };
-
-          const copyBtn = card.querySelector('.fx-btn-copy');
-          const iconCopy = copyBtn.querySelector('.fx-icon-copy');
-          const iconCopied = copyBtn.querySelector('.fx-icon-copied');
-          copyBtn.onclick = (e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(item.sentence).then(() => {
-              if (iconCopy && iconCopied) {
-                iconCopy.style.display = 'none';
-                iconCopied.style.display = 'inline-block';
-                setTimeout(() => {
-                  iconCopy.style.display = 'inline-block';
-                  iconCopied.style.display = 'none';
-                }, 1500);
-              }
-            }).catch(() => {});
-          };
-
-          const jumpLink = card.querySelector('.fx-jump-link');
-          if (jumpLink) {
-            jumpLink.onclick = (e) => {
-              e.stopPropagation();
-              this.jumpToVideoTimestamp(item.startSec, videoUrl);
-            };
-          }
 
           this.cardsGrid.appendChild(card);
           return;
@@ -1202,12 +1280,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             </div>
             <div class="fx-card-meta-actions">
               <span class="fx-card-specs">${specsText}</span>
-              <button type="button" class="fx-btn-icon-raw fx-btn-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Bỏ lưu yêu thích' : 'Lưu từ yêu thích'}" data-word="${this.escape(item.word)}">
+              <button type="button" class="fx-btn-icon-raw fx-btn-star ${isStarred ? 'active' : ''}" data-action="star" data-word="${this.escape(item.word)}" title="${isStarred ? 'Bỏ lưu yêu thích' : 'Lưu từ yêu thích'}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="${isStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                 </svg>
               </button>
-              <button type="button" class="fx-btn-icon-raw fx-btn-check ${isMastered ? 'active' : ''}" title="${isMastered ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc'}" data-word="${this.escape(item.word)}">
+              <button type="button" class="fx-btn-icon-raw fx-btn-check ${isMastered ? 'active' : ''}" data-action="master" data-word="${this.escape(item.word)}" title="${isMastered ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc'}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${isMastered ? '#10B981' : 'currentColor'}" stroke-width="${isMastered ? '2' : '1.5'}" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
@@ -1218,7 +1296,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           <!-- Dòng 2: Phiên âm IPA + icon loa mảnh (bỏ viền xám) + Nghĩa tiếng Việt rõ ràng -->
           <div class="fx-card-line-2">
             ${item.ipa ? `<span class="fx-card-ipa">${this.escape(item.ipa)}</span>` : ''}
-            <button type="button" class="fx-btn-icon-raw fx-btn-audio" title="Phát âm">
+            <button type="button" class="fx-btn-icon-raw fx-btn-audio" data-action="speak" data-text="${this.escape(item.word)}" title="Phát âm">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
               </svg>
@@ -1231,33 +1309,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           ${contextHtml ? `
             <div class="fx-card-line-3">
               <p class="fx-card-quote">"${contextHtml}"</p>
-              ${timeHtml}
+              ${startTimeStr ? `<span class="fx-card-time fx-jump-link" data-action="jump" data-sec="${startSec}" data-url="${this.escape(videoUrl)}" title="Nhảy đến phân cảnh phim">${this.escape(startTimeStr)}</span>` : ''}
             </div>
           ` : ''}
         `;
-
-        card.querySelector('.fx-btn-star').onclick = (e) => {
-          e.stopPropagation();
-          this.toggleStar(item.word);
-        };
-
-        card.querySelector('.fx-btn-check').onclick = (e) => {
-          e.stopPropagation();
-          this.toggleMastered(item.word, item);
-        };
-
-        card.querySelector('.fx-btn-audio').onclick = (e) => {
-          e.stopPropagation();
-          this.speakWord(item.word);
-        };
-
-        const jumpLink = card.querySelector('.fx-jump-link');
-        if (jumpLink) {
-          jumpLink.onclick = (e) => {
-            e.stopPropagation();
-            this.jumpToVideoTimestamp(startSec, videoUrl);
-          };
-        }
 
         this.cardsGrid.appendChild(card);
       });
@@ -1383,6 +1438,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     },
 
     speakWord(word) {
+      if (typeof APP_AUDIO_SERVICE !== 'undefined' && APP_AUDIO_SERVICE) {
+        APP_AUDIO_SERVICE.speak(word);
+        return;
+      }
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(word);
@@ -1399,6 +1458,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         return;
       }
 
+      if (typeof APP_FLASHCARD_CONTROLLER !== 'undefined' && APP_FLASHCARD_CONTROLLER) {
+        APP_FLASHCARD_CONTROLLER.open(words);
+        return;
+      }
+
       this.flashcardList = words;
       this.currentCardIdx = 0;
       this.isCardFlipped = false;
@@ -1407,6 +1471,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     },
 
     closeFlashcards() {
+      if (typeof APP_FLASHCARD_CONTROLLER !== 'undefined' && APP_FLASHCARD_CONTROLLER) {
+        APP_FLASHCARD_CONTROLLER.close();
+        return;
+      }
       this.fcModal.style.display = 'none';
     },
 
@@ -1414,8 +1482,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       this.isCardFlipped = !this.isCardFlipped;
       if (this.isCardFlipped) {
         this.fcCard.classList.add('is-flipped');
+        if (this.fcSrsBar) this.fcSrsBar.style.display = 'flex';
       } else {
         this.fcCard.classList.remove('is-flipped');
+        if (this.fcSrsBar) this.fcSrsBar.style.display = 'none';
       }
     },
 
@@ -1424,6 +1494,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.currentCardIdx--;
         this.isCardFlipped = false;
         this.fcCard.classList.remove('is-flipped');
+        if (this.fcSrsBar) this.fcSrsBar.style.display = 'none';
         this.renderFlashcard();
       }
     },
@@ -1433,7 +1504,58 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.currentCardIdx++;
         this.isCardFlipped = false;
         this.fcCard.classList.remove('is-flipped');
+        if (this.fcSrsBar) this.fcSrsBar.style.display = 'none';
         this.renderFlashcard();
+      }
+    },
+
+    rateCardSrs(rating) {
+      const item = this.flashcardList[this.currentCardIdx];
+      if (!item) return;
+
+      const key = (item.word || item.sentence || '').toLowerCase().trim();
+      if (!key) return;
+
+      if (!this.wordStates[key]) {
+        this.wordStates[key] = { starred: false, mastered: false, srsLevel: 0, updatedAt: Date.now() };
+      }
+
+      const now = Date.now();
+      let nextReview = now;
+      let curLevel = this.wordStates[key].srsLevel || 0;
+
+      if (rating === 1) {
+        // Again: 1 minute
+        nextReview += 60 * 1000;
+        this.wordStates[key].srsLevel = 0;
+      } else if (rating === 2) {
+        // Hard: 10 minutes
+        nextReview += 10 * 60 * 1000;
+        this.wordStates[key].srsLevel = curLevel;
+      } else if (rating === 3) {
+        // Good: 1 day
+        nextReview += 24 * 60 * 60 * 1000;
+        this.wordStates[key].srsLevel = curLevel + 1;
+      } else if (rating === 4) {
+        // Easy: 4 days (Auto mark mastered)
+        nextReview += 4 * 24 * 60 * 60 * 1000;
+        this.wordStates[key].srsLevel = curLevel + 2;
+        this.toggleMastered(key, item);
+      }
+
+      this.wordStates[key].nextReview = nextReview;
+      this.wordStates[key].updatedAt = now;
+      this.saveWordStates();
+
+      // Automatically advance to the next card if available, or notify completion
+      if (this.currentCardIdx < this.flashcardList.length - 1) {
+        this.nextFlashcard();
+      } else {
+        this.isCardFlipped = false;
+        this.fcCard.classList.remove('is-flipped');
+        if (this.fcSrsBar) this.fcSrsBar.style.display = 'none';
+        alert('🎉 Chúc mừng! Bạn đã hoàn thành lượt ôn tập tất cả các thẻ từ này.');
+        this.closeFlashcards();
       }
     },
 
@@ -1520,6 +1642,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         return;
       }
 
+      if (typeof APP_EXPORT_SERVICE !== 'undefined' && APP_EXPORT_SERVICE) {
+        APP_EXPORT_SERVICE.exportToAnki(words, this.movieTitle);
+        return;
+      }
+
       let content = '';
       if (ANALYZER) {
         content = ANALYZER.exportToAnkiFormat(words);
@@ -1534,6 +1661,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const words = this.getFilteredWords();
       if (words.length === 0) {
         alert('Không có từ vựng nào để xuất.');
+        return;
+      }
+
+      if (typeof APP_EXPORT_SERVICE !== 'undefined' && APP_EXPORT_SERVICE) {
+        APP_EXPORT_SERVICE.exportToCsv(words, this.movieTitle);
         return;
       }
 
@@ -1943,12 +2075,29 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       });
     },
 
-    openHistoryItem(item) {
+    async openHistoryItem(item) {
       if (!item) return;
 
       this.movieTitle = item.title || 'fx_vocab';
       this.movieUrl = item.url || '';
       this.cues = item.cues || [];
+
+      // Lazy-load complete analysis and cues on-demand from Neon if only lightweight metadata was fetched
+      if ((!item.analysis || !item.cues || item.cues.length === 0) && item.id) {
+        const neon = this.getNeonClient();
+        if (neon) {
+          try {
+            const fullItem = await neon.getMovieById(item.id);
+            if (fullItem) {
+              item.cues = fullItem.cues || [];
+              item.analysis = fullItem.analysis || null;
+              this.cues = item.cues;
+            }
+          } catch (e) {
+            console.warn('[FX Studio] Failed to fetch full movie details on-demand:', e);
+          }
+        }
+      }
 
       if (item.analysis && item.analysis.totals && item.analysis.categories) {
         this.analysis = item.analysis;
