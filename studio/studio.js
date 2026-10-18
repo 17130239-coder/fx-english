@@ -807,12 +807,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const ai = this.getAiClient();
       const conf = ai ? await ai.getConfig() : {
         baseUrl: 'http://localhost:20128/v1',
-        apiKey: 'sk-98667fb36de52067-1qd56t-2af84524',
+        apiKey: '',
         model: 'ag/gemini-3.8-flash-low'
       };
 
       if (this.inputAiBaseUrl) this.inputAiBaseUrl.value = conf.baseUrl || 'http://localhost:20128/v1';
-      if (this.inputAiApiKey) this.inputAiApiKey.value = conf.apiKey || 'sk-98667fb36de52067-1qd56t-2af84524';
+      if (this.inputAiApiKey) this.inputAiApiKey.value = conf.apiKey || '';
       if (this.inputAiModel) this.inputAiModel.value = conf.model || 'ag/gemini-3.8-flash-low';
 
       if (this.settingsStatus) {
@@ -840,7 +840,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       const rawBase = (this.inputAiBaseUrl?.value || '').trim() || 'http://localhost:20128/v1';
       const baseUrl = ai.normalizeBaseUrl ? ai.normalizeBaseUrl(rawBase) : rawBase;
-      const apiKey = (this.inputAiApiKey?.value || '').trim() || 'sk-98667fb36de52067-1qd56t-2af84524';
+      const apiKey = (this.inputAiApiKey?.value || '').trim();
       const model = (this.inputAiModel?.value || '').trim() || 'ag/gemini-3.8-flash-low';
 
       if (!apiKey) {

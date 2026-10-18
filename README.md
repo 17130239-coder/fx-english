@@ -400,7 +400,7 @@ Core logic modules residing in `lib/` (`types.js`, `subtitleParser.js`, `cefrDic
 2. Click the **AI** settings button in the top navigation bar.
 3. Verify or enter your connection parameters:
    - **Base URL**: `http://localhost:20128/v1` (or `https://api.9router.com/v1`)
-   - **API Key**: Enter your 9Router key (e.g., `sk-9866...`)
+   - **API Key**: Enter your 9Router key (e.g., `sk-your-api-key`)
    - **Model ID**: Select or type your target model (e.g., `ag/gemini-3.8-flash-low` or `gemini-3.8-flash`)
 4. Click **Kiểm tra & Lưu**. The interface will perform a test handshake and save your configuration.
 

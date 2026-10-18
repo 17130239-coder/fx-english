@@ -348,48 +348,52 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
 (async () => {
   try {
-    const health = await neonClient.checkHealth();
-    assert.ok(health.ok, 'Neon database connection is healthy');
-    console.log('   ✓ Neon health check passed (Connected to host: ' + health.host + ')');
+    if (!neonClient.dbUrl) {
+      console.log('   ℹ️ Skipped live Neon network test (No hardcoded credentials; configure NEON_DATABASE_URL to run).');
+    } else {
+      const health = await neonClient.checkHealth();
+      assert.ok(health.ok, 'Neon database connection is healthy');
+      console.log('   ✓ Neon health check passed (Connected to host: ' + health.host + ')');
 
-    const testId = 'verify_test_' + Date.now();
-    const testMovie = {
-      id: testId,
-      title: 'Neon Integration Test Video',
-      platform: 'youtube',
-      url: 'https://www.youtube.com/watch?v=neon_test_verify',
-      timestamp: Date.now(),
-      dateFormatted: '17/10/2026, 23:40',
-      wordCount: 12,
-      nounCount: 4,
-      verbCount: 3,
-      adjCount: 3,
-      advCount: 2,
-      cues: [{ startSec: 0, endSec: 3, text: 'Hello Neon PostgreSQL world' }],
-      analysis: testMultiPassAnalysis
-    };
+      const testId = 'verify_test_' + Date.now();
+      const testMovie = {
+        id: testId,
+        title: 'Neon Integration Test Video',
+        platform: 'youtube',
+        url: 'https://www.youtube.com/watch?v=neon_test_verify',
+        timestamp: Date.now(),
+        dateFormatted: '17/10/2026, 23:40',
+        wordCount: 12,
+        nounCount: 4,
+        verbCount: 3,
+        adjCount: 3,
+        advCount: 2,
+        cues: [{ startSec: 0, endSec: 3, text: 'Hello Neon PostgreSQL world' }],
+        analysis: testMultiPassAnalysis
+      };
 
-    const saved = await neonClient.saveMovie(testMovie);
-    assert.ok(saved, 'Movie saved to Neon');
-    assert.strictEqual(saved.id, testId, 'Saved movie has matching ID');
-    assert.strictEqual(saved.title, testMovie.title, 'Saved movie has matching title');
-    assert.strictEqual(saved.nounCount, 4, 'Saved movie has matching noun count');
-    assert.ok(saved.analysis, 'Saved movie includes full analysis JSONB');
+      const saved = await neonClient.saveMovie(testMovie);
+      assert.ok(saved, 'Movie saved to Neon');
+      assert.strictEqual(saved.id, testId, 'Saved movie has matching ID');
+      assert.strictEqual(saved.title, testMovie.title, 'Saved movie has matching title');
+      assert.strictEqual(saved.nounCount, 4, 'Saved movie has matching noun count');
+      assert.ok(saved.analysis, 'Saved movie includes full analysis JSONB');
 
-    const movies = await neonClient.getMovies(10);
-    assert.ok(Array.isArray(movies), 'getMovies returns an array');
-    const retrieved = movies.find(m => m.id === testId);
-    assert.ok(retrieved, 'Retrieved saved movie from Neon');
-    assert.strictEqual(retrieved.cues.length, 0, 'Lightweight history list query omits heavy cues payload');
+      const movies = await neonClient.getMovies(10);
+      assert.ok(Array.isArray(movies), 'getMovies returns an array');
+      const retrieved = movies.find(m => m.id === testId);
+      assert.ok(retrieved, 'Retrieved saved movie from Neon');
+      assert.strictEqual(retrieved.cues.length, 0, 'Lightweight history list query omits heavy cues payload');
 
-    const fullMovie = await neonClient.getMovieById(testId);
-    assert.ok(fullMovie, 'getMovieById loads complete movie record on-demand');
-    assert.ok(fullMovie.analysis, 'Full movie query includes complete analysis');
-    assert.strictEqual(fullMovie.cues.length, 1, 'Full movie query includes complete cues');
+      const fullMovie = await neonClient.getMovieById(testId);
+      assert.ok(fullMovie, 'getMovieById loads complete movie record on-demand');
+      assert.ok(fullMovie.analysis, 'Full movie query includes complete analysis');
+      assert.strictEqual(fullMovie.cues.length, 1, 'Full movie query includes complete cues');
 
-    const deleted = await neonClient.deleteMovie(testId);
-    assert.ok(deleted, 'Cleaned up test movie from Neon');
-    console.log('   ✓ Full Neon CRUD cycle verified (saveMovie, getMovies, deleteMovie).\n');
+      const deleted = await neonClient.deleteMovie(testId);
+      assert.ok(deleted, 'Cleaned up test movie from Neon');
+      console.log('   ✓ Full Neon CRUD cycle verified (saveMovie, getMovies, deleteMovie).\n');
+    }
 
     // 11. Test Real-world Title Resolution & Interactive Resource Link Models
     console.log('🔗 11. Testing Netflix/YouTube Real Title Resolvers & Resource Links...');
@@ -556,9 +560,8 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
     // 15.1 Verify default configuration
     const initialConfig = await aiClientModule.getConfig();
     assert.strictEqual(initialConfig.baseUrl, 'http://localhost:20128/v1', 'Default baseUrl is http://localhost:20128/v1');
-    assert.strictEqual(initialConfig.apiKey, 'sk-98667fb36de52067-1qd56t-2af84524', 'Default apiKey is set');
+    assert.strictEqual(typeof initialConfig.apiKey, 'string', 'apiKey is string');
     assert.strictEqual(initialConfig.model, 'ag/gemini-3.8-flash-low', 'Default model is ag/gemini-3.8-flash-low');
-    assert.strictEqual(aiClientModule.isConfigured(), true, 'isConfigured() returns true out of the box with defaults');
 
     // 15.2 Verify normalizeBaseUrl
     assert.strictEqual(aiClientModule.normalizeBaseUrl('http://localhost:20128'), 'http://localhost:20128/v1', 'Appends /v1 if missing');
