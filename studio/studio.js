@@ -23,6 +23,7 @@
 
     // Master List View State
     activeMasterFilter: 'all',
+    masterCefrFilter: 'all',
     masterSearchQuery: '',
     activeView: 'studio',
 
@@ -165,11 +166,24 @@
       this.btnExportMasterCsv = document.getElementById('fx-btn-export-master-csv');
       this.btnClearMaster = document.getElementById('fx-btn-clear-master');
 
+      this.masterCefrDistSection = document.getElementById('fx-master-cefr-dist-section');
+      this.masterCefrDistStats = document.getElementById('fx-master-cefr-dist-stats');
+      this.masterCefrSegA1 = document.getElementById('fx-master-cefr-seg-a1');
+      this.masterCefrSegA2 = document.getElementById('fx-master-cefr-seg-a2');
+      this.masterCefrSegB1 = document.getElementById('fx-master-cefr-seg-b1');
+      this.masterCefrSegB2 = document.getElementById('fx-master-cefr-seg-b2');
+      this.masterCefrSegC1C2 = document.getElementById('fx-master-cefr-seg-c1c2');
+
       this.masterTabsGroup = document.getElementById('fx-master-tabs');
       this.masterCountAll = document.getElementById('fx-master-count-all');
-      this.masterCountWord = document.getElementById('fx-master-count-word');
-      this.masterCountSentence = document.getElementById('fx-master-count-sentence');
+      this.masterCountNoun = document.getElementById('fx-master-count-noun');
+      this.masterCountVerb = document.getElementById('fx-master-count-verb');
+      this.masterCountAdj = document.getElementById('fx-master-count-adj');
+      this.masterCountAdv = document.getElementById('fx-master-count-adv');
+      this.masterCountSentences = document.getElementById('fx-master-count-sentences');
       this.masterCountPolysemy = document.getElementById('fx-master-count-polysemy');
+      this.masterCountStarred = document.getElementById('fx-master-count-starred');
+      this.masterFilterCefr = document.getElementById('fx-master-filter-cefr');
       this.masterSearchInput = document.getElementById('fx-master-search');
       this.masterEmptyEl = document.getElementById('fx-master-empty');
       this.masterGridEl = document.getElementById('fx-master-grid');
@@ -248,8 +262,20 @@
       });
 
       // Exports
-      this.btnExportAnkiTop.addEventListener('click', () => this.exportAnki());
-      this.btnExportCsvTop.addEventListener('click', () => this.exportCsv());
+      this.btnExportAnkiTop.addEventListener('click', () => {
+        if (this.activeView === 'master') {
+          this.exportMasterAnki();
+        } else {
+          this.exportAnki();
+        }
+      });
+      this.btnExportCsvTop.addEventListener('click', () => {
+        if (this.activeView === 'master') {
+          this.exportMasterCsv();
+        } else {
+          this.exportCsv();
+        }
+      });
 
       // 3D Flashcards
       this.btnToggleFlashcards.addEventListener('click', () => this.openFlashcards());
@@ -341,9 +367,17 @@
           btn.addEventListener('click', () => {
             this.masterTabsGroup.querySelectorAll('.fx-tab-btn').forEach((b) => b.classList.remove('active'));
             btn.classList.add('active');
-            this.activeMasterFilter = btn.dataset.type || 'all';
+            this.activeMasterFilter = btn.dataset.pos || btn.dataset.type || 'all';
             this.renderMasterList();
           });
+        });
+      }
+
+      // Master List CEFR Filter
+      if (this.masterFilterCefr) {
+        this.masterFilterCefr.addEventListener('change', (e) => {
+          this.masterCefrFilter = e.target.value;
+          this.renderMasterList();
         });
       }
 
@@ -1452,7 +1486,22 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
     // 3D Flashcards Implementation
     openFlashcards() {
-      const words = this.getFilteredWords();
+      let words = [];
+      if (this.activeView === 'master') {
+        const ml = this.getMasterList();
+        const allItems = ml ? ml.getAll() : [];
+        words = allItems.map((item) => ({
+          word: item.text,
+          ipa: item.ipa || '',
+          pos: item.pos || 'noun',
+          cefr: item.cefr || '',
+          vietnamese: Array.isArray(item.knownMeanings) ? item.knownMeanings.join(', ') : (item.knownMeanings || ''),
+          contexts: item.context ? [{ text: item.context }] : []
+        }));
+      } else {
+        words = this.getFilteredWords();
+      }
+
       if (words.length === 0) {
         alert('Không có từ vựng hoặc câu giao tiếp nào để tạo thẻ ghi nhớ.');
         return;
@@ -2261,15 +2310,18 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (this.studioView) this.studioView.style.display = isStudio ? 'block' : 'none';
       if (this.masterView) this.masterView.style.display = isStudio ? 'none' : 'block';
 
-      // Hide movie-specific action buttons from the top navbar when in Master view
+      const ml = this.getMasterList();
+      const hasMasterItems = Boolean(ml && ml.getAll().length > 0);
+
+      // Top navbar buttons: Flashcards, Anki, CSV
       if (this.btnToggleFlashcards) {
-        this.btnToggleFlashcards.style.display = (isStudio && this.analysis) ? 'inline-flex' : 'none';
+        this.btnToggleFlashcards.style.display = (isStudio ? Boolean(this.analysis) : hasMasterItems) ? 'inline-flex' : 'none';
       }
       if (this.btnExportAnkiTop) {
-        this.btnExportAnkiTop.style.display = (isStudio && this.analysis) ? 'inline-flex' : 'none';
+        this.btnExportAnkiTop.style.display = (isStudio ? Boolean(this.analysis) : hasMasterItems) ? 'inline-flex' : 'none';
       }
       if (this.btnExportCsvTop) {
-        this.btnExportCsvTop.style.display = (isStudio && this.analysis) ? 'inline-flex' : 'none';
+        this.btnExportCsvTop.style.display = (isStudio ? Boolean(this.analysis) : hasMasterItems) ? 'inline-flex' : 'none';
       }
 
       if (!isStudio) {
@@ -2287,23 +2339,68 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.navMasterCount.textContent = totalCount.toLocaleString();
       }
 
-      if (this.masterCountAll) {
-        this.masterCountAll.textContent = totalCount.toLocaleString();
-      }
+      const getPos = (item) => {
+        let p = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
+        if ((!p || p === 'N') && typeof APP_CEFR_DICT !== 'undefined') {
+          const d = APP_CEFR_DICT.lookup(item.text);
+          if (d && d.pos) p = d.pos;
+        }
+        const clean = String(p).trim().toLowerCase();
+        if (clean === 'n' || clean === 'noun') return 'noun';
+        if (clean === 'v' || clean === 'verb') return 'verb';
+        if (clean === 'adj' || clean === 'adjective') return 'adjective';
+        if (clean === 'adv' || clean === 'adverb') return 'adverb';
+        if (clean === 'idiom' || clean === 'phrase' || clean === 'sentences' || item.type === 'sentence') return 'sentences';
+        return 'noun';
+      };
 
-      if (this.masterCountWord) {
-        const words = allItems.filter(i => i.type === 'word').length;
-        this.masterCountWord.textContent = words.toLocaleString();
-      }
+      if (this.masterCountAll) this.masterCountAll.textContent = totalCount.toLocaleString();
+      if (this.masterCountNoun) this.masterCountNoun.textContent = allItems.filter(i => getPos(i) === 'noun').length.toLocaleString();
+      if (this.masterCountVerb) this.masterCountVerb.textContent = allItems.filter(i => getPos(i) === 'verb').length.toLocaleString();
+      if (this.masterCountAdj) this.masterCountAdj.textContent = allItems.filter(i => getPos(i) === 'adjective').length.toLocaleString();
+      if (this.masterCountAdv) this.masterCountAdv.textContent = allItems.filter(i => getPos(i) === 'adverb').length.toLocaleString();
+      if (this.masterCountSentences) this.masterCountSentences.textContent = allItems.filter(i => getPos(i) === 'sentences').length.toLocaleString();
+      if (this.masterCountPolysemy) this.masterCountPolysemy.textContent = allItems.filter(i => Array.isArray(i.knownMeanings) && i.knownMeanings.length > 1).length.toLocaleString();
+      if (this.masterCountStarred) this.masterCountStarred.textContent = allItems.filter(i => this.isStarred(i.text)).length.toLocaleString();
 
-      if (this.masterCountSentence) {
-        const sentences = allItems.filter(i => i.type === 'sentence').length;
-        this.masterCountSentence.textContent = sentences.toLocaleString();
-      }
+      // Compute Master CEFR Distribution Bar
+      if (this.masterCefrDistSection) {
+        if (totalCount === 0) {
+          this.masterCefrDistSection.style.display = 'none';
+        } else {
+          let a1 = 0, a2 = 0, b1 = 0, b2 = 0, c1c2 = 0;
+          allItems.forEach((item) => {
+            let c = String(item.cefr || '').toUpperCase().trim();
+            if (!c && typeof APP_CEFR_DICT !== 'undefined') {
+              const d = APP_CEFR_DICT.lookup(item.text);
+              if (d && d.cefr) c = d.cefr.toUpperCase().trim();
+            }
+            if (c === 'A1') a1++;
+            else if (c === 'A2') a2++;
+            else if (c === 'B1') b1++;
+            else if (c === 'B2') b2++;
+            else if (c === 'C1' || c === 'C2') c1c2++;
+            else a1++;
+          });
 
-      if (this.masterCountPolysemy) {
-        const polysemy = allItems.filter(i => Array.isArray(i.knownMeanings) && i.knownMeanings.length > 1).length;
-        this.masterCountPolysemy.textContent = polysemy.toLocaleString();
+          const total = totalCount || 1;
+          const pA1 = Math.round((a1 / total) * 100);
+          const pA2 = Math.round((a2 / total) * 100);
+          const pB1 = Math.round((b1 / total) * 100);
+          const pB2 = Math.round((b2 / total) * 100);
+          const pC1C2 = Math.max(0, 100 - (pA1 + pA2 + pB1 + pB2));
+
+          if (this.masterCefrSegA1) this.masterCefrSegA1.style.width = `${pA1}%`;
+          if (this.masterCefrSegA2) this.masterCefrSegA2.style.width = `${pA2}%`;
+          if (this.masterCefrSegB1) this.masterCefrSegB1.style.width = `${pB1}%`;
+          if (this.masterCefrSegB2) this.masterCefrSegB2.style.width = `${pB2}%`;
+          if (this.masterCefrSegC1C2) this.masterCefrSegC1C2.style.width = `${pC1C2}%`;
+
+          if (this.masterCefrDistStats) {
+            this.masterCefrDistStats.textContent = `A1: ${pA1}% · A2: ${pA2}% · B1: ${pB1}% · B2: ${pB2}% · C1/C2: ${pC1C2}%`;
+          }
+          this.masterCefrDistSection.style.display = 'flex';
+        }
       }
     },
 
@@ -2312,16 +2409,74 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       const ml = this.getMasterList();
       if (!ml) return;
 
+      this.updateMasterCount();
+
       if (this.masterTabsGroup) {
         this.masterTabsGroup.querySelectorAll('.fx-tab-btn').forEach((btn) => {
-          btn.classList.toggle('active', (btn.dataset.type || 'all') === this.activeMasterFilter);
+          btn.classList.toggle('active', (btn.dataset.pos || btn.dataset.type || 'all') === this.activeMasterFilter);
         });
       }
 
-      const items = ml.search(this.masterSearchQuery, this.activeMasterFilter);
+      const allItems = ml.getAll();
+
+      const getPos = (item) => {
+        let p = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
+        if ((!p || p === 'N') && typeof APP_CEFR_DICT !== 'undefined') {
+          const d = APP_CEFR_DICT.lookup(item.text);
+          if (d && d.pos) p = d.pos;
+        }
+        const clean = String(p).trim().toLowerCase();
+        if (clean === 'n' || clean === 'noun') return 'noun';
+        if (clean === 'v' || clean === 'verb') return 'verb';
+        if (clean === 'adj' || clean === 'adjective') return 'adjective';
+        if (clean === 'adv' || clean === 'adverb') return 'adverb';
+        if (clean === 'idiom' || clean === 'phrase' || clean === 'sentences' || item.type === 'sentence') return 'sentences';
+        return 'noun';
+      };
+
+      const getCefr = (item) => {
+        let c = String(item.cefr || '').toUpperCase().trim();
+        if (!c && typeof APP_CEFR_DICT !== 'undefined') {
+          const d = APP_CEFR_DICT.lookup(item.text);
+          if (d && d.cefr) c = d.cefr.toUpperCase().trim();
+        }
+        return c || 'B1';
+      };
+
+      const filtered = allItems.filter((item) => {
+        // 1. Tab / POS filter
+        if (this.activeMasterFilter !== 'all') {
+          if (this.activeMasterFilter === 'starred') {
+            if (!this.isStarred(item.text)) return false;
+          } else if (this.activeMasterFilter === 'polysemy') {
+            if (!item.knownMeanings || item.knownMeanings.length < 2) return false;
+          } else {
+            const pos = getPos(item);
+            if (pos !== this.activeMasterFilter) return false;
+          }
+        }
+
+        // 2. CEFR filter
+        if (this.masterCefrFilter && this.masterCefrFilter !== 'all') {
+          const cefr = getCefr(item);
+          if (cefr !== this.masterCefrFilter.toUpperCase()) return false;
+        }
+
+        // 3. Search query
+        if (this.masterSearchQuery) {
+          const q = this.masterSearchQuery;
+          const matchText = item.text.toLowerCase().includes(q);
+          const matchMeanings = item.knownMeanings && item.knownMeanings.some(m => m.toLowerCase().includes(q));
+          const matchContext = item.context && item.context.toLowerCase().includes(q);
+          if (!matchText && !matchMeanings && !matchContext) return false;
+        }
+
+        return true;
+      });
+
       this.masterGridEl.innerHTML = '';
 
-      if (items.length === 0) {
+      if (filtered.length === 0) {
         if (this.masterEmptyEl) {
           this.masterEmptyEl.style.display = 'block';
           if (this.masterSearchQuery) {
@@ -2335,7 +2490,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       if (this.masterEmptyEl) this.masterEmptyEl.style.display = 'none';
 
-      items.forEach((item) => {
+      filtered.forEach((item) => {
         const card = document.createElement('div');
         const isStarred = this.isStarred(item.text);
         card.className = 'fx-word-card fx-card-mastered' + (isStarred ? ' fx-card-starred' : '');
@@ -2343,23 +2498,16 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const meanings = Array.isArray(item.knownMeanings) ? item.knownMeanings : [];
         const isPolysemy = meanings.length > 1;
 
-        // Resolve IPA & CEFR if not stored directly
         let ipa = item.ipa || '';
-        let cefr = item.cefr || '';
-        let pos = item.pos || (item.type === 'sentence' ? 'Idiom' : 'N');
-
-        if ((!ipa || !cefr) && typeof APP_CEFR_DICT !== 'undefined') {
-          const dictMatch = APP_CEFR_DICT.lookup(item.text);
-          if (dictMatch) {
-            if (!ipa) ipa = dictMatch.ipa || '';
-            if (!cefr) cefr = dictMatch.cefr || '';
-            if (!pos || pos === 'N') pos = dictMatch.pos || pos;
-          }
-        }
-
+        let cefr = getCefr(item);
+        let pos = getPos(item);
         const posLabel = this.getPosLabel(pos);
 
-        // Resolve context sentence if not stored directly
+        if (!ipa && typeof APP_CEFR_DICT !== 'undefined') {
+          const dictMatch = APP_CEFR_DICT.lookup(item.text);
+          if (dictMatch && dictMatch.ipa) ipa = dictMatch.ipa;
+        }
+
         let contextText = item.context || '';
         if (!contextText && this.analysis?.allWords) {
           const found = this.analysis.allWords.find((w) => (w.word || '').toLowerCase() === item.text.toLowerCase());
@@ -2369,12 +2517,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
         const contextHtml = contextText ? this.highlightWordInContext(contextText, item.text) : '';
 
-        // Line 1 Specs: "Tính từ · C1" (KHÔNG CÓ 26x!)
+        // DÒNG 1: "Danh từ · B1" - STRICTLY NO FREQUENCY (Red circle 2: inspire 9x)
         const specsParts = [posLabel];
         if (cefr) specsParts.push(cefr);
         const specsText = specsParts.join(' · ');
 
-        // Line 2 Meanings
+        // DÒNG 2: Phiên âm IPA + loa + nghĩa tiếng Việt
         const meaningsHtml = meanings.map((m) => `
           <span class="fx-master-meaning-item">
             <span class="fx-card-trans">${this.escape(m)}</span>
@@ -2383,7 +2531,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         `).join('<span class="fx-card-dot-sep">·</span>');
 
         card.innerHTML = `
-          <!-- Dòng 1: Từ vựng + Thông tin: Tính từ · C1 (KHÔNG có 26x) + Star + Check -->
+          <!-- Dòng 1: Từ vựng + Specs: Danh từ · B1 (KHÔNG có 9x) + Star + Check -->
           <div class="fx-card-line-1">
             <div class="fx-card-word-wrap">
               <span class="fx-card-word">${this.escape(item.text)}</span>
@@ -2423,7 +2571,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             </div>
           </div>
 
-          <!-- Dòng 3: Ngữ cảnh trực tiếp trong ngoặc kép (KHÔNG CÓ SỐ GIÂY) -->
+          <!-- Dòng 3: Ngữ cảnh trực tiếp trong ngoặc kép - STRICTLY NO TIMESTAMP (Red circle 3: fancy 00:00:38.799) -->
           ${contextHtml ? `
             <div class="fx-card-line-3">
               <p class="fx-card-quote">"${contextHtml}"</p>
