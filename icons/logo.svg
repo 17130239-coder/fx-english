@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="fxBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181C" />
+      <stop offset="50%" stop-color="#101013" />
+      <stop offset="100%" stop-color="#08080A" />
+    </linearGradient>
+    <linearGradient id="fxRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF333E" />
+      <stop offset="100%" stop-color="#E50914" />
+    </linearGradient>
+    <linearGradient id="fxWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#EDEDF2" />
+    </linearGradient>
+    <filter id="fxRedGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#E50914" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Background squircle -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#fxBg)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="4" />
+
+  <!-- Inner luxury rim -->
+  <rect x="22" y="22" width="468" height="468" rx="106" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" />
+
+  <!-- Letter F: Solid clean typography -->
+  <path d="M110 140
+           H212 C219 140 224 145 224 152 V176 C224 183 219 188 212 188
+           H150 C145 188 142 191 142 196 V224 C142 229 145 232 150 232
+           H192 C199 232 204 237 204 244 V268 C204 275 199 280 192 280
+           H150 C145 280 142 283 142 288 V356 C142 365 135 372 126 372
+           H110 C101 372 94 365 94 356 V156 C94 147 101 140 110 140
+           Z"
+        fill="url(#fxWhite)" />
+
+  <!-- Letter X: White Diagonal (Top-Left to Bottom-Right) -->
+  <line x1="254" y1="156" x2="394" y2="356" stroke="url(#fxWhite)" stroke-width="48" stroke-linecap="round" />
+
+  <!-- Gap spacer line behind Red (matches background color to create clean negative-space cut) -->
+  <line x1="394" y1="156" x2="254" y2="356" stroke="#101013" stroke-width="72" stroke-linecap="round" />
+
+  <!-- Letter X: Dynamic Netflix Red Diagonal (Top-Right to Bottom-Left) -->
+  <line x1="394" y1="156" x2="254" y2="356" stroke="url(#fxRed)" stroke-width="48" stroke-linecap="round" filter="url(#fxRedGlow)" />
+</svg>
