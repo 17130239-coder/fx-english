@@ -164,13 +164,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnQuickVocab.innerHTML = originalHtml;
             btnQuickVocab.disabled = false;
             const errMsg = res?.error || chrome.runtime.lastError?.message || 'Chưa tìm thấy phụ đề tiếng Anh cho video này. Hãy bật biểu tượng [CC] trên video rồi thử lại.';
-            alert(errMsg);
+            showPopupToast(errMsg, true);
           }
         });
       }
     };
 
-    // Subtitle Downloads
+    const showPopupToast = (msg, isError = true) => {
+      const toastEl = document.getElementById('fx-popup-toast');
+      const dotEl = document.getElementById('fx-popup-toast-dot');
+      const msgEl = document.getElementById('fx-popup-toast-msg');
+      if (!toastEl || !msgEl) return;
+
+      msgEl.textContent = msg;
+      if (dotEl) {
+        dotEl.className = isError ? 'fx-popup-toast-dot error' : 'fx-popup-toast-dot success';
+      }
+      toastEl.style.display = 'flex';
+      setTimeout(() => {
+        toastEl.style.display = 'none';
+      }, 4000);
+    };
+
     const setupDownload = (btn, format) => {
       btn.onclick = () => {
         const originalText = btn.textContent;
@@ -181,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           btn.textContent = originalText;
           btn.disabled = false;
           if (chrome.runtime.lastError || !res || !res.success) {
-            alert('Lỗi tải phụ đề: ' + (res?.error || chrome.runtime.lastError?.message || 'Không tìm thấy phụ đề. Hãy đảm bảo video có phụ đề tiếng Anh.'));
+            showPopupToast('Lỗi tải phụ đề: ' + (res?.error || chrome.runtime.lastError?.message || 'Không tìm thấy phụ đề. Hãy đảm bảo video có phụ đề tiếng Anh.'), true);
           }
         });
       };

@@ -480,6 +480,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Reusable Tesla Confirmation & Prompt Modal -->
+    <div id="fx-confirm-modal" class="fx-modal" style="display:none;">
+      <div class="fx-modal-backdrop" id="fx-confirm-backdrop"></div>
+      <div class="fx-modal-container fx-modal-container-sm">
+        <div class="fx-modal-header">
+          <div class="fx-modal-title-group">
+            <h3 class="fx-modal-title" id="fx-confirm-title">Xác nhận</h3>
+            <span class="fx-modal-subtitle" id="fx-confirm-subtitle" style="display:none;"></span>
+          </div>
+          <button type="button" class="fx-btn-icon-raw fx-modal-close" id="fx-confirm-close" title="Đóng">&times;</button>
+        </div>
+
+        <div class="fx-modal-body">
+          <p id="fx-confirm-message" class="fx-confirm-text"></p>
+          <div id="fx-confirm-input-wrap" style="display:none;" class="fx-form-group">
+            <label for="fx-confirm-input" class="fx-label" id="fx-confirm-input-label">Nội dung</label>
+            <input type="text" id="fx-confirm-input" class="fx-input" placeholder="" spellcheck="false" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="fx-modal-footer">
+          <button type="button" id="fx-btn-confirm-cancel" class="fx-btn-tesla-ghost">Hủy</button>
+          <button type="button" id="fx-btn-confirm-ok" class="fx-btn-tesla-primary">Đồng ý</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tesla Toast Notification Container -->
+    <div id="fx-toast-container" class="fx-toast-container"></div>
   </div>
 
   <!-- Core Domain & Shared Services -->

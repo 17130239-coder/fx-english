@@ -44,8 +44,8 @@
    */
   function exportToAnki(items = [], movieTitle = 'fx_vocab', filename = '') {
     if (!Array.isArray(items) || items.length === 0) {
-      alert('Không có từ vựng nào để xuất thẻ Anki.');
-      return;
+      console.warn('[ExportService] Empty items list for Anki export.');
+      return false;
     }
 
     const lines = [
@@ -62,7 +62,7 @@
           (item.highlightPhrase ? `<div style="font-size:14px; color:#475569; margin-top:6px;">Cốt lõi: <b>${escapeHtml(item.highlightPhrase)}</b></div>` : '');
 
         const back = `<div style="font-size:18px; color:#0f766e; font-weight:bold;">${escapeHtml(item.vietnamese || '')}</div>` +
-          (item.usageNote ? `<div style="font-size:13px; color:#64748b; margin-top:8px; font-style:italic;">💡 ${escapeHtml(item.usageNote)}</div>` : '');
+          (item.usageNote ? `<div style="font-size:13px; color:#64748b; margin-top:8px; font-style:italic;">Ghi chú: ${escapeHtml(item.usageNote)}</div>` : '');
 
         const tag = (item.tag || 'Sentences').replace(/\s+/g, '_');
         lines.push([front, back, '', '', '', `FX_English ${tag}`].join('\t'));
@@ -108,8 +108,8 @@
    */
   function exportToCsv(items = [], movieTitle = 'fx_vocab', filename = '') {
     if (!Array.isArray(items) || items.length === 0) {
-      alert('Không có từ vựng nào để xuất CSV.');
-      return;
+      console.warn('[ExportService] Empty items list for CSV export.');
+      return false;
     }
 
     const rows = [

@@ -31,6 +31,7 @@
       this.store = options.store || (typeof APP_STUDIO_STATE !== 'undefined' ? APP_STUDIO_STATE : null);
       this.audioService = options.audioService || (typeof APP_AUDIO_SERVICE !== 'undefined' ? APP_AUDIO_SERVICE : null);
       this.onToggleMasterCallback = options.onToggleMaster || null;
+      this.showToast = options.showToast || null;
 
       this.elements = {
         modal: document.getElementById('fx-flashcard-modal'),
@@ -125,7 +126,9 @@
 
     open(items = []) {
       if (!Array.isArray(items) || items.length === 0) {
-        alert('Không có từ vựng hoặc câu giao tiếp nào để tạo thẻ ghi nhớ.');
+        if (typeof this.showToast === 'function') {
+          this.showToast('Không có từ vựng hoặc câu giao tiếp nào để tạo thẻ ghi nhớ.', 'info');
+        }
         return;
       }
 
@@ -229,7 +232,9 @@
       if (this.currentIdx < this.list.length - 1) {
         this.next();
       } else {
-        alert('🎉 Chúc mừng! Bạn đã hoàn thành lượt ôn tập tất cả các thẻ từ này.');
+        if (typeof this.showToast === 'function') {
+          this.showToast('Chúc mừng! Bạn đã hoàn thành lượt ôn tập tất cả các thẻ từ này.', 'success');
+        }
         this.close();
       }
     }

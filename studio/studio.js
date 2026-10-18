@@ -48,7 +48,8 @@
         APP_FLASHCARD_CONTROLLER.init({
           store: typeof APP_STUDIO_STATE !== 'undefined' ? APP_STUDIO_STATE : null,
           audioService: typeof APP_AUDIO_SERVICE !== 'undefined' ? APP_AUDIO_SERVICE : null,
-          onToggleMaster: (key, item, isMastered) => this.toggleMastered(key, item, isMastered)
+          onToggleMaster: (key, item, isMastered) => this.toggleMastered(key, item, isMastered),
+          showToast: (msg, type) => this.showToast(msg, type)
         });
       }
     },
@@ -198,6 +199,20 @@
       this.selectMasterPos = document.getElementById('fx-select-master-pos');
       this.inputMasterMeanings = document.getElementById('fx-input-master-meanings');
       this.addMasterStatus = document.getElementById('fx-add-master-status');
+
+      // Confirmation & Prompt Modal
+      this.confirmModal = document.getElementById('fx-confirm-modal');
+      this.confirmBackdrop = document.getElementById('fx-confirm-backdrop');
+      this.confirmTitle = document.getElementById('fx-confirm-title');
+      this.confirmSubtitle = document.getElementById('fx-confirm-subtitle');
+      this.confirmClose = document.getElementById('fx-confirm-close');
+      this.confirmMessage = document.getElementById('fx-confirm-message');
+      this.confirmInputWrap = document.getElementById('fx-confirm-input-wrap');
+      this.confirmInputLabel = document.getElementById('fx-confirm-input-label');
+      this.confirmInput = document.getElementById('fx-confirm-input');
+      this.btnConfirmCancel = document.getElementById('fx-btn-confirm-cancel');
+      this.btnConfirmOk = document.getElementById('fx-btn-confirm-ok');
+      this.toastContainer = document.getElementById('fx-toast-container');
     },
 
     bindEvents() {
@@ -592,7 +607,7 @@
           this.cues = cues;
           this.runAnalysis();
         } else {
-          alert('Không tìm thấy câu phụ đề nào trong video này.');
+          this.showToast('Không tìm thấy câu phụ đề nào trong video này.', 'warning');
         }
       };
 
@@ -635,21 +650,21 @@
                   onLoaded(retryRes.cues, retryRes.title, retryRes.url);
                 } else {
                   const err = retryRes?.error || 'Không thể tải phụ đề từ tab này. Hãy đảm bảo video đã bật CC rồi thử lại.';
-                  alert(err);
+                  this.showToast(err, 'error');
                 }
               });
             }, 400);
           }).catch(() => {
             this.btnLoadDetected.disabled = false;
             this.btnLoadDetected.innerHTML = '<span>Phân tích</span>';
-            alert('Không thể kết nối với tab video. Hãy tải lại (F5) tab video đó rồi bấm Phân tích.');
+            this.showToast('Không thể kết nối với tab video. Hãy tải lại tab video đó rồi bấm Phân tích.', 'warning');
           });
           return;
         }
 
         this.btnLoadDetected.disabled = false;
         this.btnLoadDetected.innerHTML = '<span>Phân tích</span>';
-        alert(res?.error || chrome.runtime.lastError?.message || 'Không thể tải phụ đề từ tab phim. Hãy đảm bảo video đã bật CC.');
+        this.showToast(res?.error || chrome.runtime.lastError?.message || 'Không thể tải phụ đề từ tab phim. Hãy đảm bảo video đã bật CC.', 'error');
       });
     },
 
@@ -694,7 +709,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     async analyzeFromTextarea() {
       const text = this.rawTextarea.value.trim();
       if (!text) {
-        alert('Vui lòng nhập hoặc dán nội dung phụ đề trước.');
+        this.showToast('Vui lòng nhập hoặc dán nội dung phụ đề trước.', 'warning');
         return;
       }
 
@@ -709,7 +724,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
     async runAnalysis(skipSaveHistory = false) {
       if (!this.cues || this.cues.length === 0) {
-        alert('Chưa có dữ liệu phụ đề để phân tích.');
+        this.showToast('Chưa có dữ liệu phụ đề để phân tích.', 'warning');
         return;
       }
 
@@ -742,7 +757,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             }
             return;
           }
-          alert('Lỗi gọi 9Router AI: ' + (err.message || 'Lỗi mạng') + '\nĐang chuyển sang bộ tách từ ngoại tuyến.');
+          this.showToast('Lỗi gọi 9Router AI: ' + (err.message || 'Lỗi mạng') + '. Đang chuyển sang bộ tách từ ngoại tuyến.', 'warning', 5000);
         } finally {
           if (this.btnAnalyze) {
             this.btnAnalyze.disabled = false;
@@ -758,7 +773,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         }
 
         if (!ANALYZER) {
-          alert('Không tìm thấy VocabAnalyzer.');
+          this.showToast('Không tìm thấy VocabAnalyzer.', 'error');
           return;
         }
         analysisResult = ANALYZER.analyzeSubtitles(this.cues);
@@ -1503,7 +1518,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       }
 
       if (words.length === 0) {
-        alert('Không có từ vựng hoặc câu giao tiếp nào để tạo thẻ ghi nhớ.');
+        this.showToast('Không có từ vựng hoặc câu giao tiếp nào để tạo thẻ ghi nhớ.', 'info');
         return;
       }
 
@@ -1603,7 +1618,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.isCardFlipped = false;
         this.fcCard.classList.remove('is-flipped');
         if (this.fcSrsBar) this.fcSrsBar.style.display = 'none';
-        alert('🎉 Chúc mừng! Bạn đã hoàn thành lượt ôn tập tất cả các thẻ từ này.');
+        this.showToast('Chúc mừng! Bạn đã hoàn thành lượt ôn tập tất cả các thẻ từ này.', 'success');
         this.closeFlashcards();
       }
     },
@@ -1687,7 +1702,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     exportAnki() {
       const words = this.getFilteredWords();
       if (words.length === 0) {
-        alert('Không có từ vựng nào để xuất.');
+        this.showToast('Không có từ vựng nào để xuất.', 'info');
         return;
       }
 
@@ -1709,7 +1724,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     exportCsv() {
       const words = this.getFilteredWords();
       if (words.length === 0) {
-        alert('Không có từ vựng nào để xuất.');
+        this.showToast('Không có từ vựng nào để xuất.', 'info');
         return;
       }
 
@@ -2195,7 +2210,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     },
 
     async clearAllHistory() {
-      if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử các phim đã quét (cả trên trình duyệt và Neon DB)?')) return;
+      const ok = await this.showConfirm({
+        title: 'Xóa lịch sử quét',
+        subtitle: 'Bao gồm dữ liệu trên trình duyệt và Neon PostgreSQL',
+        message: 'Bạn có chắc muốn xóa toàn bộ lịch sử các phim đã quét (cả trên trình duyệt và Neon DB)? Thao tác này không thể hoàn tác.',
+        confirmText: 'Xóa toàn bộ',
+        cancelText: 'Hủy',
+        isDanger: true
+      });
+      if (!ok) return;
 
       // 1. Clear local
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
@@ -2701,7 +2724,14 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     async removeMasterItem(text) {
       if (!text) return;
       const clean = text.trim().toLowerCase();
-      if (!confirm(`Bạn có chắc muốn xóa "${clean}" khỏi Master List?`)) return;
+      const ok = await this.showConfirm({
+        title: 'Xóa khỏi Master List',
+        message: `Bạn có chắc muốn xóa "${clean}" khỏi danh sách từ đã biết?`,
+        confirmText: 'Xóa',
+        cancelText: 'Hủy',
+        isDanger: true
+      });
+      if (!ok) return;
 
       const ml = this.getMasterList();
       if (ml) {
@@ -2743,7 +2773,14 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
     async addMeaningInline(text) {
       if (!text) return;
-      const newMeaning = prompt(`Nhập nghĩa tiếng Việt mới cho từ "${text}":`);
+      const newMeaning = await this.showPrompt({
+        title: 'Thêm nghĩa tiếng Việt',
+        message: `Nhập nghĩa tiếng Việt mới cho "${text}":`,
+        label: 'Nghĩa tiếng Việt',
+        placeholder: 'ví dụ: máy tính, thiết bị điện tử...',
+        confirmText: 'Thêm nghĩa',
+        cancelText: 'Hủy'
+      });
       if (!newMeaning || !newMeaning.trim()) return;
 
       const ml = this.getMasterList();
@@ -2764,7 +2801,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     },
 
     async clearMasterList() {
-      if (!confirm('Bạn có chắc muốn xóa TOÀN BỘ Master Known List?')) return;
+      const ok = await this.showConfirm({
+        title: 'Xóa toàn bộ Master List',
+        subtitle: 'Đặt lại toàn bộ danh sách từ đã biết về 0',
+        message: 'Bạn có chắc chắn muốn xóa TOÀN BỘ Master Known List? Thao tác này sẽ đồng bộ xóa trên Neon DB và không thể hoàn tác.',
+        confirmText: 'Xóa toàn bộ',
+        cancelText: 'Hủy',
+        isDanger: true
+      });
+      if (!ok) return;
 
       const ml = this.getMasterList();
       if (ml) {
@@ -2788,7 +2833,7 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (!ml) return;
       const content = ml.exportToAnki();
       if (!content) {
-        alert('Master List hiện đang trống, chưa có từ vựng nào để xuất.');
+        this.showToast('Master List hiện đang trống, chưa có từ vựng nào để xuất.', 'info');
         return;
       }
       this.downloadBlob(content, 'fx_master_known_list_anki.txt', 'text/plain;charset=utf-8;');
@@ -2799,10 +2844,206 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
       if (!ml) return;
       const content = ml.exportToCsv();
       if (!content) {
-        alert('Master List hiện đang trống, chưa có từ vựng nào để xuất.');
+        this.showToast('Master List hiện đang trống, chưa có từ vựng nào để xuất.', 'info');
         return;
       }
       this.downloadBlob(content, 'fx_master_known_list.csv', 'text/csv;charset=utf-8;');
+    },
+
+    /**
+     * Show non-intrusive Tesla toast notification.
+     * @param {string} message - Message text (strictly 0 emojis)
+     * @param {'info'|'success'|'error'|'warning'} [type='info'] - Severity type
+     * @param {number} [duration=3500] - Duration in ms
+     */
+    showToast(message, type = 'info', duration = 3500) {
+      if (!this.toastContainer) {
+        this.toastContainer = document.getElementById('fx-toast-container');
+      }
+      if (!this.toastContainer) {
+        console.log(`[Toast ${type}]`, message);
+        return;
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'fx-toast-item';
+
+      const dot = document.createElement('span');
+      dot.className = `fx-toast-dot fx-toast-dot-${type}`;
+
+      const msg = document.createElement('span');
+      msg.className = 'fx-toast-message';
+      msg.textContent = message;
+
+      toast.appendChild(dot);
+      toast.appendChild(msg);
+
+      this.toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('fx-toast-hiding');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 220);
+      }, duration);
+    },
+
+    /**
+     * Show custom Tesla confirmation modal.
+     * @param {Object} options
+     * @param {string} [options.title] - Header title
+     * @param {string} [options.subtitle] - Optional subtitle
+     * @param {string} [options.message] - Body text / question
+     * @param {string} [options.confirmText] - Label for confirm button (default: "Đồng ý")
+     * @param {string} [options.cancelText] - Label for cancel button (default: "Hủy")
+     * @param {boolean} [options.isDanger] - If true, style confirm button with red accent
+     * @returns {Promise<boolean>}
+     */
+    showConfirm({ title = 'Xác nhận', subtitle = '', message = '', confirmText = 'Đồng ý', cancelText = 'Hủy', isDanger = false } = {}) {
+      return new Promise((resolve) => {
+        if (!this.confirmModal) {
+          resolve(window.confirm(message));
+          return;
+        }
+
+        this.confirmTitle.textContent = title;
+        if (subtitle) {
+          this.confirmSubtitle.textContent = subtitle;
+          this.confirmSubtitle.style.display = 'block';
+        } else {
+          this.confirmSubtitle.style.display = 'none';
+        }
+
+        this.confirmMessage.textContent = message;
+        this.confirmInputWrap.style.display = 'none';
+
+        this.btnConfirmCancel.textContent = cancelText;
+        this.btnConfirmCancel.style.display = cancelText ? 'inline-flex' : 'none';
+
+        this.btnConfirmOk.textContent = confirmText;
+        if (isDanger) {
+          this.btnConfirmOk.className = 'fx-btn-tesla-danger';
+        } else {
+          this.btnConfirmOk.className = 'fx-btn-tesla-primary';
+        }
+
+        const cleanup = () => {
+          this.confirmModal.style.display = 'none';
+          this.btnConfirmOk.onclick = null;
+          this.btnConfirmCancel.onclick = null;
+          this.confirmClose.onclick = null;
+          this.confirmBackdrop.onclick = null;
+          window.removeEventListener('keydown', onKeyDown);
+        };
+
+        const onConfirm = () => {
+          cleanup();
+          resolve(true);
+        };
+
+        const onCancel = () => {
+          cleanup();
+          resolve(false);
+        };
+
+        const onKeyDown = (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            onConfirm();
+          }
+        };
+
+        this.btnConfirmOk.onclick = onConfirm;
+        this.btnConfirmCancel.onclick = onCancel;
+        this.confirmClose.onclick = onCancel;
+        this.confirmBackdrop.onclick = onCancel;
+        window.addEventListener('keydown', onKeyDown);
+
+        this.confirmModal.style.display = 'flex';
+        this.btnConfirmOk.focus();
+      });
+    },
+
+    /**
+     * Show custom Tesla prompt modal for text input.
+     * @param {Object} options
+     * @param {string} [options.title] - Header title
+     * @param {string} [options.message] - Body text / instruction
+     * @param {string} [options.label] - Label for text input
+     * @param {string} [options.defaultValue] - Default value in input
+     * @param {string} [options.placeholder] - Placeholder text
+     * @param {string} [options.confirmText] - Label for confirm button
+     * @param {string} [options.cancelText] - Label for cancel button
+     * @returns {Promise<string|null>}
+     */
+    showPrompt({ title = 'Nhập thông tin', message = '', label = 'Nội dung', defaultValue = '', placeholder = '', confirmText = 'Lưu', cancelText = 'Hủy' } = {}) {
+      return new Promise((resolve) => {
+        if (!this.confirmModal) {
+          resolve(window.prompt(message, defaultValue));
+          return;
+        }
+
+        this.confirmTitle.textContent = title;
+        this.confirmSubtitle.style.display = 'none';
+        this.confirmMessage.textContent = message;
+        this.confirmInputWrap.style.display = 'flex';
+        this.confirmInputLabel.textContent = label;
+        this.confirmInput.value = defaultValue;
+        this.confirmInput.placeholder = placeholder;
+
+        this.btnConfirmCancel.textContent = cancelText;
+        this.btnConfirmCancel.style.display = 'inline-flex';
+
+        this.btnConfirmOk.textContent = confirmText;
+        this.btnConfirmOk.className = 'fx-btn-tesla-primary';
+
+        const cleanup = () => {
+          this.confirmModal.style.display = 'none';
+          this.btnConfirmOk.onclick = null;
+          this.btnConfirmCancel.onclick = null;
+          this.confirmClose.onclick = null;
+          this.confirmBackdrop.onclick = null;
+          window.removeEventListener('keydown', onKeyDown);
+        };
+
+        const onConfirm = () => {
+          const val = this.confirmInput.value.trim();
+          cleanup();
+          resolve(val);
+        };
+
+        const onCancel = () => {
+          cleanup();
+          resolve(null);
+        };
+
+        const onKeyDown = (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            onConfirm();
+          }
+        };
+
+        this.btnConfirmOk.onclick = onConfirm;
+        this.btnConfirmCancel.onclick = onCancel;
+        this.confirmClose.onclick = onCancel;
+        this.confirmBackdrop.onclick = onCancel;
+        window.addEventListener('keydown', onKeyDown);
+
+        this.confirmModal.style.display = 'flex';
+        setTimeout(() => {
+          this.confirmInput.focus();
+          this.confirmInput.select();
+        }, 50);
+      });
     }
   };
 

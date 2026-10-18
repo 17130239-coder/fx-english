@@ -876,6 +876,43 @@ assert.strictEqual(typeof neonClient.getMovies, 'function', 'getMovies method ex
 
     console.log('   ✓ Master List UI Card Format verified: strictly zero frequency and zero timestamps on cards.\n');
 
+    // =========================================================================
+    // 18. Testing Zero Native Alert/Confirm Popups & Zero Emojis in Source Code
+    // =========================================================================
+    console.log('🛑 18. Testing Zero Native Alert/Confirm Popups & Zero Emojis...');
+
+    const studioJsContent = fs.readFileSync(path.join(__dirname, '../studio/studio.js'), 'utf-8');
+    const popupJsContent = fs.readFileSync(path.join(__dirname, '../popup/popup.js'), 'utf-8');
+    const studioHtmlContent = fs.readFileSync(path.join(__dirname, '../studio/studio.html'), 'utf-8');
+    const popupHtmlContent = fs.readFileSync(path.join(__dirname, '../popup/popup.html'), 'utf-8');
+    const fcControllerContent = fs.readFileSync(path.join(__dirname, '../studio/src/controllers/flashcardController.js'), 'utf-8');
+    const exportServiceContent = fs.readFileSync(path.join(__dirname, '../studio/src/services/exportService.js'), 'utf-8');
+
+    // 18.1 Strictly NO alert() calls anywhere in application scripts
+    assert.strictEqual(/\balert\(/.test(studioJsContent), false, 'studio.js contains NO alert() calls');
+    assert.strictEqual(/\balert\(/.test(popupJsContent), false, 'popup.js contains NO alert() calls');
+    assert.strictEqual(/\balert\(/.test(fcControllerContent), false, 'flashcardController.js contains NO alert() calls');
+    assert.strictEqual(/\balert\(/.test(exportServiceContent), false, 'exportService.js contains NO alert() calls');
+
+    // 18.2 No direct window.confirm or prompt calls outside fallback wrapper
+    const studioJsWithoutFallbacks = studioJsContent
+      .replace(/resolve\(window\.confirm\(message\)\);/, '')
+      .replace(/resolve\(window\.prompt\(message, defaultValue\)\);/, '');
+    assert.strictEqual(/\bconfirm\(/.test(studioJsWithoutFallbacks), false, 'studio.js contains NO unhandled confirm() calls');
+    assert.strictEqual(/\bprompt\(/.test(studioJsWithoutFallbacks), false, 'studio.js contains NO unhandled prompt() calls');
+    assert.strictEqual(/\bconfirm\(/.test(popupJsContent), false, 'popup.js contains NO confirm() calls');
+
+    // 18.3 Verify Tesla Modal & Toast elements exist in DOM
+    assert.ok(studioHtmlContent.includes('id="fx-confirm-modal"'), 'studio.html has #fx-confirm-modal');
+    assert.ok(studioHtmlContent.includes('id="fx-toast-container"'), 'studio.html has #fx-toast-container');
+    assert.ok(popupHtmlContent.includes('id="fx-popup-toast"'), 'popup.html has #fx-popup-toast');
+
+    // 18.4 Zero system emojis in studio user-facing toast / dialog texts
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+    assert.strictEqual(emojiRegex.test(fcControllerContent), false, 'flashcardController.js strictly has 0 system emojis');
+
+    console.log('   ✓ Zero native alert/confirm dialogs & zero emojis verified across all application modules.\n');
+
     console.log('====================================================');
     console.log('🎉 ALL UNIT & INTEGRATION TESTS PASSED (100% OK)');
     console.log('====================================================');
