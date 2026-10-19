@@ -1,42 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="fxBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#18181C" />
-      <stop offset="50%" stop-color="#101013" />
-      <stop offset="100%" stop-color="#08080A" />
-    </linearGradient>
+    <style>
+      .fx-mono { fill: #FFFFFF; stroke: #FFFFFF; }
+      @media (prefers-color-scheme: light) {
+        .fx-mono { fill: #111113; stroke: #111113; }
+      }
+    </style>
     <linearGradient id="fxRed" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FF333E" />
       <stop offset="100%" stop-color="#E50914" />
     </linearGradient>
-    <linearGradient id="fxWhite" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="100%" stop-color="#EDEDF2" />
-    </linearGradient>
     <filter id="fxRedGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#E50914" flood-opacity="0.45" />
+      <feDropShadow dx="0" dy="6" stdDeviation="14" flood-color="#E50914" flood-opacity="0.45" />
     </filter>
+    <mask id="slashGap">
+      <rect x="0" y="0" width="512" height="512" fill="white" />
+      <line x1="436" y1="116" x2="236" y2="396" stroke="black" stroke-width="80" stroke-linecap="round" />
+    </mask>
   </defs>
 
-  <!-- Seamless 512x512 rounded squircle: ZERO BORDER / ZERO STROKE -->
-  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#fxBg)" />
-
-  <!-- Letter F: Solid clean typography -->
-  <path d="M110 140
-           H212 C219 140 224 145 224 152 V176 C224 183 219 188 212 188
-           H150 C145 188 142 191 142 196 V224 C142 229 145 232 150 232
-           H192 C199 232 204 237 204 244 V268 C204 275 199 280 192 280
-           H150 C145 280 142 283 142 288 V356 C142 365 135 372 126 372
-           H110 C101 372 94 365 94 356 V156 C94 147 101 140 110 140
+  <!-- Letter F -->
+  <path class="fx-mono"
+        d="M80 104
+           H224 C235 104 242 111 242 120 V148 C242 157 235 164 224 164
+           H142 C135 164 130 169 130 176 V224 C130 231 135 236 142 236
+           H204 C215 236 222 243 222 252 V280 C222 289 215 296 204 296
+           H142 C135 296 130 301 130 308 V392 C130 401 123 408 114 408
+           H80 C71 408 64 401 64 392 V120 C64 111 71 104 80 104
            Z"
-        fill="url(#fxWhite)" />
+        fill="#FFFFFF" />
 
-  <!-- Letter X: White Diagonal (Top-Left to Bottom-Right) -->
-  <line x1="254" y1="156" x2="394" y2="356" stroke="url(#fxWhite)" stroke-width="48" stroke-linecap="round" />
+  <!-- Letter X: Diagonal Arm 1 with mask gap -->
+  <line class="fx-mono"
+        x1="236" y1="116" x2="436" y2="396"
+        stroke="#FFFFFF" stroke-width="58" stroke-linecap="round"
+        mask="url(#slashGap)" />
 
-  <!-- Gap spacer line behind Red (matches background color to create clean negative-space cut) -->
-  <line x1="394" y1="156" x2="254" y2="356" stroke="#101013" stroke-width="72" stroke-linecap="round" />
-
-  <!-- Letter X: Dynamic Netflix Red Diagonal (Top-Right to Bottom-Left) -->
-  <line x1="394" y1="156" x2="254" y2="356" stroke="url(#fxRed)" stroke-width="48" stroke-linecap="round" filter="url(#fxRedGlow)" />
+  <!-- Letter X: Dynamic Netflix Red Diagonal Arm 2 -->
+  <line x1="436" y1="116" x2="236" y2="396"
+        stroke="url(#fxRed)" stroke-width="58" stroke-linecap="round"
+        filter="url(#fxRedGlow)" />
 </svg>
