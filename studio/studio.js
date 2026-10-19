@@ -232,7 +232,9 @@
       // Master List View & Header Switcher
       this.navTabStudio = document.getElementById('fx-nav-tab-studio');
       this.navTabMaster = document.getElementById('fx-nav-tab-master');
+      this.navTabStarred = document.getElementById('fx-nav-tab-starred');
       this.navMasterCount = document.getElementById('fx-nav-master-count');
+      this.navStarredCount = document.getElementById('fx-nav-starred-count');
       this.studioView = document.getElementById('fx-studio-view');
       this.masterView = document.getElementById('fx-master-view');
 
@@ -471,6 +473,9 @@
       }
       if (this.navTabMaster) {
         this.navTabMaster.addEventListener('click', () => this.switchView('master'));
+      }
+      if (this.navTabStarred) {
+        this.navTabStarred.addEventListener('click', () => this.switchView('starred'));
       }
 
       // Master List Action Buttons
@@ -2905,15 +2910,15 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
     switchView(viewName) {
       this.activeView = viewName;
       const isStudio = (viewName === 'studio');
+      const isMaster = (viewName === 'master');
+      const isStarred = (viewName === 'starred');
 
       if (this.navTabStudio) this.navTabStudio.classList.toggle('active', isStudio);
-      if (this.navTabMaster) this.navTabMaster.classList.toggle('active', !isStudio);
+      if (this.navTabMaster) this.navTabMaster.classList.toggle('active', isMaster);
+      if (this.navTabStarred) this.navTabStarred.classList.toggle('active', isStarred);
 
       if (this.studioView) this.studioView.style.display = isStudio ? 'block' : 'none';
       if (this.masterView) this.masterView.style.display = isStudio ? 'none' : 'block';
-
-      const ml = this.getMasterList();
-      const hasMasterItems = Boolean(ml && ml.getAll().length > 0);
 
       // Top navbar buttons (hidden to match minimalist webapp navbar)
       if (this.btnToggleFlashcards) {
@@ -2926,7 +2931,12 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         this.btnExportCsvTop.style.display = 'none';
       }
 
-      if (!isStudio) {
+      if (isStarred) {
+        this.activeMasterFilter = 'starred';
+        this.syncWordStatesToMasterList();
+        this.renderMasterList();
+      } else if (isMaster) {
+        this.activeMasterFilter = 'all';
         this.syncWordStatesToMasterList();
         this.renderMasterList();
       }
@@ -2939,6 +2949,11 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
       if (this.navMasterCount) {
         this.navMasterCount.textContent = totalCount.toLocaleString();
+      }
+
+      const starredCount = Object.values(this.wordStates).filter((s) => s && s.starred).length;
+      if (this.navStarredCount) {
+        this.navStarredCount.textContent = starredCount.toLocaleString();
       }
 
       const getPos = (item) => {
