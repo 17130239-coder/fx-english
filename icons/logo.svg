@@ -18,11 +18,8 @@
     </filter>
   </defs>
 
-  <!-- Background squircle -->
-  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#fxBg)" stroke="rgba(255, 255, 255, 0.14)" stroke-width="4" />
-
-  <!-- Inner luxury rim -->
-  <rect x="22" y="22" width="468" height="468" rx="106" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" />
+  <!-- Seamless 512x512 rounded squircle: ZERO BORDER / ZERO STROKE -->
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#fxBg)" />
 
   <!-- Letter F: Solid clean typography -->
   <path d="M110 140
