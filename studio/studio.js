@@ -3371,10 +3371,10 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
     async clearMasterList() {
       const ok = await this.showConfirm({
-        title: 'Xóa toàn bộ Master List',
+        title: 'Xóa tất cả Master List',
         subtitle: 'Đặt lại toàn bộ danh sách từ đã biết về 0',
         message: 'Bạn có chắc chắn muốn xóa TOÀN BỘ Master Known List? Thao tác này sẽ đồng bộ xóa trên Neon DB và không thể hoàn tác.',
-        confirmText: 'Xóa toàn bộ',
+        confirmText: 'Xóa tất cả',
         cancelText: 'Hủy',
         isDanger: true
       });
