@@ -196,23 +196,55 @@ body {
   padding: 5px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: var(--fx-transition-fast);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
 }
 
 .fx-nav-tab:hover {
   color: var(--fx-text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fx-nav-tab:active {
+  transform: scale(0.96);
 }
 
 .fx-nav-tab.active {
   color: #000000;
   background: #FFFFFF;
   font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  animation: fx-tab-active-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fx-nav-tab.active .fx-nav-pill-count {
   background: rgba(0, 0, 0, 0.15);
   color: #000000;
+}
+
+@keyframes fx-tab-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fx-tab-active-pop {
+  0% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.fx-tab-pane {
+  animation: fx-tab-fade-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
 }
 
 .fx-nav-pill-count {
@@ -470,26 +502,31 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .fx-section-header h2 {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--fx-text-primary);
   letter-spacing: -0.01em;
 }
 
 .fx-history-empty {
   color: var(--fx-text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   padding: 16px 0;
 }
 
 .fx-history-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Tesla History Card (Fully Clickable) */
@@ -497,13 +534,20 @@ body {
   background: var(--fx-bg-surface);
   border: 1px solid var(--fx-border-subtle);
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   cursor: pointer;
   transition: var(--fx-transition-fast);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   text-align: left;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .fx-history-card:hover {
@@ -594,12 +638,14 @@ body {
 }
 
 .fx-history-title-row-card {
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 
 .fx-history-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--fx-text-primary);
   line-height: 1.35;
   overflow: hidden;
@@ -609,22 +655,22 @@ body {
 
 .fx-history-stats-block {
   margin-top: 4px;
-  padding-top: 8px;
+  padding-top: 10px;
   border-top: 1px solid var(--fx-border-subtle);
 }
 
 .fx-hist-total-num {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--fx-text-primary);
   letter-spacing: -0.01em;
 }
 
 .fx-hist-specs {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fx-text-secondary);
   font-weight: 500;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 /* --------------------------------------------------------------------------
@@ -731,7 +777,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 10px;
-  margin-bottom: 28px;
+  margin-bottom: 10px;
 }
 
 .fx-stat-card {
@@ -765,7 +811,7 @@ body {
   border: 1px solid var(--fx-border-subtle);
   border-radius: 8px;
   padding: 12px 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -844,18 +890,25 @@ body {
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: var(--fx-transition-fast);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
 }
 
 .fx-tab-btn:hover {
   color: var(--fx-text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.fx-tab-btn:active {
+  transform: scale(0.96);
 }
 
 .fx-tab-btn.active {
   background: var(--fx-bg-surface-hover);
-  color: #FFFFFF;
+  color: var(--fx-text-primary);
   font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  animation: fx-tab-active-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fx-filter-controls {

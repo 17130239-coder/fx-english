@@ -1637,15 +1637,20 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         const specsText = specsParts.join(' · ');
 
         card.innerHTML = `
-          <!-- Dòng 1: Từ vựng (18px, trắng đậm) + Thông tin phụ xám: Động từ · C1 · 1x + Nút Star/Check -->
+          <!-- Dòng 1: Từ vựng (18px, trắng đậm) + Specs + Actions (Loa, Star, Check) -->
           <div class="fx-card-line-1">
             <div class="fx-card-word-wrap">
               <span class="fx-card-word">${this.escape(item.word)}</span>
               ${lemmaHtml}
               ${newMeaningHtml}
+              <span class="fx-card-specs">${specsText}</span>
             </div>
             <div class="fx-card-meta-actions">
-              <span class="fx-card-specs">${specsText}</span>
+              <button type="button" class="fx-btn-icon-raw fx-btn-audio" data-action="speak" data-text="${this.escape(item.word)}" title="Phát âm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+              </button>
               <button type="button" class="fx-btn-icon-raw fx-btn-star ${isStarred ? 'active' : ''}" data-action="star" data-word="${this.escape(item.word)}" title="${isStarred ? 'Bỏ lưu yêu thích' : 'Lưu từ yêu thích'}">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="${isStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -1659,15 +1664,9 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
             </div>
           </div>
 
-          <!-- Dòng 2: Phiên âm IPA + icon loa mảnh (bỏ viền xám) + Nghĩa tiếng Việt rõ ràng -->
+          <!-- Dòng 2: Phiên âm IPA + Nghĩa tiếng Việt rõ ràng -->
           <div class="fx-card-line-2">
-            ${item.ipa ? `<span class="fx-card-ipa">${this.escape(item.ipa)}</span>` : ''}
-            <button type="button" class="fx-btn-icon-raw fx-btn-audio" data-action="speak" data-text="${this.escape(item.word)}" title="Phát âm">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-              </svg>
-            </button>
-            <span class="fx-card-dot-sep">·</span>
+            ${item.ipa ? `<span class="fx-card-ipa">${this.escape(item.ipa)}</span><span class="fx-card-dot-sep">·</span>` : ''}
             <span class="fx-card-trans" data-word="${this.escape(item.word)}">${this.escape(trans || 'Đang tra nghĩa...')}</span>
           </div>
 
@@ -2581,25 +2580,20 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
 
             <div class="fx-history-title-row-card">
               <h3 class="fx-history-title" title="${this.escape(item.title)}">${this.escape(item.title)}</h3>
-              ${resourceUrl ? `
-              <a href="${this.escape(resourceUrl)}" target="_blank" rel="noopener noreferrer" class="fx-banner-link" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--fx-text-muted); margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="event.stopPropagation();">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                <span style="overflow: hidden; text-overflow: ellipsis;">${this.escape(resourceUrl)}</span>
-              </a>` : ''}
             </div>
 
             <div class="fx-history-stats-block">
-              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
                 <span class="fx-hist-total-num">
                   ${(item.wordCount || 0).toLocaleString()}
-                  <span style="font-size: 11px; color: var(--fx-text-secondary); font-weight: 400; margin-left: 4px;">từ</span>
+                  <span style="font-size: 13px; color: var(--fx-text-secondary); font-weight: 500; margin-left: 4px;">từ vựng</span>
                 </span>
                 <div class="fx-hist-specs">
-                  ${item.nounCount > 0 ? `<span>N:${item.nounCount} </span>` : ''}
-                  ${item.verbCount > 0 ? `<span>· V:${item.verbCount} </span>` : ''}
-                  ${item.adjCount > 0 ? `<span>· Adj:${item.adjCount} </span>` : ''}
-                  ${phrCount > 0 ? `<span>· Cụm:${phrCount} </span>` : ''}
-                  ${patCount > 0 ? `<span>· Cấu trúc:${patCount}</span>` : ''}
+                  ${item.nounCount > 0 ? `<span>Danh từ: ${item.nounCount} </span>` : ''}
+                  ${item.verbCount > 0 ? `<span>· Động từ: ${item.verbCount} </span>` : ''}
+                  ${item.adjCount > 0 ? `<span>· Tính từ: ${item.adjCount} </span>` : ''}
+                  ${phrCount > 0 ? `<span>· Cụm: ${phrCount} </span>` : ''}
+                  ${patCount > 0 ? `<span>· Cấu trúc: ${patCount}</span>` : ''}
                   ${phrCount === 0 && patCount === 0 && sCount > 0 ? `<span>· S:${sCount}</span>` : ''}
                 </div>
               </div>
@@ -3145,75 +3139,40 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
         if (cefr && !isPat && !isPhr) specsParts.push(cefr);
         const specsText = specsParts.join(' · ');
 
-        // DÒNG 2: Phiên âm IPA + loa + nghĩa tiếng Việt
-        const meaningsHtml = meanings.map((m) => `
-          <span class="fx-master-meaning-item">
-            <span class="fx-card-trans">${this.escape(m)}</span>
-            ${meanings.length > 1 ? `<button type="button" class="fx-btn-remove-meaning" title="Xóa nghĩa '${this.escape(m)}'" data-text="${this.escape(item.text)}" data-meaning="${this.escape(m)}">&times;</button>` : ''}
-          </span>
-        `).join('<span class="fx-card-dot-sep">·</span>');
-
         card.innerHTML = `
-          <!-- Dòng 1: Từ vựng + Specs: Danh từ · B1 (KHÔNG có 9x) + Star + Check -->
+          <!-- Dòng 1: Từ vựng + Specs (Danh từ · B1) + Meta-actions (Loa, Thùng rác) -->
           <div class="fx-card-line-1">
             <div class="fx-card-word-wrap">
               <span class="fx-card-word">${this.escape(item.text)}</span>
-              ${isPat ? `<span class="fx-badge-new-meaning" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3);">CẤU TRÚC CÂU</span>` : ''}
-              ${isPhr ? `<span class="fx-badge-new-meaning" style="background: rgba(234, 179, 8, 0.15); color: #FACC15; border: 1px solid rgba(234, 179, 8, 0.3);">CỤM TỪ</span>` : ''}
-              ${isPolysemy ? `<span class="fx-badge-new-meaning" title="Từ có nhiều nghĩa đã biết">ĐA NGHĨA</span>` : ''}
+              <span class="fx-card-specs">${specsText}</span>
             </div>
             <div class="fx-card-meta-actions">
-              <span class="fx-card-specs">${specsText}</span>
-              <button type="button" class="fx-btn-icon-raw fx-btn-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Bỏ lưu yêu thích' : 'Lưu từ yêu thích'}" data-word="${this.escape(item.text)}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="${isStarred ? '#F4F4F6' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              <button type="button" class="fx-btn-icon-raw fx-btn-audio" title="Nghe phát âm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
                 </svg>
               </button>
-              <button type="button" class="fx-btn-icon-raw fx-btn-check active" title="Đã trong Master List. Nhấn để xóa khỏi Master List" data-word="${this.escape(item.text)}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
+              <button type="button" class="fx-btn-icon-raw fx-btn-delete-master" style="color: var(--fx-text-muted);" title="Xóa khỏi danh sách đã thuộc">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                 </svg>
               </button>
             </div>
           </div>
 
-          <!-- Dòng 2: Phiên âm IPA + Loa + Nghĩa tiếng Việt -->
+          <!-- Dòng 2: Phiên âm IPA + Nghĩa tiếng Việt rõ ràng -->
           <div class="fx-card-line-2">
-            ${ipa ? `<span class="fx-card-ipa">${this.escape(ipa)}</span>` : ''}
-            <button type="button" class="fx-btn-icon-raw fx-btn-audio" title="Phát âm">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-              </svg>
-            </button>
-            <span class="fx-card-dot-sep">·</span>
-            <div class="fx-master-meanings-inline">
-              ${meaningsHtml}
-              <button type="button" class="fx-btn-add-meaning-mini" data-text="${this.escape(item.text)}" title="Thêm nghĩa mới cho từ này">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </button>
-            </div>
+            ${ipa ? `<span class="fx-card-ipa">${this.escape(ipa)}</span><span class="fx-card-dot-sep">·</span>` : ''}
+            <span class="fx-card-trans">${this.escape(meanings.join(', ') || 'Chưa có nghĩa')}</span>
           </div>
 
-          <!-- Dòng 3: Ngữ cảnh trực tiếp trong ngoặc kép - STRICTLY NO TIMESTAMP (Red circle 3: fancy 00:00:38.799) -->
+          <!-- Dòng 3: Ngữ cảnh trực tiếp trong ngoặc kép (Không timestamp) -->
           ${contextHtml ? `
             <div class="fx-card-line-3">
               <p class="fx-card-quote">"${contextHtml}"</p>
             </div>
           ` : ''}
         `;
-
-        card.querySelector('.fx-btn-star').onclick = (e) => {
-          e.stopPropagation();
-          this.toggleStar(item.text);
-          this.renderMasterList();
-        };
-
-        card.querySelector('.fx-btn-check').onclick = (e) => {
-          e.stopPropagation();
-          this.removeMasterItem(item.text);
-        };
 
         const audioBtn = card.querySelector('.fx-btn-audio');
         if (audioBtn) {
@@ -3223,22 +3182,13 @@ The brilliant astronomer suddenly realized the extraordinary secret of the stars
           };
         }
 
-        const addMeaningBtn = card.querySelector('.fx-btn-add-meaning-mini');
-        if (addMeaningBtn) {
-          addMeaningBtn.onclick = (e) => {
+        const deleteBtn = card.querySelector('.fx-btn-delete-master');
+        if (deleteBtn) {
+          deleteBtn.onclick = (e) => {
             e.stopPropagation();
-            this.addMeaningInline(item.text);
+            this.removeMasterItem(item.text);
           };
         }
-
-        card.querySelectorAll('.fx-btn-remove-meaning').forEach((btn) => {
-          btn.onclick = (e) => {
-            e.stopPropagation();
-            const text = btn.dataset.text;
-            const meaning = btn.dataset.meaning;
-            this.removeMeaningFromItem(text, meaning);
-          };
-        });
 
         fragment.appendChild(card);
       });

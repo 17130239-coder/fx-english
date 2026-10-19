@@ -17,7 +17,6 @@
       <div class="fx-nav-brand-group">
         <div class="fx-nav-brand-btn" title="FX English Studio">
           <img src="../icons/icon32.png" alt="FX English Logo" width="24" height="24" class="fx-nav-brand-logo">
-          <span class="fx-nav-title">FX English</span>
         </div>
         <nav class="fx-nav-switcher">
           <button type="button" id="fx-nav-tab-studio" class="fx-nav-tab active" title="Danh sách phim và video đã quét">
@@ -49,21 +48,6 @@
           </svg>
         </button>
 
-        <button id="fx-btn-toggle-flashcards" class="fx-btn-tesla-primary-sm" style="display:none;" title="Ôn tập từ vựng bằng Flashcards">
-          <span>Flashcards</span>
-        </button>
-        <button id="fx-btn-export-anki-top" class="fx-btn-tesla-ghost-sm" style="display:none;" title="Xuất bộ thẻ Anki (.txt)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span>Anki</span>
-        </button>
-        <button id="fx-btn-export-csv-top" class="fx-btn-tesla-ghost-sm" style="display:none;" title="Xuất file CSV">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-          </svg>
-          <span>CSV</span>
-        </button>
         <!-- Export JSON Button (Icon only) -->
         <button id="fx-btn-export-json-top" class="fx-btn-tesla-ghost-sm" title="Xuất dữ liệu JSON" aria-label="Xuất dữ liệu JSON" style="display:inline-flex; align-items:center; justify-content:center; padding:6px 8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -115,10 +99,11 @@
       <!-- Scanned History Section -->
       <section id="fx-history-section" class="fx-history-section">
         <div class="fx-section-header">
-          <div class="fx-history-title-row">
-            <h2>Phim & Video Đã Quét (<span id="fx-history-count">0</span>)</h2>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2>Phim & Video Đã Quét</h2>
+            <span id="fx-history-count" class="fx-nav-pill-count">0</span>
           </div>
-          <button type="button" id="fx-btn-clear-history" class="fx-btn-ghost-text" style="display:none;">
+          <button type="button" id="fx-btn-clear-history" class="fx-btn-ghost-text" style="display:none;" title="Xóa toàn bộ phim đã quét">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
             </svg>
@@ -347,8 +332,29 @@
       </section>
       </div><!-- End #fx-studio-view -->
 
-      <!-- Master Known List Management View (Tesla Utilitarian Style - Matches Vocab Grid) -->
+      <!-- Master Known List Management View (Tesla Utilitarian Style - Matches Webapp) -->
       <div id="fx-master-view" class="fx-master-view" style="display:none;">
+        <!-- Top Header Row -->
+        <div class="fx-master-header-row">
+          <div class="fx-master-title-wrap">
+            <h2 class="fx-master-title">Từ vựng đã thuộc</h2>
+            <p class="fx-master-desc">
+              Danh sách toàn bộ từ vựng và câu bạn đã thuộc. Dữ liệu được đồng bộ qua Neon Serverless Postgres và dùng để tự động lọc bỏ từ trùng lặp khi quét phim mới.
+            </p>
+          </div>
+          <div class="fx-master-actions">
+            <button type="button" id="fx-btn-open-add-master" class="fx-btn-tesla-primary-sm" title="Thêm từ mới vào Master List">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Thêm từ</span>
+            </button>
+            <button type="button" id="fx-btn-clear-master" class="fx-btn-ghost-text" style="color: var(--fx-accent-netflix);" title="Xóa toàn bộ Master List">
+              <span>Xóa toàn bộ</span>
+            </button>
+          </div>
+        </div>
+
         <!-- CEFR Vocabulary Distribution Bar for Master List -->
         <section id="fx-master-cefr-dist-section" class="fx-cefr-dist-bar-wrap">
           <div class="fx-cefr-dist-header">
@@ -423,20 +429,6 @@
                 <option value="C1">C1 (Cao cấp)</option>
                 <option value="C2">C2 (Thành thạo)</option>
               </select>
-
-              <button type="button" id="fx-btn-open-add-master" class="fx-btn-tesla-primary-sm" title="Thêm từ hoặc câu vào Master List">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                <span>Thêm từ</span>
-              </button>
-
-              <button type="button" id="fx-btn-clear-master" class="fx-btn-ghost-text" title="Xóa toàn bộ Master List">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                </svg>
-                <span>Xóa tất cả</span>
-              </button>
             </div>
           </div>
         </div>
